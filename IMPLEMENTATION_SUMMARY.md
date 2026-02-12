@@ -34,10 +34,18 @@ This document summarizes the implementation of the optimg R package for optimizi
 - **R/extendr-wrappers.R**: Auto-generated Rust bindings
 
 ### 4. Vendored Dependencies (CRAN Policy) ✓
-- **src/rust/vendor/**: Contains all 37 vendored Rust crates
+- **src/rust/vendor/**: Contains all 37 vendored Rust crates (without version numbers in directory names)
 - **src/rust/.cargo/config.toml**: Configures cargo to use vendored sources
-- **update-vendor.sh**: Script to update dependencies in the future
-- All dependencies are vendored with versioned directories
+- **update-vendor.sh**: Script to update dependencies in the future with automatic trimming of non-essential files
+- All dependencies are vendored without versioned directories (e.g., `vendor/bitflags` instead of `vendor/bitflags-2.10.0`)
+- Non-essential files are removed from vendored crates to reduce package size:
+  - `.github` directories
+  - `.cargo` files
+  - CI configuration files (`.dockerignore`, `.gitlab-ci.yml`, etc.)
+  - Documentation files (README, CHANGELOG, etc.)
+  - Test directories
+  - Benchmark directories
+  - Example directories
 
 ### 5. Documentation with roxygen2 ✓
 - **Roxygen2 with Markdown**: Enabled in DESCRIPTION file

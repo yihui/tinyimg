@@ -67,9 +67,14 @@ cd src/rust
 # Update dependencies
 cargo update
 
-# Re-vendor with versioned directories
+# Re-vendor without versioned directories
 rm -rf vendor
-cargo vendor --versioned-dirs
+cargo vendor
+
+# Trim non-essential files (automated in update-vendor.sh)
+find vendor -name ".github" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".cargo" -type d -exec rm -rf {} + 2>/dev/null || true
+# ... (see update-vendor.sh for complete list)
 
 # Commit the changes
 git add vendor Cargo.lock

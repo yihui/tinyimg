@@ -77,17 +77,26 @@ When modifying Rust code:
 To update vendored Rust dependencies:
 
 ```bash
-# Using the provided script
+# Using the provided script (recommended)
 ./update-vendor.sh
 
 # Or manually:
 cd src/rust
 rm -rf vendor
 cargo update
-cargo vendor --versioned-dirs
+cargo vendor
+
+# Then trim non-essential files (see update-vendor.sh for the full list):
+find vendor -name ".github" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".cargo" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "README*" -type f -delete 2>/dev/null || true
+find vendor -name "benches" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+# ... etc
 ```
 
-**Important**: After updating dependencies, test the package thoroughly and commit all changes including the `vendor/` directory.
+**Important**: After updating dependencies, test the package thoroughly and commit all changes including the `vendor/` directory. The trimming process removes non-essential files to keep the package size small for CRAN.
 
 ### 4. Adding New Dependencies
 
