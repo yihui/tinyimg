@@ -13,11 +13,44 @@ rm -rf vendor
 echo "Step 2: Updating Cargo.lock..."
 cargo update
 
-echo "Step 3: Vendoring dependencies with versioned directories..."
-cargo vendor --versioned-dirs
+echo "Step 3: Vendoring dependencies (without versioned directories)..."
+cargo vendor
+
+echo "Step 4: Trimming non-essential files from vendored crates..."
+# Remove hidden directories and files
+find vendor -name ".github" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".cargo" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".cargo-checksum.json" -type f -delete 2>/dev/null || true
+find vendor -name ".cargo_vcs_info.json" -type f -delete 2>/dev/null || true
+
+# Remove CI configuration files
+find vendor -name ".gitlab-ci.yml" -type f -delete 2>/dev/null || true
+find vendor -name ".travis.yml" -type f -delete 2>/dev/null || true
+find vendor -name ".dockerignore" -type f -delete 2>/dev/null || true
+find vendor -name ".rustfmt.toml" -type f -delete 2>/dev/null || true
+find vendor -name ".editorconfig" -type f -delete 2>/dev/null || true
+find vendor -name ".gitignore" -type f -delete 2>/dev/null || true
+find vendor -name ".gitattributes" -type f -delete 2>/dev/null || true
+
+# Remove documentation files (keep LICENSE files)
+find vendor -name "README*" -type f -delete 2>/dev/null || true
+find vendor -name "CHANGELOG*" -type f -delete 2>/dev/null || true
+find vendor -name "CONTRIBUTING*" -type f -delete 2>/dev/null || true
+find vendor -name "CODE_OF_CONDUCT*" -type f -delete 2>/dev/null || true
+find vendor -name "SECURITY*" -type f -delete 2>/dev/null || true
+find vendor -name "*.md" -type f ! -name "LICENSE*.md" -delete 2>/dev/null || true
+
+# Remove test, benchmark, and example directories
+find vendor -name "benches" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+
+# Remove build scripts for dependencies (we keep build.rs at top level)
+find vendor -depth -mindepth 2 -name "build.rs" -type f -delete 2>/dev/null || true
 
 echo ""
-echo "✓ Dependencies updated successfully!"
+echo "✓ Dependencies updated and trimmed successfully!"
 echo ""
 echo "The vendored crates are now in src/rust/vendor/"
+echo "Non-essential files have been removed to keep the package small."
 echo "Make sure to commit the changes to the repository."

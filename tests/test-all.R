@@ -3,7 +3,7 @@ library(testit)
 # Create a simple test PNG file
 create_test_png = function() {
   tmp = tempfile(fileext = ".png")
-  png(tmp, width = 100, height = 100)
+  png(tmp, width = 400, height = 400)
   plot(1:10)
   dev.off()
   tmp
