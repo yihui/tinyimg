@@ -10,6 +10,9 @@ $(SHLIB): $(STATLIB)
 CARGOTMP = $(CURDIR)/.cargo
 
 $(STATLIB):
+	# Report rustc version for R CMD check
+	@echo "Using Rust compiler:"
+	@rustc --version || echo "rustc not found in PATH"
 	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
 	# to set it here to ensure that cargo will be found. `rustc --print sysroot`
 	# is a way to get the Rust sysroot without needing cargo itself.

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Generate cargo config for vendored sources
+mkdir -p src/rust/.cargo
+cat > src/rust/.cargo/config.toml << 'EOF'
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+EOF
+
+echo "Cargo configuration created successfully"
