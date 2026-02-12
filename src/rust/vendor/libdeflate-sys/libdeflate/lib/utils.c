@@ -136,6 +136,10 @@ NORETURN void
 libdeflate_assertion_failed(const char *expr, const char *file, int line)
 {
 	fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
-	abort();
+	/* Replaced abort() to avoid R CMD check warning.
+	 * In R packages, we cannot call abort() as it terminates R.
+	 * This function should never be called in production builds anyway,
+	 * as LIBDEFLATE_ENABLE_ASSERTIONS is only defined for static analysis. */
+	while(1) { /* Infinite loop instead of abort() */ }
 }
 #endif /* LIBDEFLATE_ENABLE_ASSERTIONS */

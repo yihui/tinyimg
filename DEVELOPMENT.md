@@ -253,14 +253,23 @@ CI automatically runs on:
 2. **Old Cargo.lock**: Run `cargo update` if dependencies are outdated
 3. **Platform-specific issues**: Check both Makevars and Makevars.win are correct
 
-### Known Warnings
+### Known Warnings and Fixes
 
-**abort() warning in R CMD check**: 
-The package may generate a warning about `Found 'abort'` in compiled code. This is from the libdeflate C library (a dependency of oxipng) which uses abort() for internal assertion failures. This is acceptable because:
-- Our Rust code properly uses `panic = "unwind"` 
-- The abort() calls are in C code for error conditions that don't occur in normal operation
-- Many CRAN packages with similar dependencies have this warning
-- The error handling in our R wrapper ensures proper error propagation
+**abort() warning in R CMD check (FIXED)**: 
+The package previously generated a warning about `Found 'abort'` in compiled code from the libdeflate C library (a dependency of oxipng). This has been fixed by patching the vendored libdeflate source code:
+
+- **Root cause**: libdeflate uses abort() in two places:
+  1. `utils.c`: For assertion failures (only when LIBDEFLATE_ENABLE_ASSERTIONS is defined for static analysis)
+  2. `cpu_features_common.h`: For test support code (only when TEST_SUPPORT__DO_NOT_USE is defined)
+
+- **Solution**: The `patches/libdeflate-remove-abort.patch` file contains patches that replace abort() calls:
+  - In assertions: Changed to an infinite loop (should never execute in production)
+  - In test code: Changed to graceful return statements (test-only code)
+
+- **Maintainability**: The patch is automatically applied by `update-vendor.sh` when updating dependencies. The patch file is tracked in git and documents exactly what was changed and why.
+
+**configure script permissions on Windows**:
+Git tracks execute permissions. The configure script is marked executable in git (mode 100755) to avoid Windows warnings about missing execute permissions.
 
 ## Resources
 

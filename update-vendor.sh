@@ -53,9 +53,21 @@ find vendor -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
 # Remove build scripts for dependencies (we keep build.rs at top level)
 find vendor -depth -mindepth 2 -name "build.rs" -type f -delete 2>/dev/null || true
 
+echo "Step 6: Applying patches to remove abort() calls from libdeflate..."
+# Apply patch to remove abort() calls which cause R CMD check warnings
+if [ -f "vendor/libdeflate-sys/libdeflate/lib/utils.c" ]; then
+  cd vendor/libdeflate-sys/libdeflate/lib
+  patch -p1 < ../../../../../../patches/libdeflate-remove-abort.patch
+  cd ../../../../..
+  echo "✓ Patch applied successfully to libdeflate"
+else
+  echo "⚠ Warning: libdeflate files not found, skipping patch"
+fi
+
 echo ""
 echo "✓ Dependencies updated and trimmed successfully!"
 echo ""
 echo "The vendored crates are now in src/rust/vendor/"
 echo "Non-essential files have been removed to keep the package small."
+echo "Patches have been applied to avoid R CMD check warnings."
 echo "Make sure to commit the changes to the repository."

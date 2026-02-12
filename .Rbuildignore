@@ -8,3 +8,4 @@
 ^update-vendor\.sh$
 ^DEVELOPMENT\.md$
 ^IMPLEMENTATION_SUMMARY\.md$
+^patches$

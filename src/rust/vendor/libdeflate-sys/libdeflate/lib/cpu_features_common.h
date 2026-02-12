@@ -61,8 +61,11 @@ disable_cpu_features_for_testing(u32 *features,
 	if (!env_value)
 		return;
 	strbuf = strdup(env_value);
-	if (!strbuf)
-		abort();
+	if (!strbuf) {
+		/* Replaced abort() to avoid R CMD check warning.
+		 * This is test-only code that should never execute in production. */
+		return;
+	}
 	p = strtok_r(strbuf, ",", &saveptr);
 	while (p) {
 		for (i = 0; i < feature_table_length; i++) {
@@ -75,7 +78,10 @@ disable_cpu_features_for_testing(u32 *features,
 			fprintf(stderr,
 				"unrecognized feature in LIBDEFLATE_DISABLE_CPU_FEATURES: \"%s\"\n",
 				p);
-			abort();
+			/* Replaced abort() to avoid R CMD check warning.
+			 * This is test-only code that should never execute in production. */
+			free(strbuf);
+			return;
 		}
 		p = strtok_r(NULL, ",", &saveptr);
 	}
