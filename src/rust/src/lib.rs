@@ -15,7 +15,7 @@ fn optim_png_impl(input: &str, output: &str, level: i32) -> Result<()> {
     let output_path = PathBuf::from(output);
     
     // Set up oxipng options
-    let mut opts = Options::from_preset(level as u8);
+    let opts = Options::from_preset(level as u8);
     
     // Run optimization
     let in_file = InFile::Path(input_path);
