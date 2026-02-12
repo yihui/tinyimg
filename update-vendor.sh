@@ -16,8 +16,18 @@ cargo update
 echo "Step 3: Vendoring dependencies (without versioned directories)..."
 cargo vendor
 
-echo "Step 4: Trimming non-essential files from vendored crates..."
-# Remove hidden directories and files
+echo "Step 4: Creating .cargo/config.toml for vendored sources..."
+mkdir -p .cargo
+cat > .cargo/config.toml << 'EOF'
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+EOF
+
+echo "Step 5: Trimming non-essential files from vendored crates..."
+# Remove hidden directories and files from vendor subdirectories (but not src/rust/.cargo)
 find vendor -name ".github" -type d -exec rm -rf {} + 2>/dev/null || true
 find vendor -name ".cargo" -type d -exec rm -rf {} + 2>/dev/null || true
 find vendor -name ".cargo-checksum.json" -type f -delete 2>/dev/null || true
