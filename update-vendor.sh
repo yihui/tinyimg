@@ -33,6 +33,9 @@ find vendor -name ".cargo" -type d -exec rm -rf {} + 2>/dev/null || true
 find vendor -name ".cargo-checksum.json" -type f -delete 2>/dev/null || true
 find vendor -name ".cargo_vcs_info.json" -type f -delete 2>/dev/null || true
 
+# Remove all other hidden files (starting with .)
+find vendor -name ".*" -type f -delete 2>/dev/null || true
+
 # Remove CI configuration files
 find vendor -name ".gitlab-ci.yml" -type f -delete 2>/dev/null || true
 find vendor -name ".travis.yml" -type f -delete 2>/dev/null || true
