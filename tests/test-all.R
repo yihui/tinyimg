@@ -32,16 +32,16 @@ assert("optim_png works with level = 6", file.exists(test_png3))
 
 # Test that optim_png fails with non-existent file
 has_error = FALSE
-tryCatch(optim_png("nonexistent.png"), error = function(e) has_error <<- TRUE)
-assert("optim_png fails with non-existent file", has_error)
+tryCatch(optim_png("nonexistent.png"), error = function(e) { has_error <<- TRUE })
+assert("optim_png fails with non-existent file", has_error == TRUE)
 
 # Test that optim_png fails with invalid level
 test_png4 = create_test_png()
-has_error = FALSE
-tryCatch(optim_png(test_png4, level = 7), error = function(e) has_error <<- TRUE)
-assert("optim_png fails with level > 6", has_error)
+has_error2 = FALSE
+tryCatch(optim_png(test_png4, level = 7), error = function(e) { has_error2 <<- TRUE })
+assert("optim_png fails with level > 6", has_error2 == TRUE)
 
 test_png5 = create_test_png()
-has_error = FALSE
-tryCatch(optim_png(test_png5, level = -1), error = function(e) has_error <<- TRUE)
-assert("optim_png fails with level < 0", has_error)
+has_error3 = FALSE
+tryCatch(optim_png(test_png5, level = -1), error = function(e) { has_error3 <<- TRUE })
+assert("optim_png fails with level < 0", has_error3 == TRUE)
