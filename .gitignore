@@ -1,0 +1,28 @@
+# R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Rust build artifacts
+src/rust/target/
+.cargo/
+*.o
+*.so
+*.dll
+*.dylib
+
+# R build artifacts
+/*.tar.gz
+/*.Rcheck/
+/doc/
+/Meta/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

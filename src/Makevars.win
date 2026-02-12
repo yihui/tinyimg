@@ -1,0 +1,30 @@
+TARGET = $(subst 64,x86_64,$(subst 32,i686,$(WIN)))-pc-windows-gnu
+
+TARGET_DIR = ./rust/target
+LIBDIR = $(TARGET_DIR)/$(TARGET)/release
+STATLIB = $(LIBDIR)/liboptimg.a
+PKG_LIBS = -L$(LIBDIR) -loptimg -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+
+all: C_clean
+
+$(SHLIB): $(STATLIB)
+
+CARGOTMP = $(CURDIR)/.cargo
+
+$(STATLIB):
+	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
+	# to set it here to ensure that cargo will be found. `rustc --print sysroot`
+	# is a way to get the Rust sysroot without needing cargo itself.
+	export CARGO_HOME=$(CARGOTMP) && \
+		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
+		cargo build --target=$(TARGET) --lib --release --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
+	if [ "$(NOT_CRAN)" != "true" ]; then \
+		rm -Rf $(CARGOTMP) && \
+		rm -Rf $(LIBDIR)/build; \
+	fi
+
+C_clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS)
+
+clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS) rust/target

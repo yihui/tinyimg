@@ -1,0 +1,9 @@
+^\.git$
+^\.github$
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^LICENSE\.md$
+^\.cargo$
+^rust/target$
+^\.github/workflows$
