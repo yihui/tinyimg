@@ -6,3 +6,4 @@
 ^LICENSE\.md$
 ^rust/target$
 ^update-vendor\.sh$
+^DEVELOPMENT\.md$
