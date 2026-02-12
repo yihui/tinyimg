@@ -19,8 +19,26 @@ compression but take longer. Default is 2.}
 Invisibly returns the path to the output file.
 }
 \description{
-Optimize PNG images using the oxipng Rust library. This function compresses
-PNG files without losing quality.
+Optimize PNG images using the \strong{oxipng} Rust library. This function compresses
+PNG files without losing quality (lossless compression).
+}
+\details{
+The function uses the oxipng library which implements various PNG optimization
+techniques including:
+\itemize{
+\item IDAT recompression with multiple algorithms
+\item Bit depth reduction
+\item Color type reduction
+\item Palette reduction
+}
+
+\strong{Optimization levels:}
+\itemize{
+\item Level 0: Minimal optimization (fastest)
+\item Level 1-2: Fast optimization with good results
+\item Level 3-4: More thorough optimization
+\item Level 5-6: Maximum optimization (slowest, best compression)
+}
 }
 \examples{
 \dontrun{
@@ -32,5 +50,8 @@ optim_png("input.png", "output.png")
 
 # Use maximum optimization
 optim_png("image.png", level = 6)
+
+# Use fast optimization for large batches
+optim_png("image.png", level = 0)
 }
 }

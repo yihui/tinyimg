@@ -86,6 +86,20 @@ install.packages(c("devtools", "roxygen2"))
 devtools::install()
 ```
 
+### Generating Documentation
+
+The package uses roxygen2 with markdown support for documentation:
+
+```r
+# Update documentation
+roxygen2::roxygenise()
+
+# Or use devtools
+devtools::document()
+```
+
+The documentation is generated from roxygen2 comments in the R source files. After modifying any `#'` comments in the R files, run the commands above to regenerate the `.Rd` files in the `man/` directory.
+
 ### Running Tests
 
 ```r
