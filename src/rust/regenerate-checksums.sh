@@ -68,10 +68,18 @@ for crate_dir in "$VENDOR_DIR"/*/; do
             echo -n ',' >> "$temp_file"
         fi
         
-        # Escape special characters in path for JSON
-        # Replace backslash with double backslash, quote with backslash-quote
-        escaped_path=$(echo "$rel_path" | sed 's/\\/\\\\/g; s/"/\\"/g')
-        echo -n "\"$escaped_path\":\"$hash\"" >> "$temp_file"
+        # Escape path for JSON - use jq if available for proper escaping
+        if command -v jq >/dev/null 2>&1; then
+            # jq properly handles all JSON special characters
+            escaped_path=$(echo -n "$rel_path" | jq -R -s '.')
+            # Remove quotes added by jq -R (we'll add them back in the final JSON)
+            escaped_path="${escaped_path:1:${#escaped_path}-2}"
+            echo -n "\"$escaped_path\":\"$hash\"" >> "$temp_file"
+        else
+            # Fallback: escape backslash, quote, newline, tab, carriage return
+            escaped_path=$(echo "$rel_path" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g; s/\t/\\t/g; s/\r/\\r/g')
+            echo -n "\"$escaped_path\":\"$hash\"" >> "$temp_file"
+        fi
         
     done < <(find "$crate_dir" -type f ! -name ".cargo-checksum.json*" -print0 2>/dev/null)
     

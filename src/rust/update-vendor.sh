@@ -48,9 +48,9 @@ find vendor -name "benches" -type d -exec rm -rf {} + 2>/dev/null || true
 find vendor -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # Remove unnecessary Windows lib files (following gifski's approach)
-rm -rf vendor/windows_x86_64_gnullvm/lib/* 2>/dev/null || true
-rm -rf vendor/windows_*_msvc/lib/* 2>/dev/null || true
-rm -rf vendor/windows_i686*/lib/* 2>/dev/null || true
+find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \; 2>/dev/null || true
+find vendor -type d -name "windows_*_msvc" -exec rm -rf {}/lib/* \; 2>/dev/null || true
+find vendor -type d -name "windows_i686*" -exec rm -rf {}/lib/* \; 2>/dev/null || true
 
 # Measure trimmed size
 VENDOR_SIZE_TRIM=$(du -sb vendor | cut -f1)
