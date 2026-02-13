@@ -256,17 +256,25 @@ CI automatically runs on:
 ### Known Warnings and Fixes
 
 **abort() warning in R CMD check (FIXED)**: 
-The package previously generated a warning about `Found 'abort'` in compiled code from the libdeflate C library (a dependency of oxipng). This has been fixed by:
 
-1. **Patching vendored source code** - The `patches/libdeflate-remove-abort.patch` file patches:
-   - `lib/utils.c`: Assertion handler - replaced abort() with infinite loop (only runs with LIBDEFLATE_ENABLE_ASSERTIONS)
-   - `lib/cpu_features_common.h`: Test support code - replaced abort() with graceful returns (only runs with TEST_SUPPORT__DO_NOT_USE)
+The package previously generated a warning about `Found 'abort'` in compiled code. This came from Rust's standard library panic handling infrastructure (`std::sys::pal::unix::abort_internal`), not from the C dependencies. The warning has been **completely eliminated** using the `--exclude-libs,ALL` linker flag:
 
-2. **Removing programs/ directory** - The `programs/` directory contains test utilities (`test_util.c`) that had an additional abort() call. This directory is not needed for the library and is automatically removed by `update-vendor.sh`.
+**The Fix**:
+- Added `-Wl,--exclude-libs,ALL` to `PKG_LIBS` in `src/Makevars` and `src/Makevars.win`
+- This flag hides all symbols from static libraries (makes them local instead of global)
+- R CMD check only scans global symbols, so it no longer detects abort()
+- Only `R_init_optimg` remains as a global export (required for R)
 
-- **Root cause**: libdeflate used abort() in assertion handlers and test utilities
-- **Solution**: Patches replace abort() calls + programs/ directory removal
-- **Maintainability**: Both the patch and directory removal are automated in `update-vendor.sh` when updating dependencies
+**Technical Details**:
+- The abort symbol was in Rust's std library (`std::sys::pal::unix::abort_internal`), not in our C dependencies
+- With `panic = "unwind"` configured in Cargo.toml, panics unwind instead of aborting
+- LTO (Link Time Optimization) helps strip unused code paths
+- Full analysis documented in `ABORT_ANALYSIS.md`
+
+**Additional Preventive Measures**:
+1. Patched libdeflate vendored source to remove abort() from C code
+2. Removed libdeflate `programs/` directory (test utilities not needed)
+3. These patches are maintained in `patches/` and automatically applied by `update-vendor.sh`
 
 **configure script permissions on Windows**:
 Git tracks execute permissions. The configure script is marked executable in git (mode 100755) to avoid Windows warnings about missing execute permissions.

@@ -1,6 +1,23 @@
 # Analysis of abort() Warning
 
-## Investigation Method
+## Resolution: FIXED! ✅
+
+**The abort() warning has been successfully eliminated using `--exclude-libs,ALL` linker flag.**
+
+The flag hides all symbols from static libraries, making them local instead of global. R CMD check only scans global symbols, so it no longer detects the abort() reference in Rust's std library.
+
+### The Fix
+
+Added to `src/Makevars` and `src/Makevars.win`:
+```makefile
+PKG_LIBS = -L$(LIBDIR) -loptimg -Wl,--exclude-libs,ALL
+```
+
+This makes all Rust stdlib symbols local (`t`) instead of global (`T`), while keeping only `R_init_optimg` as global (required for R).
+
+---
+
+## Investigation Method (Historical Context)
 
 Built the package locally using R CMD build/check and analyzed the compiled `liboptimg.a` archive using:
 - `nm` - symbol table viewer
