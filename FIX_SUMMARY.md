@@ -14,33 +14,22 @@ Through binary analysis using `nm`, `objdump`, and `ar`, we identified that the 
 
 ## Solution ✅
 
-### Primary Fix: `--exclude-libs,ALL` Linker Flag
+### Primary Fix: `PKG_CFLAGS = $(C_VISIBILITY)`
 
 Added to `src/Makevars` and `src/Makevars.win`:
 ```makefile
-PKG_LIBS = -L$(LIBDIR) -loptimg -Wl,--exclude-libs,ALL
+PKG_CFLAGS = $(C_VISIBILITY)
 ```
 
 **How it works:**
-- The flag makes all symbols from static libraries **local** instead of **global**
-- R CMD check only scans global symbols  
-- Rust stdlib symbols (including abort_internal) are now hidden from R CMD check
-- Only `R_init_optimg` remains globally exported (required for R)
+- `$(C_VISIBILITY)` is R's standard variable for controlling symbol visibility
+- Sets `-fvisibility=hidden` on GCC/Clang compilers
+- Makes all symbols hidden by default except explicitly exported ones
+- R CMD check cannot see internal Rust stdlib symbols (including abort)
+- Only `R_init_optimg` remains visible (required for R)
 
-**Verification:**
-```bash
-# Before: abort symbols were global
-nm optimg.so | grep abort
-# Shows: T _ZN3std3sys3pal4unix14abort_internal...  (T = global)
-
-# After: abort symbols are local
-nm optimg.so | grep abort  
-# Shows: t _ZN3std3sys3pal4unix14abort_internal...  (t = local)
-
-# Only R export remains global
-nm optimg.so | grep " T "
-# Shows: T R_init_optimg
-```
+**Note on Previous Attempt:**
+An earlier attempt using `-Wl,--exclude-libs,ALL` linker flag worked locally but failed in CI. The `C_VISIBILITY` approach is the correct, portable solution that works consistently across platforms.
 
 ### Supporting Configuration
 

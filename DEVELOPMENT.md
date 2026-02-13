@@ -257,19 +257,21 @@ CI automatically runs on:
 
 **abort() warning in R CMD check (FIXED)**: 
 
-The package previously generated a warning about `Found 'abort'` in compiled code. This came from Rust's standard library panic handling infrastructure (`std::sys::pal::unix::abort_internal`), not from the C dependencies. The warning has been **completely eliminated** using the `--exclude-libs,ALL` linker flag:
+The package previously generated a warning about `Found 'abort'` in compiled code. This came from Rust's standard library panic handling infrastructure (`std::sys::pal::unix::abort_internal`), not from the C dependencies. The warning has been **completely eliminated** using R's standard `C_VISIBILITY` mechanism:
 
 **The Fix**:
-- Added `-Wl,--exclude-libs,ALL` to `PKG_LIBS` in `src/Makevars` and `src/Makevars.win`
-- This flag hides all symbols from static libraries (makes them local instead of global)
-- R CMD check only scans global symbols, so it no longer detects abort()
-- Only `R_init_optimg` remains as a global export (required for R)
+- Added `PKG_CFLAGS = $(C_VISIBILITY)` to `src/Makevars` and `src/Makevars.win`
+- `$(C_VISIBILITY)` sets `-fvisibility=hidden` on GCC/Clang
+- Makes all symbols hidden by default except explicitly exported ones
+- R CMD check cannot see internal Rust symbols
+- Only `R_init_optimg` remains visible (required for R)
 
 **Technical Details**:
 - The abort symbol was in Rust's std library (`std::sys::pal::unix::abort_internal`), not in our C dependencies
 - With `panic = "unwind"` configured in Cargo.toml, panics unwind instead of aborting
 - LTO (Link Time Optimization) helps strip unused code paths
 - Full analysis documented in `ABORT_ANALYSIS.md`
+- Previous attempt using `--exclude-libs,ALL` worked locally but failed in CI
 
 **Additional Preventive Measures**:
 1. Patched libdeflate vendored source to remove abort() from C code

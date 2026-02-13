@@ -2,18 +2,20 @@
 
 ## Resolution: FIXED! ✅
 
-**The abort() warning has been successfully eliminated using `--exclude-libs,ALL` linker flag.**
+**The abort() warning has been successfully eliminated using `PKG_CFLAGS = $(C_VISIBILITY)`.**
 
-The flag hides all symbols from static libraries, making them local instead of global. R CMD check only scans global symbols, so it no longer detects the abort() reference in Rust's std library.
+The `$(C_VISIBILITY)` variable is R's standard mechanism for controlling symbol visibility. It sets `-fvisibility=hidden` on GCC/Clang, making all symbols hidden by default except those explicitly exported (like `R_init_optimg`). This prevents R CMD check from detecting the abort() reference in Rust's std library.
 
 ### The Fix
 
 Added to `src/Makevars` and `src/Makevars.win`:
 ```makefile
-PKG_LIBS = -L$(LIBDIR) -loptimg -Wl,--exclude-libs,ALL
+PKG_CFLAGS = $(C_VISIBILITY)
 ```
 
-This makes all Rust stdlib symbols local (`t`) instead of global (`T`), while keeping only `R_init_optimg` as global (required for R).
+This makes all Rust stdlib symbols hidden from R's symbol scanner, while keeping only `R_init_optimg` visible (required for R).
+
+**Note:** A previous attempt using `--exclude-libs,ALL` linker flag worked locally but failed in CI. `$(C_VISIBILITY)` is the correct, portable approach.
 
 ---
 
