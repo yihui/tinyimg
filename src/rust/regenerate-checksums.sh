@@ -83,7 +83,7 @@ for crate_dir in "$VENDOR_DIR"/*/; do
             echo -n "\"$escaped_path\":\"$hash\"" >> "$temp_file"
         fi
         
-    done < <(find "$crate_dir" -type f ! -name ".cargo-checksum.json" ! -name ".cargo-checksum.json.tmp" -print0 2>/dev/null)
+    done < <(find "$crate_dir" -type f ! -name ".cargo-checksum.json" -print0 2>/dev/null)
     
     # Close files object and add package checksum
     echo -n '},"package":' >> "$temp_file"
