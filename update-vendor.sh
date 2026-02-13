@@ -50,6 +50,9 @@ find vendor -name "benches" -type d -exec rm -rf {} + 2>/dev/null || true
 find vendor -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
 find vendor -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
 
+# Remove programs directory from libdeflate (contains test utilities with abort() calls)
+rm -rf vendor/libdeflate-sys/libdeflate/programs 2>/dev/null || true
+
 # Remove build scripts for dependencies (we keep build.rs at top level)
 find vendor -depth -mindepth 2 -name "build.rs" -type f -delete 2>/dev/null || true
 

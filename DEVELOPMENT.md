@@ -256,17 +256,17 @@ CI automatically runs on:
 ### Known Warnings and Fixes
 
 **abort() warning in R CMD check (FIXED)**: 
-The package previously generated a warning about `Found 'abort'` in compiled code from the libdeflate C library (a dependency of oxipng). This has been fixed by patching the vendored libdeflate source code:
+The package previously generated a warning about `Found 'abort'` in compiled code from the libdeflate C library (a dependency of oxipng). This has been fixed by:
 
-- **Root cause**: libdeflate uses abort() in two places:
-  1. `utils.c`: For assertion failures (only when LIBDEFLATE_ENABLE_ASSERTIONS is defined for static analysis)
-  2. `cpu_features_common.h`: For test support code (only when TEST_SUPPORT__DO_NOT_USE is defined)
+1. **Patching vendored source code** - The `patches/libdeflate-remove-abort.patch` file patches:
+   - `lib/utils.c`: Assertion handler - replaced abort() with infinite loop (only runs with LIBDEFLATE_ENABLE_ASSERTIONS)
+   - `lib/cpu_features_common.h`: Test support code - replaced abort() with graceful returns (only runs with TEST_SUPPORT__DO_NOT_USE)
 
-- **Solution**: The `patches/libdeflate-remove-abort.patch` file contains patches that replace abort() calls:
-  - In assertions: Changed to an infinite loop (should never execute in production)
-  - In test code: Changed to graceful return statements (test-only code)
+2. **Removing programs/ directory** - The `programs/` directory contains test utilities (`test_util.c`) that had an additional abort() call. This directory is not needed for the library and is automatically removed by `update-vendor.sh`.
 
-- **Maintainability**: The patch is automatically applied by `update-vendor.sh` when updating dependencies. The patch file is tracked in git and documents exactly what was changed and why.
+- **Root cause**: libdeflate used abort() in assertion handlers and test utilities
+- **Solution**: Patches replace abort() calls + programs/ directory removal
+- **Maintainability**: Both the patch and directory removal are automated in `update-vendor.sh` when updating dependencies
 
 **configure script permissions on Windows**:
 Git tracks execute permissions. The configure script is marked executable in git (mode 100755) to avoid Windows warnings about missing execute permissions.
