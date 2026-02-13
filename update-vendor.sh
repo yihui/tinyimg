@@ -69,7 +69,7 @@ echo "Step 6: Applying patches to remove abort() calls from libdeflate..."
 # Apply patch to remove abort() calls which cause R CMD check warnings
 if [ -f "vendor/libdeflate-sys/libdeflate/lib/utils.c" ]; then
   cd vendor/libdeflate-sys/libdeflate/lib
-  patch -p1 < ../../../../../../patches/libdeflate-remove-abort.patch
+  patch -p0 < ../../../../../../patches/libdeflate-remove-abort.patch
   cd ../../../../..
   echo "✓ Patch applied successfully to libdeflate"
 else

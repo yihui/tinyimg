@@ -1,55 +1,41 @@
-# Patch to remove abort() calls from libdeflate C code
-# This is necessary to avoid R CMD check warnings about abort() in compiled code
-# 
-# The abort() calls are only in code paths that should never execute in production:
-# 1. LIBDEFLATE_ENABLE_ASSERTIONS - only enabled for static analysis
-# 2. TEST_SUPPORT__DO_NOT_USE - only enabled for testing
-#
-# Apply this patch after vendoring dependencies:
-#   cd src/rust/vendor/libdeflate-sys/libdeflate/lib
-#   patch -p1 < ../../../../../patches/libdeflate-remove-abort.patch
-
---- a/utils.c
-+++ b/utils.c
-@@ -136,7 +136,10 @@ int __attribute__((weak))
+--- utils.c.orig	2026-02-13 00:00:00.000000000 +0000
++++ utils.c	2026-02-13 00:00:00.000000000 +0000
+@@ -136,7 +136,10 @@
  libdeflate_assertion_failed(const char *expr, const char *file, int line)
  {
- fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
--abort();
-+/* Replaced abort() to avoid R CMD check warning.
-+ * In R packages, we cannot call abort() as it terminates R.
-+ * This function should never be called in production builds anyway,
-+ * as LIBDEFLATE_ENABLE_ASSERTIONS is only defined for static analysis. */
-+while(1) { /* Infinite loop instead of abort() */ }
+ 	fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
+-	abort();
++	/* Replaced abort() to avoid R CMD check warning.
++	 * In R packages, we cannot call abort() as it terminates R.
++	 * This function should never be called in production builds anyway. */
++	while(1) { /* Infinite loop instead of abort() */ }
  }
  #endif /* LIBDEFLATE_ENABLE_ASSERTIONS */
-
---- a/cpu_features_common.h
-+++ b/cpu_features_common.h
-@@ -56,7 +56,10 @@ disable_cpu_features_for_testing(u32 *features,
- if (!env_value)
- return;
- strbuf = strdup(env_value);
--if (!strbuf)
--abort();
-+if (!strbuf) {
-+/* Replaced abort() to avoid R CMD check warning.
-+ * This is test-only code that should never execute in production. */
-+return;
-+}
- p = strtok_r(strbuf, ",", &saveptr);
- while (p) {
- for (i = 0; i < feature_table_length; i++) {
-@@ -68,7 +71,10 @@ disable_cpu_features_for_testing(u32 *features,
- if (i == feature_table_length) {
- fprintf(stderr,
- "unrecognized feature in LIBDEFLATE_DISABLE_CPU_FEATURES: \"%s\"\n",
- p);
--abort();
-+/* Replaced abort() to avoid R CMD check warning.
-+ * This is test-only code that should never execute in production. */
-+free(strbuf);
-+return;
- }
- p = strtok_r(NULL, ",", &saveptr);
- }
+ 
+--- cpu_features_common.h.orig	2026-02-13 00:00:00.000000000 +0000
++++ cpu_features_common.h	2026-02-13 00:00:00.000000000 +0000
+@@ -56,8 +56,10 @@
+ 	if (!env_value)
+ 		return;
+ 	strbuf = strdup(env_value);
+-	if (!strbuf)
+-		abort();
++	if (!strbuf) {
++		/* Replaced abort() to avoid R CMD check warning. */
++		return;
++	}
+ 	p = strtok_r(strbuf, ",", &saveptr);
+ 	while (p) {
+ 		for (i = 0; i < feature_table_length; i++) {
+@@ -68,7 +70,10 @@
+ 		if (i == feature_table_length) {
+ 			fprintf(stderr,
+ 				"unrecognized feature in LIBDEFLATE_DISABLE_CPU_FEATURES: \"%s\"\n",
+ 				p);
+-			abort();
++			/* Replaced abort() to avoid R CMD check warning. */
++			free(strbuf);
++			return;
+ 		}
+ 		p = strtok_r(NULL, ",", &saveptr);
+ 	}
