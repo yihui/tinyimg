@@ -1,10 +1,8 @@
 #' tinyimg: Optimize and Compress Images
 #'
-#' @description
 #' The tinyimg package provides tools for optimizing and compressing images using
 #' Rust libraries. Currently supports PNG optimization via the oxipng crate.
 #'
-#' @details
 #' ## Main Functions
 #'
 #' - [optim_png()]: Optimize PNG images without quality loss
