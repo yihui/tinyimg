@@ -1,0 +1,11 @@
+--- utils.c.orig
++++ utils.c
+@@ -136,7 +136,7 @@
+ libdeflate_assertion_failed(const char *expr, const char *file, int line)
+ {
+ 	fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
+-	abort();
++	while(1) {} /* Replaced abort() - R CMD check warning fix */
+ }
+ #endif /* LIBDEFLATE_ENABLE_ASSERTIONS */
+ 

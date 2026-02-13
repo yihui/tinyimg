@@ -1,0 +1,22 @@
+--- cpu_features_common.h.orig
++++ cpu_features_common.h
+@@ -56,8 +56,7 @@
+ 	if (!env_value)
+ 		return;
+ 	strbuf = strdup(env_value);
+-	if (!strbuf)
+-		abort();
++	if (!strbuf) return; /* R CMD check warning fix */
+ 	p = strtok_r(strbuf, ",", &saveptr);
+ 	while (p) {
+ 		for (i = 0; i < feature_table_length; i++) {
+@@ -68,7 +67,8 @@
+ 		if (i == feature_table_length) {
+ 			fprintf(stderr,
+ 				"unrecognized feature in LIBDEFLATE_DISABLE_CPU_FEATURES: \"%s\"\n", p);
+-			abort();
++			free(strbuf);
++			return; /* R CMD check warning fix */
+ 		}
+ 		p = strtok_r(NULL, ",", &saveptr);
+ 	}

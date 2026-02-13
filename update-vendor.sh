@@ -66,14 +66,15 @@ rm -rf vendor/windows_i686*/lib/* 2>/dev/null || true
 rm -rf vendor/winapi-i686-pc-windows-gnu/lib/* 2>/dev/null || true
 
 echo "Step 6: Applying patches to remove abort() calls from libdeflate..."
-# Apply patch to remove abort() calls which cause R CMD check warnings
+# Apply patches to remove abort() calls which cause R CMD check warnings
 if [ -f "vendor/libdeflate-sys/libdeflate/lib/utils.c" ]; then
   cd vendor/libdeflate-sys/libdeflate/lib
-  patch -p0 < ../../../../../../patches/libdeflate-remove-abort.patch
+  patch -p0 < ../../../../../../patches/utils.c.patch
+  patch -p0 < ../../../../../../patches/cpu_features_common.h.patch
   cd ../../../../..
-  echo "✓ Patch applied successfully to libdeflate"
+  echo "✓ Patches applied successfully to libdeflate"
 else
-  echo "⚠ Warning: libdeflate files not found, skipping patch"
+  echo "⚠ Warning: libdeflate files not found, skipping patches"
 fi
 
 echo "Step 7: Creating compressed vendor.tar.xz archive..."
