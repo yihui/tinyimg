@@ -173,6 +173,7 @@ Before submitting changes:
 2. **Indentation**: Use 2 spaces (not 4 spaces or tabs)
 3. **Compact code**: Avoid `{}` for single-expression if statements; prefer compact forms when possible
 4. **Roxygen documentation**: Don't use `@description` or `@details` explicitly - just write the description text directly after the title
+5. **Examples**: Avoid `\dontrun{}` unless absolutely necessary (e.g., requires external resources, takes very long time, or has side effects that could harm user's system). Prefer runnable examples that can be tested automatically.
 
 ### Build and Package Conventions
 

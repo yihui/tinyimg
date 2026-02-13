@@ -1,4 +1,4 @@
-name: Cargo Update
+name: Cargo Update and Benchmark
 
 on:
   schedule:
@@ -26,28 +26,65 @@ jobs:
           cd src/rust
           cargo update
           if git diff --quiet Cargo.lock; then
-            echo "No updates available"
-            echo "updated=false" >> $GITHUB_OUTPUT
+            echo "No cargo updates available"
+            echo "cargo_updated=false" >> $GITHUB_OUTPUT
           else
             echo "Cargo.lock has been updated"
-            echo "updated=true" >> $GITHUB_OUTPUT
+            echo "cargo_updated=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Vendor Rust dependencies
+        run: ./src/rust/update-vendor.sh
+      
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+      
+      - name: Install R dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
+          Rscript -e "install.packages('testit', repos='https://cloud.r-project.org')"
+      
+      - name: Install package
+        run: |
+          R CMD build .
+          sudo R CMD INSTALL tinyimg_*.tar.gz
+      
+      - name: Run benchmarks
+        id: benchmark
+        run: |
+          cd benchmarks
+          Rscript benchmark-levels.R
+          cd ..
+          if git diff --quiet benchmarks/; then
+            echo "No benchmark changes"
+            echo "benchmark_updated=false" >> $GITHUB_OUTPUT
+          else
+            echo "Benchmarks have been updated"
+            echo "benchmark_updated=true" >> $GITHUB_OUTPUT
           fi
       
       - name: Create Pull Request
-        if: steps.cargo_update.outputs.updated == 'true'
+        if: steps.cargo_update.outputs.cargo_updated == 'true' || steps.benchmark.outputs.benchmark_updated == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: update Cargo.lock dependencies'
-          title: 'chore: update Cargo.lock dependencies'
+          commit-message: 'chore: update dependencies and benchmarks'
+          title: 'chore: update Cargo.lock dependencies and benchmarks'
           body: |
-            This PR updates Rust dependencies by running `cargo update`.
+            This PR updates Rust dependencies and regenerates benchmarks.
+            
+            **Changes:**
+            - Cargo dependencies updated: ${{ steps.cargo_update.outputs.cargo_updated }}
+            - Benchmarks updated: ${{ steps.benchmark.outputs.benchmark_updated }}
             
             This is an automated PR created by the cargo-update workflow.
             
             Please review the changes and merge if appropriate.
             
             After merging, remember to run `./src/rust/update-vendor.sh` to update
-            the vendored dependencies for the next CRAN release.
+            the vendored dependencies for the next CRAN release if cargo was updated.
           branch: cargo-update-${{ github.run_number }}
           delete-branch: true
