@@ -1,4 +1,4 @@
-Package: optimg
+Package: tinyimg
 Title: Optimize and Compress Images
 Version: 0.1.0
 Authors@R: 
@@ -6,8 +6,8 @@ Authors@R:
 Description: Optimize and compress images using Rust libraries. Currently
     supports PNG optimization via the oxipng crate.
 License: MIT + file LICENSE
-URL: https://github.com/yihui/optimg
-BugReports: https://github.com/yihui/optimg/issues
+URL: https://github.com/yihui/tinyimg
+BugReports: https://github.com/yihui/tinyimg/issues
 SystemRequirements: Cargo (>= 1.56.0)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

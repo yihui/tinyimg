@@ -1,7 +1,7 @@
-#' optimg: Optimize and Compress Images
+#' tinyimg: Optimize and Compress Images
 #'
 #' @description
-#' The optimg package provides tools for optimizing and compressing images using
+#' The tinyimg package provides tools for optimizing and compressing images using
 #' Rust libraries. Currently supports PNG optimization via the oxipng crate.
 #'
 #' @details
@@ -22,8 +22,8 @@
 #'
 #' @section See Also:
 #' Useful links:
-#' - <https://github.com/yihui/optimg>
-#' - Report bugs at <https://github.com/yihui/optimg/issues>
+#' - <https://github.com/yihui/tinyimg>
+#' - Report bugs at <https://github.com/yihui/tinyimg/issues>
 #'
 #' @keywords internal
 "_PACKAGE"

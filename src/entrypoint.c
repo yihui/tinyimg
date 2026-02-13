@@ -14,15 +14,15 @@ static const R_CallMethodDef CallEntries[] = {
 };
 
 // Forward declaration of extendr initialization
-void R_init_optimg_extendr(DllInfo *dll);
+void R_init_tinyimg_extendr(DllInfo *dll);
 
 // Main package initialization function
-attribute_visible void R_init_optimg(DllInfo *dll) {
+attribute_visible void R_init_tinyimg(DllInfo *dll) {
     // Register native routines
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
     
     // Initialize extendr
-    R_init_optimg_extendr(dll);
+    R_init_tinyimg_extendr(dll);
 }
 

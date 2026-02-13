@@ -32,6 +32,6 @@ fn optim_png_impl(input: &str, output: &str, level: i32) -> Result<()> {
 
 // Macro to generate exports
 extendr_module! {
-    mod optimg;
+    mod tinyimg;
     fn optim_png_impl;
 }

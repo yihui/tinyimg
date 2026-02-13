@@ -1,5 +1,5 @@
 library(testit)
-library(optimg)
+library(tinyimg)
 
 # Create a simple test PNG file
 create_test_png = function() {
