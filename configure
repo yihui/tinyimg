@@ -1,5 +1,23 @@
 #!/bin/sh
 
+# Check if we need to create vendor directory
+# This handles the case when installing from GitHub via remotes::install_github()
+if [ ! -d "src/rust/vendor" ] && [ ! -f "src/rust/vendor.tar.xz" ]; then
+  echo "Vendor directory not found. Checking for cargo and rustc..."
+  if command -v cargo >/dev/null 2>&1 && command -v rustc >/dev/null 2>&1; then
+    echo "Rust toolchain detected. Creating vendor directory..."
+    if [ -f "src/rust/update-vendor.sh" ]; then
+      ./src/rust/update-vendor.sh
+      echo "Vendor directory created successfully"
+    else
+      echo "Warning: update-vendor.sh not found. Cargo will fetch from crates.io"
+    fi
+  else
+    echo "Warning: Rust toolchain not found. Install from: https://rustup.rs/"
+    echo "Cargo will attempt to fetch dependencies from crates.io during build"
+  fi
+fi
+
 # Generate cargo config for vendored sources only if vendor/ exists
 if [ -d "src/rust/vendor" ]; then
   mkdir -p src/rust/.cargo
@@ -12,7 +30,5 @@ directory = "vendor"
 EOF
   echo "Cargo configuration created for vendored sources"
 else
-  echo "Note: vendor/ directory not found. If building from git:"
-  echo "  - For development: Run './update-vendor.sh' to create vendor/"
-  echo "  - Or cargo will fetch dependencies from crates.io"
+  echo "Note: vendor/ directory not found. Cargo will fetch from crates.io"
 fi

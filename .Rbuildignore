@@ -5,8 +5,7 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^rust/target$
-^update-vendor\.sh$
+^src/rust/update-vendor\.sh$
 ^DEVELOPMENT\.md$
 ^IMPLEMENTATION_SUMMARY\.md$
-^patches$
 ^src/rust/vendor$
