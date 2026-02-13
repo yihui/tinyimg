@@ -13,6 +13,6 @@ oxipng = { version = "9.1", default-features = false, features = ["filetime", "z
 
 [profile.release]
 opt-level = 3
-lto = true
+lto = true        # Link Time Optimization helps strip unused 'abort' paths
 codegen-units = 1
 panic = "unwind"
