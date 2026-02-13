@@ -1,9 +1,8 @@
 TARGET_DIR = ./rust/target
 LIBDIR = $(TARGET_DIR)/release
 STATLIB = $(LIBDIR)/liboptimg.a
-# Use --exclude-libs,ALL to hide Rust internal symbols from R's symbol scanner
-# This prevents R CMD check from detecting abort() in Rust's std library
-PKG_LIBS = -L$(LIBDIR) -loptimg -Wl,--exclude-libs,ALL
+PKG_LIBS = -L$(LIBDIR) -loptimg
+PKG_CFLAGS = $(C_VISIBILITY)
 
 all: C_clean
 
