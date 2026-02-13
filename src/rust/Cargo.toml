@@ -9,7 +9,7 @@ name = "optimg"
 
 [dependencies]
 extendr-api = "0.7"
-oxipng = { version = "9.1", default-features = false, features = ["filetime", "zopfli", "freestanding"] }
+oxipng = { version = "9.1", default-features = false, features = ["filetime", "zopfli"] }
 
 [profile.release]
 opt-level = 3
