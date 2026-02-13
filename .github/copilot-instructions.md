@@ -14,6 +14,9 @@ This is an R package that optimizes and compresses images using Rust libraries. 
 ### Prerequisites
 
 - R (>= 3.5.0)
+  - **For testing on Linux**: Install the latest R from CRAN, not from Debian/Ubuntu official repositories
+  - Follow instructions at https://cran.r-project.org/bin/linux/ubuntu
+  - This ensures you're testing with the most recent R version that users will have
 - Rust/Cargo (>= 1.56.0) - install from https://rustup.rs/
 - On Linux: `libcurl4-openssl-dev` system package
 
@@ -163,6 +166,14 @@ Before submitting changes:
 5. Check GitHub Actions status for multi-platform validation
 
 ## Important Conventions
+
+### R Code Style
+
+1. **Assignment**: Use `=` instead of `<-` for assignment
+2. **Indentation**: Use 2 spaces (not 4 spaces or tabs)
+3. **Roxygen documentation**: Don't use `@description` or `@details` explicitly - just write the description text directly after the title
+
+### Build and Package Conventions
 
 1. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
 2. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
