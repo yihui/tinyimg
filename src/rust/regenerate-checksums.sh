@@ -71,13 +71,15 @@ for crate_dir in "$VENDOR_DIR"/*/; do
         # Escape path for JSON - use jq if available for proper escaping
         if command -v jq >/dev/null 2>&1; then
             # jq properly handles all JSON special characters
-            escaped_path=$(echo -n "$rel_path" | jq -R -s '.')
-            # Remove quotes added by jq -R (we'll add them back in the final JSON)
-            escaped_path="${escaped_path:1:${#escaped_path}-2}"
+            # Use -Rs to read as raw string and output as JSON string (with quotes)
+            # Then strip the quotes that jq adds
+            escaped_path=$(echo -n "$rel_path" | jq -Rs '.' | sed 's/^"//; s/"$//')
             echo -n "\"$escaped_path\":\"$hash\"" >> "$temp_file"
         else
-            # Fallback: escape backslash, quote, newline, tab, carriage return
-            escaped_path=$(echo "$rel_path" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g; s/\t/\\t/g; s/\r/\\r/g')
+            # Fallback: basic escaping for backslash and quote only
+            # Note: This doesn't handle all JSON special chars properly
+            # If filenames contain newlines, tabs, etc., jq is required
+            escaped_path=$(echo "$rel_path" | sed 's/\\/\\\\/g; s/"/\\"/g')
             echo -n "\"$escaped_path\":\"$hash\"" >> "$temp_file"
         fi
         

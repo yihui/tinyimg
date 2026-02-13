@@ -29,7 +29,7 @@ echo "Step 4: Trimming non-essential files from vendored crates..."
 echo "Original vendor/ size: $VENDOR_SIZE_ORIG_H ($FILE_COUNT_ORIG files)"
 
 # Remove .github directories (CI workflows, issue templates)
-find vendor -name ".github" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".github" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 
 # Remove CI configuration files
 find vendor -name ".gitlab-ci.yml" -type f -delete 2>/dev/null || true
@@ -43,9 +43,9 @@ find vendor -name "CODE_OF_CONDUCT*" -type f -delete 2>/dev/null || true
 find vendor -name "SECURITY*" -type f -delete 2>/dev/null || true
 
 # Remove test, benchmark, and example directories
-find vendor -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "benches" -type d -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "tests" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "benches" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "examples" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 
 # Remove unnecessary Windows lib files (following gifski's approach)
 find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \; 2>/dev/null || true
