@@ -9,3 +9,4 @@
 ^DEVELOPMENT\.md$
 ^IMPLEMENTATION_SUMMARY\.md$
 ^patches$
+^src/rust/vendor$

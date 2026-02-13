@@ -14,6 +14,10 @@ src/rust/.cargo/
 *.dll
 *.dylib
 
+# Vendored Rust crates (compressed archive only in releases, not in git)
+src/rust/vendor/
+src/rust/vendor.tar.xz
+
 # R build artifacts
 /*.tar.gz
 /*.Rcheck/

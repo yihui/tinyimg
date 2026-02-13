@@ -7,8 +7,8 @@ set -e
 echo "Updating Rust dependencies for tinyimg..."
 cd "$(dirname "$0")/src/rust"
 
-echo "Step 1: Removing old vendor directory..."
-rm -rf vendor
+echo "Step 1: Removing old vendor directory and archive..."
+rm -rf vendor vendor.tar.xz
 
 echo "Step 2: Updating Cargo.lock..."
 cargo update
@@ -59,6 +59,12 @@ rm -rf vendor/libdeflate-sys/libdeflate/programs 2>/dev/null || true
 # Remove build scripts for dependencies (we keep build.rs at top level)
 find vendor -depth -mindepth 2 -name "build.rs" -type f -delete 2>/dev/null || true
 
+# Remove unnecessary Windows lib files (following gifski's approach)
+rm -rf vendor/windows_x86_64_gnullvm/lib/* 2>/dev/null || true
+rm -rf vendor/windows_*_msvc/lib/* 2>/dev/null || true
+rm -rf vendor/windows_i686*/lib/* 2>/dev/null || true
+rm -rf vendor/winapi-i686-pc-windows-gnu/lib/* 2>/dev/null || true
+
 echo "Step 6: Applying patches to remove abort() calls from libdeflate..."
 # Apply patch to remove abort() calls which cause R CMD check warnings
 if [ -f "vendor/libdeflate-sys/libdeflate/lib/utils.c" ]; then
@@ -70,10 +76,21 @@ else
   echo "⚠ Warning: libdeflate files not found, skipping patch"
 fi
 
+echo "Step 7: Creating compressed vendor.tar.xz archive..."
+XZ_OPT=-9 tar -cJf vendor.tar.xz vendor/
+echo "✓ Created vendor.tar.xz ($(du -h vendor.tar.xz | cut -f1))"
+
 echo ""
-echo "✓ Dependencies updated and trimmed successfully!"
+echo "✓ Dependencies updated and packaged successfully!"
 echo ""
-echo "The vendored crates are now in src/rust/vendor/"
-echo "Non-essential files have been removed to keep the package small."
-echo "Patches have been applied to avoid R CMD check warnings."
-echo "Make sure to commit the changes to the repository."
+echo "Summary:"
+echo "  - vendor/ directory: $(du -sh vendor | cut -f1) (for development)"
+echo "  - vendor.tar.xz: $(du -h vendor.tar.xz | cut -f1) (for CRAN releases)"
+echo ""
+echo "Note: vendor/ is gitignored. Only vendor.tar.xz should be included in"
+echo "      CRAN releases (add to .Rbuildignore with ^src/rust/vendor$ pattern)."
+echo "      The Makevars will extract it automatically during build."
+echo ""
+echo "For development: Keep vendor/ directory for cargo builds"
+echo "For releases: Include vendor.tar.xz in the package tarball"
+echo ""
