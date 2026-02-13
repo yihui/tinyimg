@@ -4,23 +4,60 @@
 \alias{optim_png}
 \title{Optimize PNG images}
 \usage{
-optim_png(input, output = NULL, level = 2L)
+optim_png(
+  input,
+  output = NULL,
+  level = 2L,
+  strip = NULL,
+  alpha = FALSE,
+  interlace = c("off", "on", "keep"),
+  fast = FALSE,
+  preserve = TRUE,
+  timeout = 0L,
+  recursive = FALSE
+)
 }
 \arguments{
-\item{input}{Path to the input PNG file.}
+\item{input}{Path to the input PNG file or directory. If a directory is provided,
+all PNG files in the directory (and subdirectories if \code{recursive = TRUE})
+will be optimized.}
 
-\item{output}{Path to the output PNG file. If \code{NULL} (default), the input
-file will be overwritten.}
+\item{output}{Path to the output PNG file or directory. If \code{NULL} (default), the
+input file(s) will be overwritten. When optimizing a directory, \code{output}
+must be either \code{NULL} or a directory path.}
 
 \item{level}{Optimization level (0-6). Higher values result in better
 compression but take longer. Default is 2.}
+
+\item{strip}{Strip metadata chunks. Options: \code{NULL} (keep all), \code{"safe"} (strip
+non-critical chunks except display-affecting ones), or \code{"all"} (strip all
+non-critical chunks). Default is \code{NULL}.}
+
+\item{alpha}{Optimize transparent pixels for better compression. This is
+technically lossy but visually lossless. Default is \code{FALSE}.}
+
+\item{interlace}{Interlacing mode: \code{"off"} (remove interlacing), \code{"on"} (apply
+Adam7 interlacing), or \code{"keep"} (preserve existing mode). Default is \code{"off"}.
+Note that interlacing can add 25-50\% to file size.}
+
+\item{fast}{Use fast compression evaluation. Recommended when using multiple
+filter types. Default is \code{FALSE}.}
+
+\item{preserve}{Preserve file permissions and timestamps. Default is \code{TRUE}.}
+
+\item{timeout}{Maximum time in seconds to spend optimizing each file. 0 means
+no limit. Default is 0.}
+
+\item{recursive}{When \code{input} is a directory, recursively process subdirectories.
+Default is \code{FALSE}.}
 }
 \value{
-Invisibly returns the path to the output file.
+Invisibly returns the path(s) to the output file(s). For directories,
+returns a character vector of all optimized files.
 }
 \description{
 Optimize PNG images using the \strong{oxipng} Rust library. This function compresses
-PNG files without losing quality (lossless compression).
+PNG files or directories of PNG files without losing quality (lossless compression).
 }
 \details{
 The function uses the oxipng library which implements various PNG optimization
@@ -41,17 +78,29 @@ techniques including:
 }
 }
 \examples{
-\dontrun{
-# Optimize a PNG file in-place
-optim_png("image.png")
+# Create a test PNG
+tmp = tempfile(fileext = ".png")
+png(tmp, width = 400, height = 400)
+plot(1:10)
+dev.off()
 
-# Optimize and save to a different file
-optim_png("input.png", "output.png")
+# Optimize with different levels
+optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
+optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
 
-# Use maximum optimization
-optim_png("image.png", level = 6)
+# Strip metadata for smaller files
+optim_png(tmp, paste0(tmp, "-stripped.png"), strip = "safe")
 
-# Use fast optimization for large batches
-optim_png("image.png", level = 0)
-}
+# Optimize transparent images
+optim_png(tmp, paste0(tmp, "-alpha.png"), alpha = TRUE)
+
+# Optimize with timeout
+optim_png(tmp, paste0(tmp, "-fast.png"), timeout = 5)
+
+# Optimize all PNGs in a directory
+tmpdir = tempfile()
+dir.create(tmpdir)
+file.copy(tmp, file.path(tmpdir, "test1.png"))
+file.copy(tmp, file.path(tmpdir, "test2.png"))
+optim_png(tmpdir)
 }
