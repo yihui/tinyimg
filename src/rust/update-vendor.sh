@@ -70,16 +70,7 @@ echo "Trimmed vendor/ size:  $VENDOR_SIZE_TRIM_H ($FILE_COUNT_TRIM files)"
 echo "Space saved: ${SAVED_MB}MB (${SAVED_PERCENT}%) | Files removed: $FILES_REMOVED"
 
 echo ""
-echo "Step 5: Regenerating checksums after trimming..."
-if [ -f "$SCRIPT_DIR/regenerate-checksums.sh" ]; then
-    "$SCRIPT_DIR/regenerate-checksums.sh" vendor
-else
-    echo "Warning: regenerate-checksums.sh not found, skipping checksum regeneration"
-    echo "         This may cause cargo build failures!"
-fi
-
-echo ""
-echo "Step 6: Creating compressed vendor.tar.xz archive..."
+echo "Step 5: Creating compressed vendor.tar.xz archive..."
 XZ_OPT=-9 tar -cJf vendor.tar.xz vendor/
 TAR_SIZE=$(du -b vendor.tar.xz | cut -f1)
 TAR_SIZE_H=$(du -h vendor.tar.xz | cut -f1)

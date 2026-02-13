@@ -76,9 +76,8 @@ cd src/rust
 This script will:
 1. Vendor all dependencies into `vendor/`
 2. Trim non-essential files (tests, docs, CI configs, etc.) to reduce size
-3. Regenerate checksums to ensure cargo can still validate the vendored crates
-4. Create compressed `vendor.tar.xz` archive
-5. Report size savings (typically ~8% reduction in raw size, ~10% in compressed)
+3. Create compressed `vendor.tar.xz` archive
+4. Report size savings (typically ~8% reduction in raw size, ~10% in compressed)
 
 **Note:** The script no longer runs `cargo update`. Dependency updates are now managed through automated PRs created by a GitHub Actions cron job that runs twice monthly.
 
