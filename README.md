@@ -75,8 +75,7 @@ cd src/rust
 
 This script will:
 1. Vendor all dependencies into `vendor/`
-2. Trim unnecessary files (tests, docs, etc.)
-3. Create compressed `vendor.tar.xz` archive
+2. Create compressed `vendor.tar.xz` archive
 
 **Note:** The script no longer runs `cargo update`. Dependency updates are now managed through automated PRs created by a GitHub Actions cron job that runs twice monthly.
 
