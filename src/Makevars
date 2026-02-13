@@ -4,7 +4,7 @@ STATLIB = $(LIBDIR)/libtinyimg.a
 PKG_LIBS = -L$(LIBDIR) -ltinyimg
 PKG_CFLAGS = -pthread $(C_VISIBILITY)
 
-all: C_clean
+all: $(SHLIB) cleanup
 
 $(SHLIB): $(STATLIB)
 
@@ -25,14 +25,12 @@ $(STATLIB):
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
 		cargo build --lib --release --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
-	if [ "$(NOT_CRAN)" != "true" ]; then \
-		rm -Rf $(CARGOTMP) && \
+	rm -Rf $(CARGOTMP) && \
 		rm -Rf $(LIBDIR)/build && \
-		rm -Rf ./rust/vendor; \
-	fi
+		rm -Rf ./rust/vendor
 
-C_clean:
-	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS)
+cleanup: $(SHLIB)
+	rm -Rf $(STATLIB) $(TARGET_DIR)
 
 clean:
 	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS) rust/target
