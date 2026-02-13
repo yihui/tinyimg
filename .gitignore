@@ -1,0 +1,33 @@
+# R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Rust build artifacts
+src/rust/target/
+/.cargo/
+src/rust/.cargo/
+*.o
+*.so
+*.dll
+*.dylib
+
+# Vendored Rust crates (compressed archive only in releases, not in git)
+src/rust/vendor/
+src/rust/vendor.tar.xz
+
+# R build artifacts
+/*.tar.gz
+/*.Rcheck/
+/doc/
+/Meta/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+^\.git$
+^\.github$
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^LICENSE\.md$
+^rust/target$
+^update-vendor\.sh$
+^DEVELOPMENT\.md$
+^IMPLEMENTATION_SUMMARY\.md$
+^patches$
+^src/rust/vendor$

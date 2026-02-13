@@ -1,0 +1,18 @@
+[package]
+name = "tinyimg"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+name = "tinyimg"
+
+[dependencies]
+extendr-api = "0.7"
+oxipng = { version = "9.1", default-features = false, features = ["filetime", "zopfli"] }
+
+[profile.release]
+opt-level = 3
+lto = true        # Link Time Optimization helps strip unused 'abort' paths
+codegen-units = 1
+panic = "unwind"

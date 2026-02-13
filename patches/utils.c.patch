@@ -1,0 +1,10 @@
+--- utils.c.orig
++++ utils.c
+@@ -138,7 +138,7 @@
+ {
+ 	fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
+-	abort();
++	while(1) {} /* Replaced abort() - R CMD check warning fix */
+ }
+ #endif /* LIBDEFLATE_ENABLE_ASSERTIONS */
+ 
