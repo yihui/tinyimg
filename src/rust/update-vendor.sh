@@ -4,6 +4,9 @@
 
 set -e
 
+# Constants
+MB=1048576  # Bytes in a megabyte
+
 echo "Vendoring Rust dependencies for tinyimg..."
 
 # Get the directory where this script is located
@@ -59,7 +62,7 @@ FILE_COUNT_TRIM=$(find vendor -type f | wc -l)
 
 # Calculate savings
 SAVED_BYTES=$((VENDOR_SIZE_ORIG - VENDOR_SIZE_TRIM))
-SAVED_MB=$((SAVED_BYTES / 1048576))
+SAVED_MB=$((SAVED_BYTES / MB))
 SAVED_PERCENT=$((SAVED_BYTES * 100 / VENDOR_SIZE_ORIG))
 FILES_REMOVED=$((FILE_COUNT_ORIG - FILE_COUNT_TRIM))
 
