@@ -71,7 +71,7 @@ if [ -f "vendor/libdeflate-sys/libdeflate/lib/utils.c" ]; then
   cd vendor/libdeflate-sys/libdeflate/lib
   patch -p0 < ../../../../../../patches/utils.c.patch
   patch -p0 < ../../../../../../patches/cpu_features_common.h.patch
-  cd ../../../../..
+  cd ../../../../
   echo "✓ Patches applied successfully to libdeflate"
 else
   echo "⚠ Warning: libdeflate files not found, skipping patches"

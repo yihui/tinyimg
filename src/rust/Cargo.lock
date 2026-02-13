@@ -179,14 +179,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
-name = "optimg"
-version = "0.1.0"
-dependencies = [
- "extendr-api",
- "oxipng",
-]
-
-[[package]]
 name = "oxipng"
 version = "9.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -284,6 +276,14 @@ name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
+
+[[package]]
+name = "tinyimg"
+version = "0.1.0"
+dependencies = [
+ "extendr-api",
+ "oxipng",
+]
 
 [[package]]
 name = "unicode-ident"
