@@ -171,7 +171,8 @@ Before submitting changes:
 
 1. **Assignment**: Use `=` instead of `<-` for assignment
 2. **Indentation**: Use 2 spaces (not 4 spaces or tabs)
-3. **Roxygen documentation**: Don't use `@description` or `@details` explicitly - just write the description text directly after the title
+3. **Compact code**: Avoid `{}` for single-expression if statements; prefer compact forms when possible
+4. **Roxygen documentation**: Don't use `@description` or `@details` explicitly - just write the description text directly after the title
 
 ### Build and Package Conventions
 
