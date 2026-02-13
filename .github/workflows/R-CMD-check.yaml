@@ -33,7 +33,7 @@ jobs:
 
       - name: Vendor Rust dependencies
         run: |
-          cd src/rust && ./update-vendor.sh
+          ./src/rust/update-vendor.sh
         shell: bash
 
       - name: Set up R ${{ matrix.config.r }}

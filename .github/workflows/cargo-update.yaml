@@ -47,7 +47,7 @@ jobs:
             
             Please review the changes and merge if appropriate.
             
-            After merging, remember to run `src/rust/update-vendor.sh` to update
+            After merging, remember to run `./src/rust/update-vendor.sh` to update
             the vendored dependencies for the next CRAN release.
           branch: cargo-update-${{ github.run_number }}
           delete-branch: true

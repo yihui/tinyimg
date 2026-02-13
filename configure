@@ -7,7 +7,7 @@ if [ ! -d "src/rust/vendor" ] && [ ! -f "src/rust/vendor.tar.xz" ]; then
   if command -v cargo >/dev/null 2>&1 && command -v rustc >/dev/null 2>&1; then
     echo "Rust toolchain detected. Creating vendor directory..."
     if [ -f "src/rust/update-vendor.sh" ]; then
-      cd src/rust && ./update-vendor.sh && cd ../..
+      ./src/rust/update-vendor.sh
       echo "Vendor directory created successfully"
     else
       echo "Warning: update-vendor.sh not found. Cargo will fetch from crates.io"

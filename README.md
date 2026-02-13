@@ -58,33 +58,15 @@ If you're developing and need to manually create the vendor directory:
 
 ```bash
 # Run the update script to create vendor/ directory
-cd src/rust
-./update-vendor.sh
+./src/rust/update-vendor.sh
 ```
 
 This creates the local `vendor/` directory needed for development. Neither `vendor/` nor `vendor.tar.xz` are tracked in git (following the [gifski](https://github.com/r-rust/gifski) approach).
 
-### Updating Vendored Dependencies
-
-To update vendored dependencies for a CRAN release:
-
-```bash
-cd src/rust
-./update-vendor.sh
-```
-
-This script will:
-1. Vendor all dependencies into `vendor/`
-2. Trim non-essential files (tests, docs, CI configs, etc.) to reduce size
-3. Create compressed `vendor.tar.xz` archive
-4. Report size savings (typically ~8% reduction in raw size, ~10% in compressed)
-
-**Note:** The script no longer runs `cargo update`. Dependency updates are now managed through automated PRs created by a GitHub Actions cron job that runs twice monthly.
-
 ### CRAN Release Workflow
 
 1. Wait for or merge any pending dependency update PRs from the automated workflow
-2. Run `cd src/rust && ./update-vendor.sh` to create `vendor.tar.xz`
+2. Run `./src/rust/update-vendor.sh` to create `vendor.tar.xz`
 3. Build the R package with `R CMD build` (includes `vendor.tar.xz`)
 4. The CRAN tarball contains `vendor.tar.xz`, not the uncompressed `vendor/` directory
 5. During installation, Makevars extracts `vendor.tar.xz` if present
