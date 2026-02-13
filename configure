@@ -1,13 +1,18 @@
 #!/bin/sh
 
-# Generate cargo config for vendored sources
-mkdir -p src/rust/.cargo
-cat > src/rust/.cargo/config.toml << 'EOF'
+# Generate cargo config for vendored sources only if vendor/ exists
+if [ -d "src/rust/vendor" ]; then
+  mkdir -p src/rust/.cargo
+  cat > src/rust/.cargo/config.toml << 'EOF'
 [source.crates-io]
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
 directory = "vendor"
 EOF
-
-echo "Cargo configuration created successfully"
+  echo "Cargo configuration created for vendored sources"
+else
+  echo "Note: vendor/ directory not found. If building from git:"
+  echo "  - For development: Run './update-vendor.sh' to create vendor/"
+  echo "  - Or cargo will fetch dependencies from crates.io"
+fi
