@@ -2,7 +2,7 @@ TARGET_DIR = ./rust/target
 LIBDIR = $(TARGET_DIR)/release
 STATLIB = $(LIBDIR)/liboptimg.a
 PKG_LIBS = -L$(LIBDIR) -loptimg
-PKG_CFLAGS = $(C_VISIBILITY)
+PKG_CFLAGS = -pthread $(C_VISIBILITY)
 
 all: C_clean
 

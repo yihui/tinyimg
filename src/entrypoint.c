@@ -1,8 +1,28 @@
-// We need to forward routine registration from C to Rust
-// to avoid the linker removing the static library.
+#include <R.h>
+#include <Rinternals.h>
+#include <R_ext/Rdynload.h>
+#include <R_ext/Visibility.h>
 
-void R_init_optimg_extendr(void *dll);
+// Forward declaration of Rust wrapper function
+// Mark as visible to override C_VISIBILITY setting
+attribute_visible SEXP wrap__optim_png_impl(SEXP input, SEXP output, SEXP level);
 
-void R_init_optimg(void *dll) {
+// Registration table for R's .Call interface
+static const R_CallMethodDef CallEntries[] = {
+    {"wrap__optim_png_impl", (DL_FUNC) &wrap__optim_png_impl, 3},
+    {NULL, NULL, 0}
+};
+
+// Forward declaration of extendr initialization
+void R_init_optimg_extendr(DllInfo *dll);
+
+// Main package initialization function
+attribute_visible void R_init_optimg(DllInfo *dll) {
+    // Register native routines
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+    
+    // Initialize extendr
     R_init_optimg_extendr(dll);
 }
+
