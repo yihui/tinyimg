@@ -28,11 +28,10 @@
 #'   compression but take longer. Default is 2.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless. Default is `FALSE`.
-#' @param fast Use fast compression evaluation. Recommended when using multiple
-#'   filter types. Default is `FALSE`.
 #' @param preserve Preserve file permissions and timestamps. Default is `TRUE`.
 #' @param recursive When `input` is a directory, recursively process subdirectories.
 #'   Default is `TRUE`.
+#' @param verbose Print file size reduction info for each file. Default is `TRUE`.
 #'
 #' @return For single files, returns the output path. For directories, returns a
 #'   character vector of all optimized files.
@@ -49,18 +48,14 @@
 #' optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
 #' optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
 optim_png = function(
-  input, output = input, level = 2L, alpha = FALSE, fast = FALSE,
-  preserve = TRUE, recursive = TRUE
+  input, output = input, level = 2L, alpha = FALSE, preserve = TRUE,
+  recursive = TRUE, verbose = TRUE
 ) {
   # Check if input is a directory
   if (dir.exists(input)) {
     files = list.files(
       input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
-    if (length(files) == 0) {
-      warning("No PNG files found in directory: ", input)
-      return(invisible(character(0)))
-    }
 
     # Determine output paths
     output_files = file.path(output, files)
@@ -69,7 +64,7 @@ optim_png = function(
     for (i in seq_along(files)) {
       optim_png(
         file.path(input, files[i]), output_files[i], level = level,
-        alpha = alpha, fast = fast, preserve = preserve
+        alpha = alpha, preserve = preserve, verbose = verbose
       )
     }
     return(output_files)
@@ -83,7 +78,7 @@ optim_png = function(
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
   # Call Rust function
-  optim_png_impl(input, output, as.integer(level), alpha, fast, preserve)
+  optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
 
   output
 }

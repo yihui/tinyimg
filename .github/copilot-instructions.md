@@ -18,7 +18,6 @@ This is an R package that optimizes and compresses images using Rust libraries. 
   - Follow instructions at https://cran.r-project.org/bin/linux/ubuntu
   - This ensures you're testing with the most recent R version that users will have
 - Rust/Cargo (>= 1.56.0) - install from https://rustup.rs/
-- On Linux: `libcurl4-openssl-dev` system package
 
 ### Bootstrap and Build Sequence
 

@@ -51,11 +51,11 @@ assert("optim_png works with alpha = TRUE", {
   (file.exists(test_png4_out))
 })
 
-# Test fast parameter
+# Test verbose parameter
 test_png5 = create_test_png()
 test_png5_out = tempfile(fileext = ".png")
-optim_png(test_png5, test_png5_out, fast = TRUE)
-assert("optim_png works with fast = TRUE", {
+optim_png(test_png5, test_png5_out, verbose = FALSE)
+assert("optim_png works with verbose = FALSE", {
   (file.exists(test_png5_out))
 })
 

@@ -9,9 +9,9 @@ optim_png(
   output = input,
   level = 2L,
   alpha = FALSE,
-  fast = FALSE,
   preserve = TRUE,
-  recursive = TRUE
+  recursive = TRUE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -29,13 +29,12 @@ compression but take longer. Default is 2.}
 \item{alpha}{Optimize transparent pixels for better compression. This is
 technically lossy but visually lossless. Default is \code{FALSE}.}
 
-\item{fast}{Use fast compression evaluation. Recommended when using multiple
-filter types. Default is \code{FALSE}.}
-
 \item{preserve}{Preserve file permissions and timestamps. Default is \code{TRUE}.}
 
 \item{recursive}{When \code{input} is a directory, recursively process subdirectories.
 Default is \code{TRUE}.}
+
+\item{verbose}{Print file size reduction info for each file. Default is \code{TRUE}.}
 }
 \value{
 For single files, returns the output path. For directories, returns a
@@ -73,11 +72,4 @@ dev.off()
 # Optimize with different levels
 optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
 optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
-
-# Optimize all PNGs in a directory
-tmpdir = tempfile()
-dir.create(tmpdir)
-file.copy(tmp, file.path(tmpdir, "test1.png"))
-file.copy(tmp, file.path(tmpdir, "test2.png"))
-optim_png(tmpdir)
 }
