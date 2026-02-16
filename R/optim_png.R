@@ -25,13 +25,12 @@
 #'   which means the input file(s) will be overwritten. When optimizing a directory,
 #'   `output` must be a directory path.
 #' @param level Optimization level (0-6). Higher values result in better
-#'   compression but take longer. Default is 2.
+#'   compression but take longer.
 #' @param alpha Optimize transparent pixels for better compression. This is
-#'   technically lossy but visually lossless. Default is `FALSE`.
-#' @param preserve Preserve file permissions and timestamps. Default is `TRUE`.
+#'   technically lossy but visually lossless.
+#' @param preserve Preserve file permissions and timestamps.
 #' @param recursive When `input` is a directory, recursively process subdirectories.
-#'   Default is `TRUE`.
-#' @param verbose Print file size reduction info for each file. Default is `TRUE`.
+#' @param verbose Print file size reduction info for each file.
 #'
 #' @return For single files, returns the output path. For directories, returns a
 #'   character vector of all optimized files.

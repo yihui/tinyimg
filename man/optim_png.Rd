@@ -24,17 +24,16 @@ which means the input file(s) will be overwritten. When optimizing a directory,
 \code{output} must be a directory path.}
 
 \item{level}{Optimization level (0-6). Higher values result in better
-compression but take longer. Default is 2.}
+compression but take longer.}
 
 \item{alpha}{Optimize transparent pixels for better compression. This is
-technically lossy but visually lossless. Default is \code{FALSE}.}
+technically lossy but visually lossless.}
 
-\item{preserve}{Preserve file permissions and timestamps. Default is \code{TRUE}.}
+\item{preserve}{Preserve file permissions and timestamps.}
 
-\item{recursive}{When \code{input} is a directory, recursively process subdirectories.
-Default is \code{TRUE}.}
+\item{recursive}{When \code{input} is a directory, recursively process subdirectories.}
 
-\item{verbose}{Print file size reduction info for each file. Default is \code{TRUE}.}
+\item{verbose}{Print file size reduction info for each file.}
 }
 \value{
 For single files, returns the output path. For directories, returns a

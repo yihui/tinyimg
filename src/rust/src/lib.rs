@@ -72,25 +72,14 @@ fn optim_png_impl(
 
 /// Format bytes in human-readable form (similar to xfun::format_bytes)
 fn format_bytes(bytes: u64) -> String {
-    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
+    let units = ["B", "KB", "MB", "GB", "TB", "PB"];
+    if bytes == 0 { return "0 B".to_string(); }
     
-    if bytes == 0 {
-        return "0 B".to_string();
-    }
+    let i = (bytes as f64).log(1024.0).floor() as usize;
+    let p = 1024_f64.powi(i as i32);
+    let s = (bytes as f64) / p;
     
-    let mut size = bytes as f64;
-    let mut unit_index = 0;
-    
-    while size >= 1024.0 && unit_index < UNITS.len() - 1 {
-        size /= 1024.0;
-        unit_index += 1;
-    }
-    
-    if unit_index == 0 {
-        format!("{} {}", bytes, UNITS[unit_index])
-    } else {
-        format!("{:.1} {}", size, UNITS[unit_index])
-    }
+    format!("{:.1} {}", s, units[i])
 }
 
 // Macro to generate exports
