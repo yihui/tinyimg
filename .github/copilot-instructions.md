@@ -197,7 +197,10 @@ Before submitting changes:
 
 ### Build and Package Conventions
 
-1. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
+1. **Always re-roxygenize**: Run `roxygen2::roxygenize()` after changing any roxygen documentation to update man files
+2. **Always run R CMD check**: Run `R CMD check` before concluding to catch possible errors
+3. **Bump version in PRs**: Always bump the patch version number in DESCRIPTION in a PR if the version has not been bumped yet
+4. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
 2. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
 3. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
 4. **Testing**: Use testit assertions with proper error handling

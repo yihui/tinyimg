@@ -21,9 +21,9 @@
 #' @param input Path to the input PNG file or directory. If a directory is provided,
 #'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
 #'   will be optimized.
-#' @param output Path to the output PNG file or directory. If `NULL` (default), the
-#'   input file(s) will be overwritten. When optimizing a directory, `output`
-#'   must be either `NULL` or a directory path.
+#' @param output Path to the output PNG file or directory. Defaults to `input`,
+#'   which means the input file(s) will be overwritten. When optimizing a directory,
+#'   `output` must be a directory path.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer. Default is 2.
 #' @param alpha Optimize transparent pixels for better compression. This is

@@ -6,13 +6,12 @@
 \usage{
 optim_png(
   input,
-  output = NULL,
+  output = input,
   level = 2L,
   alpha = FALSE,
   fast = FALSE,
   preserve = TRUE,
-  timeout = 0L,
-  recursive = FALSE
+  recursive = TRUE
 )
 }
 \arguments{
@@ -20,9 +19,9 @@ optim_png(
 all PNG files in the directory (and subdirectories if \code{recursive = TRUE})
 will be optimized.}
 
-\item{output}{Path to the output PNG file or directory. If \code{NULL} (default), the
-input file(s) will be overwritten. When optimizing a directory, \code{output}
-must be either \code{NULL} or a directory path.}
+\item{output}{Path to the output PNG file or directory. Defaults to \code{input},
+which means the input file(s) will be overwritten. When optimizing a directory,
+\code{output} must be a directory path.}
 
 \item{level}{Optimization level (0-6). Higher values result in better
 compression but take longer. Default is 2.}
@@ -35,11 +34,8 @@ filter types. Default is \code{FALSE}.}
 
 \item{preserve}{Preserve file permissions and timestamps. Default is \code{TRUE}.}
 
-\item{timeout}{Maximum time in seconds to spend optimizing each file. 0 means
-no limit. Default is 0.}
-
 \item{recursive}{When \code{input} is a directory, recursively process subdirectories.
-Default is \code{FALSE}.}
+Default is \code{TRUE}.}
 }
 \value{
 For single files, returns the output path. For directories, returns a
@@ -75,8 +71,8 @@ plot(1:10)
 dev.off()
 
 # Optimize with different levels
-optim_png(tmp, paste0(tmp, "-o1"), level = 1)
-optim_png(tmp, paste0(tmp, "-o6"), level = 6)
+optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
+optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
 
 # Optimize all PNGs in a directory
 tmpdir = tempfile()
