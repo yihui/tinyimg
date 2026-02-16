@@ -53,20 +53,13 @@ optim_png = function(
 ) {
   # Check if input is a directory
   if (dir.exists(input)) {
-    files = list.files(
-      input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
-    )
-
-    # Determine output paths
+    files = list.files(input, "\\.a?png$", recursive = recursive,
+      ignore.case = TRUE)
     output_files = file.path(output, files)
-
-    # Optimize each file
-    for (i in seq_along(files)) {
-      optim_png(
-        file.path(input, files[i]), output_files[i], level = level,
-        alpha = alpha, preserve = preserve, verbose = verbose
-      )
-    }
+    invisible(Map(
+      function(f, o) optim_png(f, o, level, alpha, preserve, verbose),
+      file.path(input, files), output_files
+    ))
     return(output_files)
   }
 
