@@ -1,0 +1,48 @@
+Authors of Rust Crates Included in tinyimg
+===========================================
+
+This file lists the authors of the Rust crates vendored in this package.
+The information is extracted from the Cargo.toml files in the vendor directory.
+
+
+## bitflags
+## bumpalo
+## bytemuck
+## cc
+## cfg-if
+## filetime
+## funty
+## hashbrown
+## libc
+## libdeflate-sys
+## libdeflater
+## libredox
+## log
+## once_cell
+## oxipng
+## paste
+## quote
+## radium
+## redox_syscall
+## rustc-hash
+## simd-adler32
+## syn
+## tap
+## unicode-ident
+## wyz
+-  myrrlyn <self@myrrlyn.dev>
+- 4lDO2 <4lDO2@protonmail.com>
+- Adam Kewley <contact@adamkewley.com>
+- Aleksey Kladov <aleksey.kladov@gmail.com>
+- Alex Crichton <alex@alexcrichton.com>
+- Amanieu d'Antras <amanieu@gmail.com>
+- David Tolnay <dtolnay@gmail.com>
+- Elliott Linder <elliott.darfink@gmail.com>
+- Jeremy Soller <jackpot51@gmail.com>
+- Joshua Holmer <jholmer.in@gmail.com>
+- Lokathor <zefria@gmail.com>
+- Marvin Countryman <me@maar.vin>
+- Nick Fitzgerald <fitzgen@gmail.com>
+- Nika Layzell <nika@thelayzells.com>
+- The Rust Project Developers
+- myrrlyn <self@myrrlyn.dev>

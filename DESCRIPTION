@@ -2,18 +2,15 @@ Package: tinyimg
 Title: Optimize and Compress Images
 Version: 0.1.0
 Authors@R: c(
-    person("Yihui", "Xie", , "xie@yihui.name", role = c("aut", "cre")),
-    person("Joshua", "Holmer", role = "ctb", comment = "Author of bundled oxipng Rust crate"),
-    person(, "The Rust Project Developers", role = "ctb", comment = "Authors of bundled Rust dependencies")
-    )
+    person("Yihui", "Xie", role = c("aut", "cre"), email = "xie@yihui.name", comment = c(ORCID = "0000-0003-0645-5666", URL = "https://yihui.org")),
+    person("Authors of the dependency Rust crates", role = "ctb", 
+      comment = "see AUTHORS file"))
 Description: Optimize and compress images using Rust libraries. Currently
-    supports PNG optimization via the oxipng crate. Includes vendored Rust
-    dependencies including oxipng, extendr-api, libdeflater, and their
-    transitive dependencies.
+    supports PNG optimization via the oxipng crate.
 License: MIT + file LICENSE
 URL: https://github.com/yihui/tinyimg
 BugReports: https://github.com/yihui/tinyimg/issues
-SystemRequirements: Cargo (Rust's package manager, >= 1.56.0), rustc (>= 1.56.0)
+SystemRequirements: Cargo, rustc
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

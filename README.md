@@ -34,8 +34,8 @@ plot(1:10)
 dev.off()
 
 # Optimize with different levels
-optim_png(tmp, paste0(tmp, "-o1"), level = 1)
-optim_png(tmp, paste0(tmp, "-o6"), level = 6)
+optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
+optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
 ```
 
 ### Directory optimization
@@ -43,12 +43,6 @@ optim_png(tmp, paste0(tmp, "-o6"), level = 6)
 ```r
 # Optimize all PNGs in a directory
 optim_png("path/to/directory")
-
-# Optimize recursively (including subdirectories)
-optim_png("path/to/directory", recursive = TRUE)
-
-# Optimize to a different directory
-optim_png("input_dir", "output_dir")
 ```
 
 ### Optimization levels

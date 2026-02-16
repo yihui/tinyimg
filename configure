@@ -1,44 +1,27 @@
 #!/bin/sh
 
+# mimics: source ~/.cargo/env
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # Check for Rust toolchain per CRAN policy
-echo "Checking for Rust toolchain..."
-
-# Check for cargo in PATH and ~/.cargo/bin
-CARGO_CMD=""
-if command -v cargo >/dev/null 2>&1; then
-  CARGO_CMD="cargo"
-elif [ -f "$HOME/.cargo/bin/cargo" ]; then
-  CARGO_CMD="$HOME/.cargo/bin/cargo"
-fi
-
-# Check for rustc in PATH and ~/.cargo/bin
-RUSTC_CMD=""
-if command -v rustc >/dev/null 2>&1; then
-  RUSTC_CMD="rustc"
-elif [ -f "$HOME/.cargo/bin/rustc" ]; then
-  RUSTC_CMD="$HOME/.cargo/bin/rustc"
-fi
-
-if [ -z "$CARGO_CMD" ] || [ -z "$RUSTC_CMD" ]; then
-  echo "ERROR: Rust toolchain not found"
+VERSION=$(rustc --version 2>/dev/null)
+if [ $? -ne 0 ]; then
+  echo "------------------ RUST COMPILER NOT FOUND --------------------"
   echo ""
-  echo "This package requires Cargo and rustc (>= 1.56.0)"
+  echo "Cargo and rustc are required. Please install Rust:"
   echo ""
-  echo "Please install Rust via your system package manager:"
-  echo "  Debian/Ubuntu: sudo apt-get install cargo rustc"
-  echo "  Fedora/RHEL:   sudo dnf install cargo"
-  echo "  macOS:         brew install rust"
+  echo " - yum install cargo         (Fedora/CentOS)"
+  echo " - apt-get install cargo rustc (Debian/Ubuntu)"
+  echo " - brew install rust         (macOS)"
   echo ""
-  echo "Or install via rustup from https://rustup.rs/"
+  echo "Alternatively install Rust from: <https://www.rust-lang.org>"
+  echo ""
+  echo "---------------------------------------------------------------"
   exit 1
 fi
 
-# Check versions
-CARGO_VERSION=$($CARGO_CMD --version | sed 's/cargo //')
-RUSTC_VERSION=$($RUSTC_CMD --version | sed 's/rustc //')
-
-echo "Found cargo: $CARGO_VERSION"
-echo "Found rustc: $RUSTC_VERSION"
+echo "Using `which cargo`"
+echo "Rustc version: $VERSION"
 
 # Check if we need to create vendor directory
 # This handles the case when installing from GitHub via remotes::install_github()

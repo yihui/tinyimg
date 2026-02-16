@@ -96,6 +96,38 @@ echo "  Files:      $FILES_REMOVED removed"
 echo ""
 echo "========================================"
 echo ""
+
+echo "Step 6: Generating AUTHORS file from dependency crates..."
+# Navigate to package root (two directories up from src/rust)
+PACKAGE_ROOT="$SCRIPT_DIR/../.."
+mkdir -p "$PACKAGE_ROOT/inst"
+
+# Generate AUTHORS file from Cargo.toml metadata
+{
+  echo "Authors of Rust Crates Included in tinyimg"
+  echo "==========================================="
+  echo ""
+  echo "This file lists the authors of the Rust crates vendored in this package."
+  echo "The information is extracted from the Cargo.toml files in the vendor directory."
+  echo ""
+  
+  # Find all Cargo.toml files in vendor and extract unique authors
+  find vendor -name "Cargo.toml" -type f | while read -r toml; do
+    # Extract crate name
+    crate=$(grep '^name = ' "$toml" | head -1 | sed 's/^name = "\(.*\)"/\1/')
+    # Extract authors
+    authors=$(grep '^authors = ' "$toml" | head -1 | sed 's/^authors = \[//' | sed 's/\]$//' | tr -d '"' | tr ',' '\n')
+    if [ -n "$authors" ]; then
+      echo "## $crate"
+      echo "$authors" | sed 's/^/- /'
+      echo ""
+    fi
+  done | sort -u
+} > "$PACKAGE_ROOT/inst/AUTHORS"
+
+echo "Created inst/AUTHORS with author information from vendored crates"
+
+echo ""
 echo "Note: vendor/ is gitignored. Only vendor.tar.xz should be included in"
 echo "      CRAN releases (add to .Rbuildignore with ^src/rust/vendor$ pattern)."
 echo "      The Makevars will extract it automatically during build."

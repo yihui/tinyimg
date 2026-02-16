@@ -186,10 +186,10 @@ Before submitting changes:
 
 ### Testing Conventions
 
-1. **Use testit properly**: Write all test conditions in `()`, use `%==%` to test for `identical()`, and test conditions can return vectors (if all elements are TRUE, the test passes)
+1. **Use testit properly**: Write all test conditions in `()`, use `%==%` to test for `identical()`, and test conditions can return vectors (if all elements are TRUE, the test passes). Use `L` suffix for integer literals when comparing lengths.
    ```r
    assert("test description", {
-     (length(result) %==% 3)
+     (length(result) %==% 3L)
      (file.exists(result))
    })
    ```

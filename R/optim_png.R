@@ -19,10 +19,10 @@
 #' - Level 5-6: Maximum optimization (slowest, best compression)
 #'
 #' @param input Path to the input PNG file or directory. If a directory is provided,
-#'   all PNG files in the directory (and subdirectories if \code{recursive = TRUE})
+#'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
 #'   will be optimized.
 #' @param output Path to the output PNG file or directory. If `NULL` (default), the
-#'   input file(s) will be overwritten. When optimizing a directory, \code{output}
+#'   input file(s) will be overwritten. When optimizing a directory, `output`
 #'   must be either `NULL` or a directory path.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer. Default is 2.
@@ -31,10 +31,8 @@
 #' @param fast Use fast compression evaluation. Recommended when using multiple
 #'   filter types. Default is `FALSE`.
 #' @param preserve Preserve file permissions and timestamps. Default is `TRUE`.
-#' @param timeout Maximum time in seconds to spend optimizing each file. 0 means
-#'   no limit. Default is 0.
 #' @param recursive When `input` is a directory, recursively process subdirectories.
-#'   Default is `FALSE`.
+#'   Default is `TRUE`.
 #'
 #' @return For single files, returns the output path. For directories, returns a
 #'   character vector of all optimized files.
@@ -48,23 +46,16 @@
 #' dev.off()
 #'
 #' # Optimize with different levels
-#' optim_png(tmp, paste0(tmp, "-o1"), level = 1)
-#' optim_png(tmp, paste0(tmp, "-o6"), level = 6)
-#'
-#' # Optimize all PNGs in a directory
-#' tmpdir = tempfile()
-#' dir.create(tmpdir)
-#' file.copy(tmp, file.path(tmpdir, "test1.png"))
-#' file.copy(tmp, file.path(tmpdir, "test2.png"))
-#' optim_png(tmpdir)
+#' optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
+#' optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
 optim_png = function(
-  input, output = NULL, level = 2L, alpha = FALSE, fast = FALSE,
-  preserve = TRUE, timeout = 0L, recursive = FALSE
+  input, output = input, level = 2L, alpha = FALSE, fast = FALSE,
+  preserve = TRUE, recursive = TRUE
 ) {
   # Check if input is a directory
   if (dir.exists(input)) {
     files = list.files(
-      input, pattern = "\\.a?png$", full.names = FALSE,
+      input, "\\.a?png$",
       recursive = recursive, ignore.case = TRUE
     )
     if (length(files) == 0) {
@@ -73,24 +64,18 @@ optim_png = function(
     }
 
     # Determine output paths
-    if (is.null(output)) {
+    if (identical(output, input)) {
       output_files = file.path(input, files)
     } else {
       if (!dir.exists(output)) dir.create(output, recursive = TRUE)
       output_files = file.path(output, files)
-      # Create subdirectories if needed
-      output_dirs = unique(dirname(output_files))
-      for (d in output_dirs) {
-        if (!dir.exists(d)) dir.create(d, recursive = TRUE)
-      }
     }
 
     # Optimize each file
     for (i in seq_along(files)) {
       optim_png(
         file.path(input, files[i]), output_files[i], level = level,
-        alpha = alpha, fast = fast, preserve = preserve, timeout = timeout,
-        recursive = FALSE
+        alpha = alpha, fast = fast, preserve = preserve
       )
     }
     return(output_files)
@@ -99,18 +84,12 @@ optim_png = function(
   # Validate input file
   if (!file.exists(input)) stop("Input file does not exist: ", input)
 
-  # Use input as output if output is not specified
-  if (is.null(output)) output = input
-
   # Create output directory if it doesn't exist
   output_dir = dirname(output)
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
   # Call Rust function
-  optim_png_impl(
-    input, output, as.integer(level), alpha, fast, preserve,
-    as.integer(timeout)
-  )
+  optim_png_impl(input, output, as.integer(level), alpha, fast, preserve, 0L)
 
   output
 }
