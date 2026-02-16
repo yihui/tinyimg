@@ -174,14 +174,34 @@ Before submitting changes:
 3. **Compact code**: Avoid `{}` for single-expression if statements; prefer compact forms when possible
 4. **Roxygen documentation**: Don't use `@description` or `@details` explicitly - just write the description text directly after the title
 5. **Examples**: Avoid `\dontrun{}` unless absolutely necessary (e.g., requires external resources, takes very long time, or has side effects that could harm user's system). Prefer runnable examples that can be tested automatically.
+6. **Function definitions**: For functions with many arguments, break the line right after the opening `(`, indent arguments by 2 spaces, and try to wrap them at 80-char width, e.g.:
+   ```r
+   f = function(
+     arg1, arg2, ...,
+     argN, ...
+   ) {
+     ...
+   }
+   ```
+
+### Testing Conventions
+
+1. **Use testit properly**: Write all test conditions in `()`, use `%==%` to test for `identical()`, and test conditions can return vectors (if all elements are TRUE, the test passes)
+   ```r
+   assert("test description", {
+     (length(result) %==% 3)
+     (file.exists(result))
+   })
+   ```
 
 ### Build and Package Conventions
 
 1. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
-2. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
-3. **Testing**: Use testit assertions with proper error handling
-4. **Dependencies**: Run cargo vendor after any Cargo.toml changes
-5. **Cross-platform**: Test on Linux, macOS, and Windows via CI
+2. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
+3. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
+4. **Testing**: Use testit assertions with proper error handling
+5. **Dependencies**: Run cargo vendor after any Cargo.toml changes
+6. **Cross-platform**: Test on Linux, macOS, and Windows via CI
 
 ## Package API
 

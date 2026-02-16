@@ -28,23 +28,14 @@ The package includes vendored Rust dependencies per CRAN policy, so you don't ne
 library(tinyimg)
 
 # Create a test PNG
-tmp = tempfile(fileext = ".png")
+tmp = tempfile()
 png(tmp, width = 400, height = 400)
 plot(1:10)
 dev.off()
 
 # Optimize with different levels
-optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
-optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
-
-# Strip metadata for smaller files
-optim_png(tmp, paste0(tmp, "-stripped.png"), strip = "safe")
-
-# Optimize transparent images
-optim_png(tmp, paste0(tmp, "-alpha.png"), alpha = TRUE)
-
-# Set timeout for large files
-optim_png(tmp, paste0(tmp, "-fast.png"), timeout = 5)
+optim_png(tmp, paste0(tmp, "-o1"), level = 1)
+optim_png(tmp, paste0(tmp, "-o6"), level = 6)
 ```
 
 ### Directory optimization
@@ -64,32 +55,11 @@ optim_png("input_dir", "output_dir")
 
 The `level` parameter controls the optimization level (0-6):
 
-- `0`: Fast optimization with minimal compression (~3-17% reduction)
-- `2`: Default - good balance between speed and compression (~22-29% reduction)
-- `6`: Maximum optimization - best compression but slower (~24-29% reduction)
-
-See [benchmarks/](benchmarks/) for detailed performance metrics.
-
-### Advanced options
-
-- **strip**: Strip metadata chunks (`"safe"` or `"all"`)
-- **alpha**: Optimize transparent pixels (visually lossless)
-- **interlace**: Control interlacing (`"off"`, `"on"`, or `"keep"`)
-- **fast**: Use fast compression evaluation
-- **preserve**: Preserve file permissions and timestamps (default: `TRUE`)
-- **timeout**: Maximum optimization time in seconds (0 = no limit)
-- **recursive**: Process subdirectories when optimizing directories
+- `0`: Fast optimization with minimal compression
+- `2`: Default - good balance between speed and compression
+- `6`: Maximum optimization - best compression but slower
 
 See `?optim_png` for full documentation.
-
-## Benchmarks
-
-Performance benchmarks are automatically generated twice monthly. See [benchmarks/README.md](benchmarks/README.md) for details.
-
-Quick summary (from latest benchmarks):
-- Simple plots: 12ms (level 0) to 1.6s (level 6)
-- Complex plots: 35ms (level 0) to 5.5s (level 6)
-- Compression: 3-29% file size reduction depending on level
 
 ## For Package Developers
 
@@ -104,7 +74,7 @@ If you're developing and need to manually create the vendor directory:
 ./src/rust/update-vendor.sh
 ```
 
-This creates the local `vendor/` directory needed for development. Neither `vendor/` nor `vendor.tar.xz` are tracked in git (following the [gifski](https://github.com/r-rust/gifski) approach).
+This creates the local `vendor/` directory needed for development. Neither `vendor/` nor `vendor.tar.xz` are tracked in git.
 
 ### CRAN Release Workflow
 
