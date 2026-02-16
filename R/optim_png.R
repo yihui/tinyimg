@@ -55,8 +55,7 @@ optim_png = function(
   # Check if input is a directory
   if (dir.exists(input)) {
     files = list.files(
-      input, "\\.a?png$",
-      recursive = recursive, ignore.case = TRUE
+      input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
     if (length(files) == 0) {
       warning("No PNG files found in directory: ", input)
@@ -64,12 +63,7 @@ optim_png = function(
     }
 
     # Determine output paths
-    if (identical(output, input)) {
-      output_files = file.path(input, files)
-    } else {
-      if (!dir.exists(output)) dir.create(output, recursive = TRUE)
-      output_files = file.path(output, files)
-    }
+    output_files = file.path(output, files)
 
     # Optimize each file
     for (i in seq_along(files)) {
@@ -89,7 +83,7 @@ optim_png = function(
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
   # Call Rust function
-  optim_png_impl(input, output, as.integer(level), alpha, fast, preserve, 0L)
+  optim_png_impl(input, output, as.integer(level), alpha, fast, preserve)
 
   output
 }

@@ -183,6 +183,7 @@ Before submitting changes:
      ...
    }
    ```
+7. **Re-wrap code**: Always re-wrap the code after making changes to maintain consistent formatting and line length.
 
 ### Testing Conventions
 

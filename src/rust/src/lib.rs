@@ -1,7 +1,6 @@
 use extendr_api::prelude::*;
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
-use std::time::Duration;
 
 /// Optimize a PNG file using oxipng
 ///
@@ -11,7 +10,6 @@ use std::time::Duration;
 /// @param alpha Optimize transparent pixels (may be lossy but visually lossless)
 /// @param fast Use fast compression evaluation
 /// @param preserve Preserve file permissions and timestamps
-/// @param timeout Maximum optimization time in seconds (0 for no limit)
 /// @export
 #[extendr]
 fn optim_png_impl(
@@ -21,7 +19,6 @@ fn optim_png_impl(
     alpha: bool,
     fast: bool,
     preserve: bool,
-    timeout: i32,
 ) -> Result<()> {
     // Convert paths
     let input_path = PathBuf::from(input);
@@ -38,11 +35,6 @@ fn optim_png_impl(
     
     // Configure fast mode
     opts.fast_evaluation = fast;
-    
-    // Configure timeout
-    if timeout > 0 {
-        opts.timeout = Some(Duration::from_secs(timeout as u64));
-    }
     
     // Run optimization
     let in_file = InFile::Path(input_path);

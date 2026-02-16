@@ -13,13 +13,6 @@ You can install the development version of tinyimg from GitHub:
 remotes::install_github("yihui/tinyimg")
 ```
 
-## Requirements
-
-- R (>= 3.5.0)
-- Rust/Cargo (>= 1.56.0)
-
-The package includes vendored Rust dependencies per CRAN policy, so you don't need internet access during installation.
-
 ## Usage
 
 ### Basic PNG optimization

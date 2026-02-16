@@ -108,21 +108,24 @@ mkdir -p "$PACKAGE_ROOT/inst"
   echo "==========================================="
   echo ""
   echo "This file lists the authors of the Rust crates vendored in this package."
-  echo "The information is extracted from the Cargo.toml files in the vendor directory."
   echo ""
   
-  # Find all Cargo.toml files in vendor and extract unique authors
-  find vendor -name "Cargo.toml" -type f | while read -r toml; do
+  # Find all Cargo.toml files in vendor and extract crate name and authors
+  find vendor -name "Cargo.toml" -type f | sort | while read -r toml; do
     # Extract crate name
     crate=$(grep '^name = ' "$toml" | head -1 | sed 's/^name = "\(.*\)"/\1/')
-    # Extract authors
-    authors=$(grep '^authors = ' "$toml" | head -1 | sed 's/^authors = \[//' | sed 's/\]$//' | tr -d '"' | tr ',' '\n')
+    # Extract authors array
+    authors=$(grep '^authors = ' "$toml" | head -1 | sed 's/^authors = \[//' | sed 's/\]$//' | tr -d '"')
     if [ -n "$authors" ]; then
-      echo "## $crate"
-      echo "$authors" | sed 's/^/- /'
-      echo ""
+      # Process each author (comma-separated)
+      echo "$authors" | tr ',' '\n' | while IFS= read -r author; do
+        author=$(echo "$author" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        if [ -n "$author" ]; then
+          echo "- $crate: $author"
+        fi
+      done
     fi
-  done | sort -u
+  done
 } > "$PACKAGE_ROOT/inst/AUTHORS"
 
 echo "Created inst/AUTHORS with author information from vendored crates"

@@ -48,39 +48,21 @@ jobs:
           R CMD build .
           sudo R CMD INSTALL tinyimg_*.tar.gz
       
-      - name: Run benchmarks
-        id: benchmark
-        run: |
-          cd benchmarks
-          Rscript benchmark-levels.R
-          cd ..
-          if git diff --quiet benchmarks/; then
-            echo "No benchmark changes"
-            echo "benchmark_updated=false" >> $GITHUB_OUTPUT
-          else
-            echo "Benchmarks have been updated"
-            echo "benchmark_updated=true" >> $GITHUB_OUTPUT
-          fi
-      
       - name: Create Pull Request
-        if: steps.cargo_update.outputs.cargo_updated == 'true' || steps.benchmark.outputs.benchmark_updated == 'true'
+        if: steps.cargo_update.outputs.cargo_updated == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: update dependencies and benchmarks'
-          title: 'chore: update Cargo.lock dependencies and benchmarks'
+          commit-message: 'chore: update Cargo.lock dependencies'
+          title: 'chore: update Cargo.lock dependencies'
           body: |
-            This PR updates Rust dependencies and regenerates benchmarks.
-            
-            **Changes:**
-            - Cargo dependencies updated: ${{ steps.cargo_update.outputs.cargo_updated }}
-            - Benchmarks updated: ${{ steps.benchmark.outputs.benchmark_updated }}
+            This PR updates Rust dependencies.
             
             This is an automated PR created by the cargo-update workflow.
             
             Please review the changes and merge if appropriate.
             
             After merging, remember to run `./src/rust/update-vendor.sh` to update
-            the vendored dependencies for the next CRAN release if cargo was updated.
+            the vendored dependencies for the next CRAN release.
           branch: cargo-update-${{ github.run_number }}
           delete-branch: true
