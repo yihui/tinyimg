@@ -17,6 +17,9 @@ jobs:
       contents: read
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -24,6 +27,3 @@ jobs:
         uses: r-lib/actions/setup-r@HEAD
         with:
           use-public-rspm: true
-
-      - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@HEAD
