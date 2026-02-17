@@ -28,7 +28,7 @@ First, we create test plots using the `png()` device:
 
 ```{r create-penguins, fig.cap='Penguin bill length vs flipper length.'}
 par(mar = c(4, 4, 1, 1))
-plot(penguins$flipper_length_mm, penguins$bill_length_mm,
+plot(penguins$flipper_len, penguins$bill_len,
      pch = 19,
      xlab = "Flipper Length (mm)",
      ylab = "Bill Length (mm)")
