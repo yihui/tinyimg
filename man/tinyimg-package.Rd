@@ -6,40 +6,9 @@
 \alias{tinyimg-package}
 \title{tinyimg: Optimize and Compress Images}
 \description{
-The tinyimg package provides tools for optimizing and compressing images using
-Rust libraries. Currently supports PNG optimization via the oxipng crate.
+The tinyimg package provides tools for optimizing and compressing images
+using Rust libraries.
 }
-\details{
-\subsection{Main Functions}{
-\itemize{
-\item \code{\link[=optim_png]{optim_png()}}: Optimize PNG images without quality loss
-}
-}
-
-\subsection{Optimization Levels}{
-
-The package supports optimization levels from 0 to 6:
-\itemize{
-\item \strong{Level 0}: Fastest, minimal compression
-\item \strong{Level 2}: Default, balanced speed and compression
-\item \strong{Level 6}: Maximum compression, slower
-}
-}
-}
-\section{Author}{
-
-Yihui Xie
-}
-
-\section{See Also}{
-
-Useful links:
-\itemize{
-\item \url{https://github.com/yihui/tinyimg}
-\item Report bugs at \url{https://github.com/yihui/tinyimg/issues}
-}
-}
-
 \seealso{
 Useful links:
 \itemize{
