@@ -56,32 +56,31 @@ optim_png = function(
       input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
     # If output is a function, use it; otherwise treat as directory
-    if (is.function(output)) {
-      output_files = sapply(file.path(input, files), output)
+    output = if (is.function(output)) {
+      output(file.path(input, files))
     } else {
-      output_files = file.path(output, files)
+      file.path(output, files)
     }
     for (i in seq_along(files)) {
       optim_png(
-        file.path(input, files[i]), output_files[i], level = level,
+        file.path(input, files[i]), output[i], level = level,
         alpha = alpha, preserve = preserve, verbose = verbose
       )
     }
-    return(output_files)
+    return(output)
   }
 
   # Validate input file
   if (!file.exists(input)) stop("Input file does not exist: ", input)
 
   # Determine output path
-  output_path = if (is.function(output)) output(input) else output
+  if (is.function(output)) output = output(input)
 
   # Create output directory if it doesn't exist
-  output_dir = dirname(output_path)
-  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+  if (!dir.exists(d <- dirname(output))) dir.create(d, recursive = TRUE)
 
   # Call Rust function
-  optim_png_impl(input, output_path, as.integer(level), alpha, preserve, verbose)
+  optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
 
   output_path
 }
