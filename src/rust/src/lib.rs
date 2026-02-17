@@ -138,87 +138,71 @@ fn find_common_parent(paths: &[String]) -> String {
     }
     
     if paths.len() == 1 {
-        // For single path, return empty so we use basename
-        return String::new();
-    }
-    
-    // Convert all paths to absolute paths for comparison
-    let abs_paths: Vec<PathBuf> = paths
-        .iter()
-        .filter_map(|p| std::fs::canonicalize(p).ok())
-        .collect();
-    
-    if abs_paths.is_empty() || abs_paths.len() != paths.len() {
-        return String::new();
-    }
-    
-    // Get parent directories
-    let parents: Vec<PathBuf> = abs_paths
-        .iter()
-        .filter_map(|p| p.parent().map(|parent| parent.to_path_buf()))
-        .collect();
-    
-    if parents.is_empty() {
-        return String::new();
-    }
-    
-    // Find common prefix of all parent paths
-    let mut common = parents[0].clone();
-    
-    for parent in &parents[1..] {
-        // Find common prefix between common and parent
-        common = find_common_prefix(&common, parent);
-        if common.as_os_str().is_empty() {
-            break;
+        // For single path, truncate to the last '/'
+        let path = &paths[0];
+        let normalized = path.replace('\\', "/");
+        if let Some(pos) = normalized.rfind('/') {
+            return normalized[..pos].to_string();
         }
+        return String::new();
     }
     
-    common.to_string_lossy().to_string()
-}
-
-/// Find common prefix between two paths
-fn find_common_prefix(path1: &PathBuf, path2: &PathBuf) -> PathBuf {
-    let components1: Vec<_> = path1.components().collect();
-    let components2: Vec<_> = path2.components().collect();
+    // Normalize all paths (replace \ with /)
+    let normalized_paths: Vec<String> = paths
+        .iter()
+        .map(|p| p.replace('\\', "/"))
+        .collect();
     
-    let mut common = PathBuf::new();
-    for (c1, c2) in components1.iter().zip(components2.iter()) {
-        if c1 == c2 {
-            common.push(c1);
+    // Find the position of the last '/' in the first path
+    let first_path = &normalized_paths[0];
+    let last_slash = match first_path.rfind('/') {
+        Some(pos) => pos,
+        None => return String::new(),
+    };
+    
+    // Iterate from the first character to the last '/'
+    for n in 1..=last_slash {
+        let prefix = &first_path[..n];
+        // Check if this prefix is common to all paths
+        if normalized_paths.iter().all(|p| p.starts_with(prefix)) {
+            // Continue to next character
+            continue;
         } else {
-            break;
+            // Found a mismatch, return the prefix up to the last '/'
+            if let Some(pos) = prefix[..prefix.len()-1].rfind('/') {
+                return prefix[..pos].to_string();
+            }
+            return String::new();
         }
     }
     
-    common
+    // All characters up to last_slash are common
+    first_path[..last_slash].to_string()
 }
 
 /// Format a path for display by removing common prefix or using basename
 fn format_display_path(path: &str, common_prefix: &str, use_basename: bool) -> String {
     if use_basename {
-        // Single path - use basename only
-        return PathBuf::from(path)
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or(path)
-            .to_string();
+        // Single path - use basename only (everything after last '/')
+        let normalized = path.replace('\\', "/");
+        if let Some(pos) = normalized.rfind('/') {
+            return normalized[pos + 1..].to_string();
+        }
+        return path.to_string();
     }
     
     if common_prefix.is_empty() {
         return path.to_string();
     }
     
-    // Try to canonicalize the path for proper prefix removal
-    let abs_path = match std::fs::canonicalize(path) {
-        Ok(p) => p.to_string_lossy().to_string(),
-        Err(_) => path.to_string(),
-    };
+    // Normalize the path
+    let normalized = path.replace('\\', "/");
     
     // Remove common prefix
-    if abs_path.starts_with(common_prefix) {
-        let mut result = abs_path[common_prefix.len()..].to_string();
+    if normalized.starts_with(common_prefix) {
+        let mut result = normalized[common_prefix.len()..].to_string();
         // Remove leading slash if present
-        if result.starts_with('/') || result.starts_with('\\') {
+        if result.starts_with('/') {
             result = result[1..].to_string();
         }
         result

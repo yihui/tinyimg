@@ -13,9 +13,9 @@ options(xfun.md_table.limit = Inf)
 This document benchmarks the `optim_png()` function from the **tinyimg** package
 across different optimization levels (0-6). We test with three types of plots:
 
-1. A simple boxplot (simpler graphics)
-2. A complex 3D perspective plot (more complex graphics)
-3. A scatterplot based on the penguins dataset
+1. A scatterplot based on the penguins dataset
+2. A simple boxplot (simpler graphics)
+3. A complex 3D perspective plot (more complex graphics)
 
 For each optimization level, we measure:
 
@@ -25,6 +25,14 @@ For each optimization level, we measure:
 ## Test Plots
 
 First, we create test plots using the `png()` device:
+
+```{r create-penguins, fig.cap='Penguin bill length vs flipper length.'}
+par(mar = c(4, 4, 1, 1))
+plot(penguins$flipper_length_mm, penguins$bill_length_mm,
+     pch = 19,
+     xlab = "Flipper Length (mm)",
+     ylab = "Bill Length (mm)")
+```
 
 ```{r create-boxplot, fig.cap='Miles per gallon by cylinder count.'}
 par(mar = c(4, 4, 1, 1))
@@ -50,18 +58,6 @@ persp(x, y, z,
       shade = 0.5,
       ticktype = "detailed",
       xlab = "X", ylab = "Y", zlab = "Z")
-```
-
-```{r create-penguins, fig.cap='Penguin bill length vs flipper length.'}
-par(mar = c(4, 4, 1, 1))
-if (requireNamespace("palmerpenguins", quietly = TRUE)) {
-  data("penguins", package = "palmerpenguins")
-  penguins = na.omit(penguins)
-  plot(penguins$flipper_length_mm, penguins$bill_length_mm,
-       pch = 19, col = ifelse(penguins$sex == "male", "black", "gray"),
-       xlab = "Flipper Length (mm)",
-       ylab = "Bill Length (mm)")
-}
 ```
 
 ## Benchmarks
@@ -93,7 +89,7 @@ benchmark_file = function(input_file, plot_name) {
     output_file = file.path(tmp_dir, sprintf("%s_level_%d.png", plot_name, level))
     
     time_taken = system.time({
-      optim_png(input_file, output = output_file, level = level, verbose = FALSE)
+      optim_png(input_file, output = output_file, level = level)
     })["elapsed"]
     
     new_size = file.info(output_file)$size
@@ -112,11 +108,11 @@ benchmark_file = function(input_file, plot_name) {
 }
 
 # Benchmark all three plots
-num_plots = if (requireNamespace("palmerpenguins", quietly = TRUE)) 3L else 2L
-results = do.call(rbind, lapply(seq_len(num_plots), function(i) {
-  plot_name = c("Boxplot", "Persp", "Penguins")[i]
-  benchmark_file(plot_files[i], plot_name)
-}))
+results = rbind(
+  benchmark_file(plot_files[1], "Penguins"),
+  benchmark_file(plot_files[2], "Boxplot"),
+  benchmark_file(plot_files[3], "Persp")
+)
 
 rownames(results) = NULL
 results
@@ -131,7 +127,6 @@ par(mar = c(4, 4, 1, 1))
 
 # Prepare data for all plots
 plot_names = unique(results$Plot)
-colors = c("blue", "red", "green3")
 pchs = c(19, 17, 15)
 
 # Calculate y-axis range on log scale
@@ -144,10 +139,10 @@ plot(NA, xlim = c(0, 6), ylim = ylim_range, log = "y",
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i] & Level >= 0)
   lines(plot_data$Level, plot_data$Size_KB, 
-        type = "b", pch = pchs[i], col = colors[i])
+        type = "b", pch = pchs[i], col = i + 1)
 }
 legend("topright", legend = plot_names, 
-       col = colors[seq_along(plot_names)], 
+       col = seq_along(plot_names) + 1, 
        pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
 ```
@@ -165,10 +160,10 @@ plot(NA, xlim = c(0, 6), ylim = ylim_range,
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i] & Level >= 0)
   lines(plot_data$Level, plot_data$Time_sec, 
-        type = "b", pch = pchs[i], col = colors[i])
+        type = "b", pch = pchs[i], col = i + 1)
 }
 legend("topleft", legend = plot_names, 
-       col = colors[seq_along(plot_names)], 
+       col = seq_along(plot_names) + 1, 
        pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
 ```
@@ -186,10 +181,10 @@ plot(NA, xlim = c(0, 6), ylim = ylim_range,
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i] & Level >= 0)
   lines(plot_data$Level, plot_data$Reduction_pct, 
-        type = "b", pch = pchs[i], col = colors[i])
+        type = "b", pch = pchs[i], col = i + 1)
 }
 legend("topleft", legend = plot_names, 
-       col = colors[seq_along(plot_names)], 
+       col = seq_along(plot_names) + 1, 
        pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
 ```
@@ -208,7 +203,7 @@ reduction_matrix = do.call(cbind, lapply(plot_names, function(pn) {
 barplot(t(reduction_matrix),
         beside = TRUE,
         names.arg = 0:6,
-        col = colors[seq_along(plot_names)],
+        col = seq_along(plot_names) + 1,
         xlab = "Optimization Level",
         ylab = "Size Reduction (KB)",
         legend.text = plot_names)
