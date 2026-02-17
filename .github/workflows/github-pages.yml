@@ -25,9 +25,6 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
       
-      - name: Vendor Rust dependencies
-        run: ./src/rust/update-vendor.sh
-      
       - uses: r-lib/actions/setup-r@HEAD
         with:
           use-public-rspm: true
@@ -36,11 +33,11 @@ jobs:
       
       - uses: yihui/litedown/site@HEAD
         with:
-          site-dir: 'examples'
+          site-dir: 'site'
       
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: 'examples'
+          path: 'site'
       
       - id: deployment
         uses: actions/deploy-pages@v4

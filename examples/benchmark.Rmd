@@ -2,7 +2,8 @@
 title: "optim_png() Benchmarks"
 ---
 
-```{r echo=FALSE}
+```{r}
+litedown::reactor(echo = FALSE)
 library(tinyimg)
 options(xfun.md_table.limit = Inf)
 ```
@@ -24,7 +25,7 @@ For each optimization level, we measure:
 
 First, we create two test plots using litedown's default graphics device:
 
-```{r create-boxplot, echo=FALSE}
+```{r create-boxplot}
 boxplot(mpg ~ cyl, data = mtcars, 
         main = "Miles Per Gallon by Cylinder Count",
         xlab = "Number of Cylinders", 
@@ -32,7 +33,7 @@ boxplot(mpg ~ cyl, data = mtcars,
         col = c("lightblue", "lightgreen", "lightpink"))
 ```
 
-```{r create-persp, echo=FALSE}
+```{r create-persp}
 x = seq(-10, 10, length = 50)
 y = seq(-10, 10, length = 50)
 z = outer(x, y, function(x, y) {
@@ -54,7 +55,7 @@ persp(x, y, z,
 
 Now let's optimize these plot files at different levels and measure the results:
 
-```{r benchmark, echo=FALSE}
+```{r benchmark}
 # Get the plot files created by litedown
 plot_files = litedown::get_context("plot_files")
 
@@ -99,7 +100,7 @@ results
 
 ### Size Reduction by Level
 
-```{r plot-reduction, echo=FALSE, fig.width=10, fig.height=5}
+```{r plot-reduction, fig.width=10, fig.height=5}
 par(mfrow = c(1, 2))
 
 boxplot_data = subset(results, Plot == "Boxplot")
@@ -134,7 +135,7 @@ grid()
 
 ### Detailed Comparison
 
-```{r plot-detailed, echo=FALSE, fig.width=12, fig.height=8}
+```{r plot-detailed, fig.width=12, fig.height=8}
 par(mfrow = c(2, 2))
 
 # Size reduction percentage
@@ -190,31 +191,6 @@ barplot(rbind(reduction_kb_box, reduction_kb_persp),
 grid()
 ```
 
-## Summary
-
-```{r summary, echo=FALSE}
-cat("\n### Key Findings\n\n")
-cat("**Boxplot:**\n")
-cat(sprintf("- Size reduction range: %.1f%% (level 0) to %.1f%% (level 6)\n",
-            min(boxplot_data$Reduction_pct), max(boxplot_data$Reduction_pct)))
-cat(sprintf("- Processing time range: %.3f sec (level 0) to %.3f sec (level 6)\n",
-            min(boxplot_data$Time_sec), max(boxplot_data$Time_sec)))
-cat(sprintf("- Best balance: Level 2 (%.1f%% reduction in %.3f sec)\n\n",
-            boxplot_data$Reduction_pct[boxplot_data$Level == 2],
-            boxplot_data$Time_sec[boxplot_data$Level == 2]))
-
-cat("**Persp:**\n")
-cat(sprintf("- Size reduction range: %.1f%% (level 0) to %.1f%% (level 6)\n",
-            min(persp_data$Reduction_pct), max(persp_data$Reduction_pct)))
-cat(sprintf("- Processing time range: %.3f sec (level 0) to %.3f sec (level 6)\n",
-            min(persp_data$Time_sec), max(persp_data$Time_sec)))
-cat(sprintf("- Best balance: Level 2 (%.1f%% reduction in %.3f sec)\n\n",
-            persp_data$Reduction_pct[persp_data$Level == 2],
-            persp_data$Time_sec[persp_data$Level == 2]))
-
-cat("**Recommendation:** Level 2 provides a good balance between compression and speed.\n")
-```
-
-```{r cleanup, echo=FALSE, include=FALSE}
+```{r cleanup, include=FALSE}
 unlink(tmp_dir, recursive = TRUE)
 ```
