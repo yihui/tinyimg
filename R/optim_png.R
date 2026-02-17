@@ -33,52 +33,20 @@ optim_png = function(
   input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE
 ) {
-  # Handle empty input
-  if (length(input) == 0) return(invisible(character(0)))
-  
   # Resolve directory input to PNG file paths
   if (length(input) == 1 && dir.exists(input)) {
-    files = list.files(
-      input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
-    )
-    if (length(files) == 0) return(invisible(character(0)))
-    input_paths = file.path(input, files)
-    
+    files = list.files(input, "\\.a?png$", recursive = recursive)
     # Apply output function or construct output paths
-    output_paths = if (is.function(output)) {
-      output(input_paths)
+    output = if (is.function(output)) {
+      output(file.path(input, files))
     } else {
       file.path(output, files)
     }
+    input = file.path(input, files)
   } else {
-    # Input is file path(s) - resolve after checking length
-    input_paths = input
-    
-    # Apply output function or use provided output
-    if (is.function(output)) {
-      output_paths = output(input_paths)
-    } else if (length(output) == 1 && length(input_paths) > 1) {
-      stop(
-        "When providing multiple input files, 'output' must be a function, ",
-        "vector of paths (same length as input), or omitted to use identity"
-      )
-    } else {
-      output_paths = output
-    }
+    if (is.function(output)) output = output(input)
   }
-  
-  # Validate lengths match
-  if (length(output_paths) != length(input_paths)) {
-    stop(
-      "Output length (", length(output_paths), 
-      ") must match input length (", length(input_paths), ")"
-    )
-  }
-  
-  # Call Rust function (it handles file existence and directory creation)
-  optim_png_impl(
-    input_paths, output_paths, as.integer(level), alpha, preserve, verbose
-  )
-  
-  invisible(output_paths)
+  if (length(input))
+    optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
+  invisible(output)
 }
