@@ -1,4 +1,4 @@
-# tinyimg 0.1.3
+# CHANGES IN tinyimg VERSION 0.2
 
 ## Initial CRAN release
 
