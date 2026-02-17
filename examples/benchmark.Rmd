@@ -1,8 +1,11 @@
 ---
 title: "optim_png() Benchmarks"
-author: "tinyimg"
-date: "`r Sys.Date()`"
 ---
+
+```{r echo=FALSE}
+library(tinyimg)
+options(xfun.md_table.limit = Inf)
+```
 
 ## Overview
 
@@ -14,102 +17,22 @@ across different optimization levels (0-6). We test with two types of plots:
 
 For each optimization level, we measure:
 
-- File size reduction (in bytes and percentage)
+- File size reduction (in KB and percentage)
 - Time taken for optimization
 
-## Test Setup
+## Test Plots
 
-We'll create temporary PNG files for testing and clean them up at the end.
+First, we create two test plots using litedown's default graphics device:
 
-```{r create-temp-dir}
-library(tinyimg)
-tmp_dir = tempfile()
-dir.create(tmp_dir)
-```
-
-## Test 1: Simple Boxplot
-
-First, we create a simple boxplot and save it as a PNG file:
-
-```{r create-boxplot}
-boxplot_file = file.path(tmp_dir, "boxplot.png")
-png(boxplot_file, width = 800, height = 600)
+```{r create-boxplot, echo=FALSE}
 boxplot(mpg ~ cyl, data = mtcars, 
         main = "Miles Per Gallon by Cylinder Count",
         xlab = "Number of Cylinders", 
         ylab = "Miles Per Gallon",
         col = c("lightblue", "lightgreen", "lightpink"))
-dev.off()
-
-original_size = file.info(boxplot_file)$size
-cat("Original boxplot size:", format(original_size, big.mark = ","), "bytes\n")
 ```
 
-Now let's benchmark across different optimization levels:
-
-```{r benchmark-boxplot}
-levels = 0:6
-results = data.frame(
-  level = integer(),
-  size_bytes = numeric(),
-  reduction_pct = numeric(),
-  time_sec = numeric()
-)
-
-for (level in levels) {
-  test_file = file.path(tmp_dir, sprintf("boxplot_level_%d.png", level))
-  file.copy(boxplot_file, test_file)
-  
-  time_taken = system.time({
-    optim_png(test_file, level = level)
-  })["elapsed"]
-  
-  new_size = file.info(test_file)$size
-  reduction_pct = ((original_size - new_size) / original_size) * 100
-  
-  results = rbind(results, data.frame(
-    level = level,
-    size_bytes = new_size,
-    reduction_pct = reduction_pct,
-    time_sec = time_taken
-  ))
-}
-
-results$size_kb = results$size_bytes / 1024
-print(results)
-```
-
-### Boxplot Results Visualization
-
-```{r plot-boxplot-results, fig.width=10, fig.height=5}
-par(mfrow = c(1, 2))
-
-# Plot 1: File size by optimization level
-plot(results$level, results$size_kb, 
-     type = "b", pch = 19, col = "blue",
-     xlab = "Optimization Level", 
-     ylab = "File Size (KB)",
-     main = "Boxplot: File Size vs Optimization Level")
-grid()
-
-# Plot 2: Processing time by optimization level
-plot(results$level, results$time_sec, 
-     type = "b", pch = 19, col = "red",
-     xlab = "Optimization Level", 
-     ylab = "Time (seconds)",
-     main = "Boxplot: Processing Time vs Optimization Level")
-grid()
-```
-
-## Test 2: Complex 3D Perspective Plot
-
-Now let's test with a more complex 3D perspective plot:
-
-```{r create-persp}
-persp_file = file.path(tmp_dir, "persp.png")
-png(persp_file, width = 800, height = 600)
-
-# Create a complex 3D surface
+```{r create-persp, echo=FALSE}
 x = seq(-10, 10, length = 50)
 y = seq(-10, 10, length = 50)
 z = outer(x, y, function(x, y) {
@@ -125,161 +48,173 @@ persp(x, y, z,
       ticktype = "detailed",
       xlab = "X", ylab = "Y", zlab = "Z",
       main = "Complex 3D Surface: sin(r)/r")
-dev.off()
-
-original_size_persp = file.info(persp_file)$size
-cat("Original persp plot size:", format(original_size_persp, big.mark = ","), "bytes\n")
 ```
 
-Benchmark the perspective plot across optimization levels:
+## Benchmarks
 
-```{r benchmark-persp}
-results_persp = data.frame(
-  level = integer(),
-  size_bytes = numeric(),
-  reduction_pct = numeric(),
-  time_sec = numeric()
-)
+Now let's optimize these plot files at different levels and measure the results:
 
-for (level in levels) {
-  test_file = file.path(tmp_dir, sprintf("persp_level_%d.png", level))
-  file.copy(persp_file, test_file)
+```{r benchmark, echo=FALSE}
+# Get the plot files created by litedown
+plot_files = litedown::get_context("plot_files")
+
+# Create a temporary directory for optimized files
+tmp_dir = tempfile()
+dir.create(tmp_dir)
+
+# Function to benchmark a single file at all levels
+benchmark_file = function(input_file, plot_name) {
+  original_size = file.info(input_file)$size
   
-  time_taken = system.time({
-    optim_png(test_file, level = level)
-  })["elapsed"]
-  
-  new_size = file.info(test_file)$size
-  reduction_pct = ((original_size_persp - new_size) / original_size_persp) * 100
-  
-  results_persp = rbind(results_persp, data.frame(
-    level = level,
-    size_bytes = new_size,
-    reduction_pct = reduction_pct,
-    time_sec = time_taken
-  ))
+  do.call(rbind, lapply(0:6, function(level) {
+    output_file = file.path(tmp_dir, sprintf("%s_level_%d.png", plot_name, level))
+    
+    time_taken = system.time({
+      optim_png(input_file, output = output_file, level = level)
+    })["elapsed"]
+    
+    new_size = file.info(output_file)$size
+    reduction_pct = ((original_size - new_size) / original_size) * 100
+    
+    data.frame(
+      Plot = plot_name,
+      Level = level,
+      Size_KB = new_size / 1024,
+      Reduction_pct = reduction_pct,
+      Time_sec = time_taken
+    )
+  }))
 }
 
-results_persp$size_kb = results_persp$size_bytes / 1024
-print(results_persp)
+# Benchmark both plots
+results = rbind(
+  benchmark_file(plot_files[1], "Boxplot"),
+  benchmark_file(plot_files[2], "Persp")
+)
+
+results
 ```
 
-### Perspective Plot Results Visualization
+## Visualization
 
-```{r plot-persp-results, fig.width=10, fig.height=5}
+### Size Reduction by Level
+
+```{r plot-reduction, echo=FALSE, fig.width=10, fig.height=5}
 par(mfrow = c(1, 2))
 
+boxplot_data = subset(results, Plot == "Boxplot")
+persp_data = subset(results, Plot == "Persp")
+
 # Plot 1: File size by optimization level
-plot(results_persp$level, results_persp$size_kb, 
+plot(boxplot_data$Level, boxplot_data$Size_KB, 
      type = "b", pch = 19, col = "blue",
      xlab = "Optimization Level", 
      ylab = "File Size (KB)",
-     main = "Persp Plot: File Size vs Optimization Level")
-grid()
-
-# Plot 2: Processing time by optimization level
-plot(results_persp$level, results_persp$time_sec, 
-     type = "b", pch = 19, col = "red",
-     xlab = "Optimization Level", 
-     ylab = "Time (seconds)",
-     main = "Persp Plot: Processing Time vs Optimization Level")
-grid()
-```
-
-## Combined Comparison
-
-Let's compare both plot types side by side:
-
-```{r combined-comparison, fig.width=12, fig.height=8}
-par(mfrow = c(2, 2))
-
-# Size reduction comparison
-plot(results$level, results$reduction_pct, 
-     type = "b", pch = 19, col = "blue",
-     xlab = "Optimization Level", 
-     ylab = "Size Reduction (%)",
-     main = "Size Reduction: Boxplot vs Persp",
-     ylim = range(c(results$reduction_pct, results_persp$reduction_pct)))
-lines(results_persp$level, results_persp$reduction_pct, 
-      type = "b", pch = 17, col = "red")
-legend("topleft", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
-grid()
-
-# Time comparison
-plot(results$level, results$time_sec, 
-     type = "b", pch = 19, col = "blue",
-     xlab = "Optimization Level", 
-     ylab = "Time (seconds)",
-     main = "Processing Time: Boxplot vs Persp",
-     ylim = range(c(results$time_sec, results_persp$time_sec)))
-lines(results_persp$level, results_persp$time_sec, 
-      type = "b", pch = 17, col = "red")
-legend("topleft", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
-grid()
-
-# File size comparison
-plot(results$level, results$size_kb, 
-     type = "b", pch = 19, col = "blue",
-     xlab = "Optimization Level", 
-     ylab = "File Size (KB)",
-     main = "File Size: Boxplot vs Persp",
-     ylim = range(c(results$size_kb, results_persp$size_kb)))
-lines(results_persp$level, results_persp$size_kb, 
+     main = "File Size vs Optimization Level",
+     ylim = range(c(boxplot_data$Size_KB, persp_data$Size_KB)))
+lines(persp_data$Level, persp_data$Size_KB, 
       type = "b", pch = 17, col = "red")
 legend("topright", legend = c("Boxplot", "Persp"), 
        col = c("blue", "red"), pch = c(19, 17), lty = 1)
 grid()
 
-# Bar chart of absolute size reduction by level
-reduction_bytes_box = original_size - results$size_bytes
-reduction_bytes_persp = original_size_persp - results_persp$size_bytes
-barplot(rbind(reduction_bytes_box / 1024, reduction_bytes_persp / 1024),
+# Plot 2: Processing time by optimization level
+plot(boxplot_data$Level, boxplot_data$Time_sec, 
+     type = "b", pch = 19, col = "blue",
+     xlab = "Optimization Level", 
+     ylab = "Time (seconds)",
+     main = "Processing Time vs Optimization Level",
+     ylim = range(c(boxplot_data$Time_sec, persp_data$Time_sec)))
+lines(persp_data$Level, persp_data$Time_sec, 
+      type = "b", pch = 17, col = "red")
+legend("topleft", legend = c("Boxplot", "Persp"), 
+       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+grid()
+```
+
+### Detailed Comparison
+
+```{r plot-detailed, echo=FALSE, fig.width=12, fig.height=8}
+par(mfrow = c(2, 2))
+
+# Size reduction percentage
+plot(boxplot_data$Level, boxplot_data$Reduction_pct, 
+     type = "b", pch = 19, col = "blue",
+     xlab = "Optimization Level", 
+     ylab = "Size Reduction (%)",
+     main = "Size Reduction Percentage",
+     ylim = range(c(boxplot_data$Reduction_pct, persp_data$Reduction_pct)))
+lines(persp_data$Level, persp_data$Reduction_pct, 
+      type = "b", pch = 17, col = "red")
+legend("topleft", legend = c("Boxplot", "Persp"), 
+       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+grid()
+
+# Absolute file sizes
+plot(boxplot_data$Level, boxplot_data$Size_KB, 
+     type = "b", pch = 19, col = "blue",
+     xlab = "Optimization Level", 
+     ylab = "File Size (KB)",
+     main = "Absolute File Size",
+     ylim = range(c(boxplot_data$Size_KB, persp_data$Size_KB)))
+lines(persp_data$Level, persp_data$Size_KB, 
+      type = "b", pch = 17, col = "red")
+legend("topright", legend = c("Boxplot", "Persp"), 
+       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+grid()
+
+# Time comparison
+plot(boxplot_data$Level, boxplot_data$Time_sec, 
+     type = "b", pch = 19, col = "blue",
+     xlab = "Optimization Level", 
+     ylab = "Time (seconds)",
+     main = "Processing Time",
+     ylim = range(c(boxplot_data$Time_sec, persp_data$Time_sec)))
+lines(persp_data$Level, persp_data$Time_sec, 
+      type = "b", pch = 17, col = "red")
+legend("topleft", legend = c("Boxplot", "Persp"), 
+       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+grid()
+
+# Bar chart of size reduction by level
+reduction_kb_box = boxplot_data$Size_KB[1] - boxplot_data$Size_KB
+reduction_kb_persp = persp_data$Size_KB[1] - persp_data$Size_KB
+barplot(rbind(reduction_kb_box, reduction_kb_persp),
         beside = TRUE,
-        names.arg = levels,
+        names.arg = 0:6,
         col = c("blue", "red"),
         xlab = "Optimization Level",
         ylab = "Size Reduction (KB)",
-        main = "Absolute Size Reduction by Level",
+        main = "Absolute Size Reduction",
         legend.text = c("Boxplot", "Persp"))
 grid()
 ```
 
-## Summary Statistics
+## Summary
 
-```{r summary-stats}
-cat("Boxplot Summary:\n")
-cat(sprintf("  Best reduction: Level %d (%.1f%%, %.3f sec)\n", 
-            results$level[which.max(results$reduction_pct)],
-            max(results$reduction_pct),
-            results$time_sec[which.max(results$reduction_pct)]))
-cat(sprintf("  Fastest: Level %d (%.3f sec, %.1f%% reduction)\n",
-            results$level[which.min(results$time_sec)],
-            min(results$time_sec),
-            results$reduction_pct[which.min(results$time_sec)]))
+```{r summary, echo=FALSE}
+cat("\n### Key Findings\n\n")
+cat("**Boxplot:**\n")
+cat(sprintf("- Size reduction range: %.1f%% (level 0) to %.1f%% (level 6)\n",
+            min(boxplot_data$Reduction_pct), max(boxplot_data$Reduction_pct)))
+cat(sprintf("- Processing time range: %.3f sec (level 0) to %.3f sec (level 6)\n",
+            min(boxplot_data$Time_sec), max(boxplot_data$Time_sec)))
+cat(sprintf("- Best balance: Level 2 (%.1f%% reduction in %.3f sec)\n\n",
+            boxplot_data$Reduction_pct[boxplot_data$Level == 2],
+            boxplot_data$Time_sec[boxplot_data$Level == 2]))
 
-cat("\nPersp Plot Summary:\n")
-cat(sprintf("  Best reduction: Level %d (%.1f%%, %.3f sec)\n", 
-            results_persp$level[which.max(results_persp$reduction_pct)],
-            max(results_persp$reduction_pct),
-            results_persp$time_sec[which.max(results_persp$reduction_pct)]))
-cat(sprintf("  Fastest: Level %d (%.3f sec, %.1f%% reduction)\n",
-            results_persp$level[which.min(results_persp$time_sec)],
-            min(results_persp$time_sec),
-            results_persp$reduction_pct[which.min(results_persp$time_sec)]))
+cat("**Persp:**\n")
+cat(sprintf("- Size reduction range: %.1f%% (level 0) to %.1f%% (level 6)\n",
+            min(persp_data$Reduction_pct), max(persp_data$Reduction_pct)))
+cat(sprintf("- Processing time range: %.3f sec (level 0) to %.3f sec (level 6)\n",
+            min(persp_data$Time_sec), max(persp_data$Time_sec)))
+cat(sprintf("- Best balance: Level 2 (%.1f%% reduction in %.3f sec)\n\n",
+            persp_data$Reduction_pct[persp_data$Level == 2],
+            persp_data$Time_sec[persp_data$Level == 2]))
 
-cat("\nRecommendation: Level 2 provides a good balance between compression and speed.\n")
+cat("**Recommendation:** Level 2 provides a good balance between compression and speed.\n")
 ```
 
-## Cleanup
-
-```{r cleanup}
+```{r cleanup, echo=FALSE, include=FALSE}
 unlink(tmp_dir, recursive = TRUE)
-```
-
-## Session Info
-
-```{r session-info}
-sessionInfo()
 ```

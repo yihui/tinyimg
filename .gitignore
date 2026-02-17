@@ -23,9 +23,6 @@ src/rust/vendor.tar.xz
 /doc/
 /Meta/
 
-# Generated site
-docs/
-
 # IDE
 .vscode/
 .idea/
