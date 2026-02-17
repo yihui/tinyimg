@@ -39,26 +39,7 @@ technically lossy but visually lossless.}
 Character vector of output file paths (invisibly).
 }
 \description{
-Optimize PNG images using the \strong{oxipng} Rust library. This function compresses
-PNG files or directories of PNG files without losing quality (lossless compression).
-}
-\details{
-The function uses the oxipng library which implements various PNG optimization
-techniques including:
-\itemize{
-\item IDAT recompression with multiple algorithms
-\item Bit depth reduction
-\item Color type reduction
-\item Palette reduction
-}
-
-\strong{Optimization levels:}
-\itemize{
-\item Level 0: Minimal optimization (fastest)
-\item Level 1-2: Fast optimization with good results
-\item Level 3-4: More thorough optimization
-\item Level 5-6: Maximum optimization (slowest, best compression)
-}
+Optimize PNG files or directories of PNG files using lossless compression.
 }
 \examples{
 # Create a test PNG

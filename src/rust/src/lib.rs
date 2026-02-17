@@ -21,12 +21,31 @@ fn optim_png_impl(
     verbose: bool,
 ) -> Result<()> {
     // Convert to vectors
-    let inputs: Vec<String> = input.into_iter().collect();
-    let outputs: Vec<String> = output.into_iter().collect();
+    let inputs: Vec<String> = input.iter().map(|s| s.to_string()).collect();
+    let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
     
     // Validate that input and output have same length
     if inputs.len() != outputs.len() {
         return Err("Input and output vectors must have the same length".into());
+    }
+    
+    // Check all input files exist before processing any
+    for input_str in &inputs {
+        let input_path = PathBuf::from(input_str);
+        if !input_path.exists() {
+            return Err(format!("Input file does not exist: {}", input_str).into());
+        }
+    }
+    
+    // Create output directories if needed
+    for output_str in &outputs {
+        let output_path = PathBuf::from(output_str);
+        if let Some(parent) = output_path.parent() {
+            if !parent.exists() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+            }
+        }
     }
     
     // Set up oxipng options from preset

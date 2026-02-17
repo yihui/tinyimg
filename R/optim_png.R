@@ -1,22 +1,6 @@
 #' Optimize PNG images
 #'
-#' Optimize PNG images using the **oxipng** Rust library. This function compresses
-#' PNG files or directories of PNG files without losing quality (lossless compression).
-#'
-#' The function uses the oxipng library which implements various PNG optimization
-#' techniques including:
-#'
-#' - IDAT recompression with multiple algorithms
-#' - Bit depth reduction
-#' - Color type reduction
-#' - Palette reduction
-#'
-#' **Optimization levels:**
-#'
-#' - Level 0: Minimal optimization (fastest)
-#' - Level 1-2: Fast optimization with good results
-#' - Level 3-4: More thorough optimization
-#' - Level 5-6: Maximum optimization (slowest, best compression)
+#' Optimize PNG files or directories of PNG files using lossless compression.
 #'
 #' @param input Path to the input PNG file or directory. If a directory is provided,
 #'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
@@ -52,63 +36,46 @@ optim_png = function(
   # Handle empty input
   if (length(input) == 0) return(invisible(character(0)))
   
-  # Check if input is a single directory
+  # Resolve directory input to PNG file paths
   if (length(input) == 1 && dir.exists(input)) {
-    # Find PNG files in directory
     files = list.files(
       input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
     if (length(files) == 0) return(invisible(character(0)))
-    
-    # Construct full input paths
     input_paths = file.path(input, files)
     
-    # Determine output paths
-    if (is.function(output)) {
-      output_paths = output(input_paths)
+    # Apply output function or construct output paths
+    output_paths = if (is.function(output)) {
+      output(input_paths)
     } else {
-      output_paths = file.path(output, files)
+      file.path(output, files)
     }
   } else {
-    # Handle single file or vector of files
+    # Input is file path(s) - resolve after checking length
     input_paths = input
     
-    # Determine output paths
+    # Apply output function or use provided output
     if (is.function(output)) {
       output_paths = output(input_paths)
-    } else if (length(output) == 1) {
-      # Single output: only allowed with single input, or use output as a function
-      # Otherwise it's ambiguous how to handle multiple inputs
-      if (length(input_paths) == 1) {
-        output_paths = output
-      } else {
-        stop("When providing multiple input files, 'output' must be a function, ",
-             "vector of paths (same length as input), or omitted to use identity function")
-      }
+    } else if (length(output) == 1 && length(input_paths) > 1) {
+      stop(
+        "When providing multiple input files, 'output' must be a function, ",
+        "vector of paths (same length as input), or omitted to use identity"
+      )
     } else {
       output_paths = output
     }
   }
   
-  # Ensure output_paths has same length as input_paths
+  # Validate lengths match
   if (length(output_paths) != length(input_paths)) {
-    stop("Output length (", length(output_paths), 
-         ") must match input length (", length(input_paths), ")")
+    stop(
+      "Output length (", length(output_paths), 
+      ") must match input length (", length(input_paths), ")"
+    )
   }
   
-  # Validate all input files exist
-  missing = input_paths[!file.exists(input_paths)]
-  if (length(missing) > 0) {
-    stop("Input file(s) do not exist: ", paste(missing, collapse = ", "))
-  }
-  
-  # Create output directories if they don't exist
-  output_dirs = unique(dirname(output_paths))
-  for (d in output_dirs) {
-    if (!dir.exists(d)) dir.create(d, recursive = TRUE)
-  }
-  
-  # Call Rust function with vectors
+  # Call Rust function (it handles file existence and directory creation)
   optim_png_impl(
     input_paths, output_paths, as.integer(level), alpha, preserve, verbose
   )

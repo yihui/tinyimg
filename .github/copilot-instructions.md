@@ -197,15 +197,16 @@ Before submitting changes:
 ### Build and Package Conventions
 
 1. **Always re-roxygenize**: Run `roxygen2::roxygenize()` after changing any roxygen documentation to update man files
-2. **Always run R CMD check**: Run `R CMD check` before concluding to catch possible errors
-3. **Bump version in PRs**: Bump the patch version number in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR
-4. **NEVER BREAK CI**: ALWAYS run `R CMD check` before submitting ANY fixes. Wait for CI to be green before quitting. Breaking CI is unacceptable - this policy must be followed strictly for all changes.
-5. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
-6. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
-7. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
-8. **Testing**: Use testit assertions with proper error handling
-9. **Dependencies**: Run cargo vendor after any Cargo.toml changes
-10. **Cross-platform**: Test on Linux, macOS, and Windows via CI
+2. **MANDATORY: R CMD check before EVERY commit**: You MUST run `R CMD check` successfully before submitting ANY code changes. If R or required R packages are not available, you MUST install them first using `sudo apt-get install r-base` and `Rscript -e "install.packages(...)"`. There are NO exceptions to this rule.
+3. **MANDATORY: Wait for CI to be green**: After pushing code, you MUST wait for GitHub Actions CI to complete successfully before claiming the task is done. Never quit while CI is running or failing.
+4. **Bump version in PRs**: Bump the patch version number in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR
+5. **NEVER BREAK CI**: Breaking CI is completely unacceptable. If CI fails, you must immediately fix it. This policy must be followed strictly for ALL changes without exception.
+6. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
+7. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
+8. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
+9. **Testing**: Use testit assertions with proper error handling
+10. **Dependencies**: Run cargo vendor after any Cargo.toml changes
+11. **Cross-platform**: Test on Linux, macOS, and Windows via CI
 
 ## Package API
 
