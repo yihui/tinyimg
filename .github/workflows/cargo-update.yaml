@@ -26,22 +26,25 @@ jobs:
           cd src/rust
           cargo update
           if git diff --quiet Cargo.lock; then
-            echo "No updates available"
-            echo "updated=false" >> $GITHUB_OUTPUT
+            echo "No cargo updates available"
+            echo "cargo_updated=false" >> $GITHUB_OUTPUT
           else
             echo "Cargo.lock has been updated"
-            echo "updated=true" >> $GITHUB_OUTPUT
+            echo "cargo_updated=true" >> $GITHUB_OUTPUT
           fi
       
+      - name: Vendor Rust dependencies
+        run: ./src/rust/update-vendor.sh
+      
       - name: Create Pull Request
-        if: steps.cargo_update.outputs.updated == 'true'
+        if: steps.cargo_update.outputs.cargo_updated == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore: update Cargo.lock dependencies'
           title: 'chore: update Cargo.lock dependencies'
           body: |
-            This PR updates Rust dependencies by running `cargo update`.
+            This PR updates Rust dependencies.
             
             This is an automated PR created by the cargo-update workflow.
             

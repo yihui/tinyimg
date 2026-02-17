@@ -6,7 +6,8 @@
 \alias{tinyimg-package}
 \title{tinyimg: Optimize and Compress Images}
 \description{
-The tinyimg package provides tools for optimizing and compressing images using Rust libraries. Currently supports PNG optimization via the oxipng crate.
+The tinyimg package provides tools for optimizing and compressing images using
+Rust libraries. Currently supports PNG optimization via the oxipng crate.
 }
 \details{
 \subsection{Main Functions}{
@@ -34,14 +35,26 @@ Yihui Xie
 
 Useful links:
 \itemize{
-\item \url{https://github.com/yihui/optimg}
-\item Report bugs at \url{https://github.com/yihui/optimg/issues}
+\item \url{https://github.com/yihui/tinyimg}
+\item Report bugs at \url{https://github.com/yihui/tinyimg/issues}
+}
+}
+
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/yihui/tinyimg}
+  \item Report bugs at \url{https://github.com/yihui/tinyimg/issues}
 }
 
 }
-
 \author{
-\strong{Maintainer}: Yihui Xie \email{xie@yihui.name}
+\strong{Maintainer}: Yihui Xie \email{xie@yihui.name} (\href{https://orcid.org/0000-0003-0645-5666}{ORCID}) (https://yihui.org)
+
+Other contributors:
+\itemize{
+  \item Authors of the dependency Rust crates (see AUTHORS file) [contributor]
+}
 
 }
 \keyword{internal}

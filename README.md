@@ -13,13 +13,6 @@ You can install the development version of tinyimg from GitHub:
 remotes::install_github("yihui/tinyimg")
 ```
 
-## Requirements
-
-- R (>= 3.5.0)
-- Rust/Cargo (>= 1.56.0)
-
-The package includes vendored Rust dependencies per CRAN policy, so you don't need internet access during installation.
-
 ## Usage
 
 ### Basic PNG optimization
@@ -27,17 +20,22 @@ The package includes vendored Rust dependencies per CRAN policy, so you don't ne
 ```r
 library(tinyimg)
 
-# Optimize a PNG file in-place (overwrites the original)
-optim_png("path/to/image.png")
+# Create a test PNG
+tmp = tempfile()
+png(tmp, width = 400, height = 400)
+plot(1:10)
+dev.off()
 
-# Optimize and save to a different file
-optim_png("input.png", "output.png")
+# Optimize with different levels
+optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
+optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
+```
 
-# Use maximum optimization (slower but better compression)
-optim_png("image.png", level = 6)
+### Directory optimization
 
-# Use fast optimization
-optim_png("image.png", level = 0)
+```r
+# Optimize all PNGs in a directory
+optim_png("path/to/directory")
 ```
 
 ### Optimization levels
@@ -47,6 +45,8 @@ The `level` parameter controls the optimization level (0-6):
 - `0`: Fast optimization with minimal compression
 - `2`: Default - good balance between speed and compression
 - `6`: Maximum optimization - best compression but slower
+
+See `?optim_png` for full documentation.
 
 ## For Package Developers
 
@@ -61,7 +61,7 @@ If you're developing and need to manually create the vendor directory:
 ./src/rust/update-vendor.sh
 ```
 
-This creates the local `vendor/` directory needed for development. Neither `vendor/` nor `vendor.tar.xz` are tracked in git (following the [gifski](https://github.com/r-rust/gifski) approach).
+This creates the local `vendor/` directory needed for development. Neither `vendor/` nor `vendor.tar.xz` are tracked in git.
 
 ### CRAN Release Workflow
 

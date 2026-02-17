@@ -11,7 +11,7 @@ $(SHLIB): $(STATLIB)
 CARGOTMP = $(CURDIR)/.cargo
 
 $(STATLIB):
-	# Report rustc version for R CMD check
+	# Report rustc version for R CMD check (per CRAN policy)
 	@echo "Using Rust compiler:"
 	@rustc --version || echo "rustc not found in PATH"
 	# Extract vendored dependencies if present (for CRAN releases)
@@ -22,9 +22,10 @@ $(STATLIB):
 	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
 	# to set it here to ensure that cargo will be found. `rustc --print sysroot`
 	# is a way to get the Rust sysroot without needing cargo itself.
+	# Limit to 2 jobs per CRAN policy (cargo build -j defaults to number of logical CPUs)
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
-		cargo build --lib --release --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
+		cargo build --lib --release --jobs 2 --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
 	rm -Rf $(CARGOTMP) && \
 		rm -Rf $(LIBDIR)/build && \
 		rm -Rf ./rust/vendor

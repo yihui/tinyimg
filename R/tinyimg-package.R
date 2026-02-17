@@ -24,4 +24,5 @@
 #' - Report bugs at <https://github.com/yihui/tinyimg/issues>
 #'
 #' @keywords internal
+#' @useDynLib tinyimg, .registration = TRUE
 "_PACKAGE"

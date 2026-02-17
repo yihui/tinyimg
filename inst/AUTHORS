@@ -1,0 +1,32 @@
+Authors of Rust Crates Included in tinyimg
+===========================================
+
+This file lists the authors of the Rust crates vendored in this package.
+
+- bitflags: The Rust Project Developers
+- bumpalo: Nick Fitzgerald <fitzgen@gmail.com>
+- bytemuck: Lokathor <zefria@gmail.com>
+- cc: Alex Crichton <alex@alexcrichton.com>
+- cfg-if: Alex Crichton <alex@alexcrichton.com>
+- filetime: Alex Crichton <alex@alexcrichton.com>
+- funty: myrrlyn <self@myrrlyn.dev>
+- hashbrown: Amanieu d'Antras <amanieu@gmail.com>
+- libc: The Rust Project Developers
+- libdeflate-sys: Adam Kewley <contact@adamkewley.com>
+- libdeflater: Adam Kewley <contact@adamkewley.com>
+- libredox: 4lDO2 <4lDO2@protonmail.com>
+- log: The Rust Project Developers
+- once_cell: Aleksey Kladov <aleksey.kladov@gmail.com>
+- oxipng: Joshua Holmer <jholmer.in@gmail.com>
+- paste: David Tolnay <dtolnay@gmail.com>
+- quote: David Tolnay <dtolnay@gmail.com>
+- radium: Nika Layzell <nika@thelayzells.com>
+- radium: myrrlyn <self@myrrlyn.dev>
+- redox_syscall: Jeremy Soller <jackpot51@gmail.com>
+- rustc-hash: The Rust Project Developers
+- simd-adler32: Marvin Countryman <me@maar.vin>
+- syn: David Tolnay <dtolnay@gmail.com>
+- tap: Elliott Linder <elliott.darfink@gmail.com>
+- tap: myrrlyn <self@myrrlyn.dev>
+- unicode-ident: David Tolnay <dtolnay@gmail.com>
+- wyz: myrrlyn <self@myrrlyn.dev>

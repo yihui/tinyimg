@@ -18,7 +18,6 @@ This is an R package that optimizes and compresses images using Rust libraries. 
   - Follow instructions at https://cran.r-project.org/bin/linux/ubuntu
   - This ensures you're testing with the most recent R version that users will have
 - Rust/Cargo (>= 1.56.0) - install from https://rustup.rs/
-- On Linux: `libcurl4-openssl-dev` system package
 
 ### Bootstrap and Build Sequence
 
@@ -173,14 +172,41 @@ Before submitting changes:
 2. **Indentation**: Use 2 spaces (not 4 spaces or tabs)
 3. **Compact code**: Avoid `{}` for single-expression if statements; prefer compact forms when possible
 4. **Roxygen documentation**: Don't use `@description` or `@details` explicitly - just write the description text directly after the title
+5. **Examples**: Avoid `\dontrun{}` unless absolutely necessary (e.g., requires external resources, takes very long time, or has side effects that could harm user's system). Prefer runnable examples that can be tested automatically.
+6. **Function definitions**: For functions with many arguments, break the line right after the opening `(`, indent arguments by 2 spaces, and try to wrap them at 80-char width, e.g.:
+   ```r
+   f = function(
+     arg1, arg2, ...,
+     argN, ...
+   ) {
+     ...
+   }
+   ```
+7. **Re-wrap code**: Always re-wrap the code after making changes to maintain consistent formatting and line length.
+
+### Testing Conventions
+
+1. **Use testit properly**: Write all test conditions in `()`, use `%==%` to test for `identical()`, and test conditions can return vectors (if all elements are TRUE, the test passes). Use `L` suffix for integer literals when comparing lengths.
+   ```r
+   assert("test description", {
+     (length(result) %==% 3L)
+     (file.exists(result))
+   })
+   ```
 
 ### Build and Package Conventions
 
-1. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
-2. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
-3. **Testing**: Use testit assertions with proper error handling
-4. **Dependencies**: Run cargo vendor after any Cargo.toml changes
-5. **Cross-platform**: Test on Linux, macOS, and Windows via CI
+1. **Always re-roxygenize**: Run `roxygen2::roxygenize()` after changing any roxygen documentation to update man files
+2. **MANDATORY: R CMD check before EVERY commit**: You MUST run `R CMD check` successfully before submitting ANY code changes. If R or required R packages are not available, you MUST install them first using `sudo apt-get install r-base` and `Rscript -e "install.packages(...)"`. There are NO exceptions to this rule.
+3. **MANDATORY: Wait for CI to be green**: After pushing code, you MUST wait for GitHub Actions CI to complete successfully before claiming the task is done. Never quit while CI is running or failing.
+4. **Bump version in PRs**: Bump the patch version number in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR
+5. **NEVER BREAK CI**: Breaking CI is completely unacceptable. If CI fails, you must immediately fix it. This policy must be followed strictly for ALL changes without exception.
+6. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
+7. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
+8. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
+9. **Testing**: Use testit assertions with proper error handling
+10. **Dependencies**: Run cargo vendor after any Cargo.toml changes
+11. **Cross-platform**: Test on Linux, macOS, and Windows via CI
 
 ## Package API
 
