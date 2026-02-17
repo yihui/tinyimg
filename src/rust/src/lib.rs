@@ -84,12 +84,14 @@ fn optim_png_impl(
                     
                     if input_size > 0 {
                         let reduction = ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
+                        let sign = if output_size < input_size { "-" } else { "+" };
                         rprintln!(
-                            "  {} | {} -> {} ({:.1}%)",
+                            "  {} | {} -> {} ({}{:.1}%)",
                             output_path.display(),
                             format_bytes(input_size),
                             format_bytes(output_size),
-                            reduction
+                            sign,
+                            reduction.abs()
                         );
                     }
                 }
