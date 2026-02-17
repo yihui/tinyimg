@@ -1,0 +1,46 @@
+---
+title: "tinyimg Package Site"
+---
+
+## Welcome to tinyimg
+
+The **tinyimg** package optimizes and compresses images using Rust libraries. 
+Currently supports PNG optimization via the [oxipng](https://github.com/shssoichiro/oxipng) crate.
+
+## Installation
+
+You can install the development version from GitHub:
+
+```r
+# install.packages("remotes")
+remotes::install_github("yihui/tinyimg")
+```
+
+## Usage
+
+The main function is `optim_png()`:
+
+```{r eval=FALSE}
+library(tinyimg)
+
+# Optimize a single PNG file
+optim_png("input.png")
+
+# Optimize with different compression levels (0-6)
+optim_png("input.png", level = 6)
+
+# Optimize all PNG files in a directory
+optim_png("images/")
+
+# Optimize with verbose output
+optim_png("input.png", verbose = TRUE)
+```
+
+## Documentation
+
+- [Benchmarks](benchmark.html) - Performance benchmarks across different optimization levels
+
+## Links
+
+- GitHub: <https://github.com/yihui/tinyimg>
+- Issues: <https://github.com/yihui/tinyimg/issues>

@@ -2,13 +2,7 @@
 title: "optim_png() Benchmarks"
 author: "tinyimg"
 date: "`r Sys.Date()`"
-output: html_document
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-library(tinyimg)
-```
 
 ## Overview
 
@@ -28,6 +22,7 @@ For each optimization level, we measure:
 We'll create temporary PNG files for testing and clean them up at the end.
 
 ```{r create-temp-dir}
+library(tinyimg)
 tmp_dir = tempfile()
 dir.create(tmp_dir)
 ```
