@@ -1,0 +1,61 @@
+name: Deploy Site
+
+on:
+  schedule:
+    # Run twice a month on the 1st and 15th at 00:00 UTC
+    - cron: '0 0 1,15 * *'
+  workflow_dispatch: # Allow manual triggers
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-site:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Vendor Rust dependencies
+        run: ./src/rust/update-vendor.sh
+      
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
+      
+      - name: Install R dependencies
+        run: |
+          install.packages("litedown", repos = c("https://yihui.r-universe.dev", "https://cloud.r-project.org"))
+        shell: Rscript {0}
+      
+      - name: Install tinyimg package
+        run: |
+          R CMD build .
+          R CMD INSTALL tinyimg_*.tar.gz
+      
+      - name: Build site with litedown
+        run: |
+          dir.create("docs", showWarnings = FALSE)
+          litedown::fuse("examples/benchmark.Rmd", output_dir = "docs")
+        shell: Rscript {0}
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
