@@ -30,3 +30,6 @@ src/rust/vendor.tar.xz
 # OS files
 .DS_Store
 Thumbs.db
+
+# litedown plots
+*__files/
