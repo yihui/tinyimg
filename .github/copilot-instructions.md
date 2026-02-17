@@ -13,11 +13,12 @@ This is an R package that optimizes and compresses images using Rust libraries. 
 
 ### Prerequisites
 
-- R (>= 3.5.0)
-  - **For testing on Linux**: Install the latest R from CRAN, not from Debian/Ubuntu official repositories
-  - Follow instructions at https://cran.r-project.org/bin/linux/ubuntu
-  - This ensures you're testing with the most recent R version that users will have
-- Rust/Cargo (>= 1.56.0) - install from https://rustup.rs/
+**Note**: Rust and R are automatically installed via `.github/copilot-setup-steps.yml` when working with GitHub Copilot. For manual setup:
+- R (>= 3.5.0) - available via `copilot-setup-steps.yml`
+- Rust/Cargo (>= 1.56.0) - available via `copilot-setup-steps.yml`
+- R package dependencies (testit, roxygen2) - available via `copilot-setup-steps.yml`
+
+**For testing on Linux manually**: If not using Copilot's automated setup, install the latest R from CRAN, not from Debian/Ubuntu official repositories. Follow instructions at https://cran.r-project.org/bin/linux/ubuntu to ensure you're testing with the most recent R version that users will have.
 
 ### Bootstrap and Build Sequence
 
@@ -70,7 +71,7 @@ This is an R package that optimizes and compresses images using Rust libraries. 
 ### Common Build Issues and Solutions
 
 1. **"Vendor directory not found"**: Run `./src/rust/update-vendor.sh` first
-2. **Rust compiler not found**: Install Rust from https://rustup.rs/
+2. **Rust compiler not found**: Should not occur when using Copilot (installed via `copilot-setup-steps.yml`). For manual setup, install Rust from https://rustup.rs/
 3. **"abort() warning" in R CMD check**: This is from Rust std library and is handled by `PKG_CFLAGS = $(C_VISIBILITY)` in `src/Makevars`
 4. **Cargo checksum errors**: Do NOT manually delete files from `vendor/` directory after running `update-vendor.sh`
 
