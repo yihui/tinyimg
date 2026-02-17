@@ -26,7 +26,7 @@ For each optimization level, we measure:
 
 First, we create test plots using the `png()` device:
 
-```{r create-boxplot, fig.cap='Miles Per Gallon by Cylinder Count'}
+```{r create-boxplot, fig.cap='Miles per gallon by cylinder count.'}
 par(mar = c(4, 4, 1, 1))
 boxplot(mpg ~ cyl, data = mtcars, 
         xlab = "Number of Cylinders", 
@@ -34,7 +34,7 @@ boxplot(mpg ~ cyl, data = mtcars,
         col = c("lightblue", "lightgreen", "lightpink"))
 ```
 
-```{r create-persp, fig.cap='Complex 3D Surface: sin(r)/r'}
+```{r create-persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
 par(mar = c(2, 2, 1, 1))
 x = seq(-10, 10, length = 50)
 y = seq(-10, 10, length = 50)
@@ -52,7 +52,7 @@ persp(x, y, z,
       xlab = "X", ylab = "Y", zlab = "Z")
 ```
 
-```{r create-penguins, fig.cap='Penguin Bill Length vs Flipper Length'}
+```{r create-penguins, fig.cap='Penguin bill length vs flipper length.'}
 par(mar = c(4, 4, 1, 1))
 if (requireNamespace("palmerpenguins", quietly = TRUE)) {
   data("penguins", package = "palmerpenguins")
@@ -126,7 +126,7 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 
 ## Visualization
 
-```{r plot-filesize, fig.cap='File Size vs Optimization Level (log scale)'}
+```{r plot-filesize, fig.cap='File size vs optimization level (log scale).'}
 par(mar = c(4, 4, 1, 1))
 
 # Prepare data for all plots
@@ -152,7 +152,7 @@ legend("topright", legend = plot_names,
 grid()
 ```
 
-```{r plot-time, fig.cap='Processing Time vs Optimization Level'}
+```{r plot-time, fig.cap='Processing time vs optimization level.'}
 par(mar = c(4, 4, 1, 1))
 
 # Calculate y-axis range
@@ -173,7 +173,7 @@ legend("topleft", legend = plot_names,
 grid()
 ```
 
-```{r plot-reduction-pct, fig.cap='Size Reduction Percentage by Optimization Level'}
+```{r plot-reduction-pct, fig.cap='Size reduction percentage by optimization level.'}
 par(mar = c(4, 4, 1, 1))
 
 # Calculate y-axis range
@@ -194,7 +194,7 @@ legend("topleft", legend = plot_names,
 grid()
 ```
 
-```{r plot-size-reduction-bar, fig.cap='Absolute Size Reduction by Optimization Level'}
+```{r plot-size-reduction-bar, fig.cap='Absolute size reduction by optimization level.'}
 par(mar = c(4, 4, 1, 1))
 
 # Prepare data for bar chart - reduction from raw (level -1) to each level
