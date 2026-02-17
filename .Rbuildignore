@@ -6,6 +6,5 @@
 ^LICENSE\.md$
 ^rust/target$
 ^src/rust/update-vendor\.sh$
-^DEVELOPMENT\.md$
-^IMPLEMENTATION_SUMMARY\.md$
 ^src/rust/vendor$
+^src/rust/\.cargo$

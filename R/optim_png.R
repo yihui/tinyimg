@@ -32,8 +32,7 @@
 #' @param recursive When `input` is a directory, recursively process subdirectories.
 #' @param verbose Print file size reduction info for each file.
 #'
-#' @return For single files, returns the output path. For directories, returns a
-#'   character vector of all optimized files.
+#' @return Character vector of output file paths (invisibly).
 #' @export
 #'
 #' @examples
@@ -50,37 +49,69 @@ optim_png = function(
   input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE
 ) {
-  # Check if input is a directory
-  if (dir.exists(input)) {
+  # Handle empty input
+  if (length(input) == 0) return(invisible(character(0)))
+  
+  # Check if input is a single directory
+  if (length(input) == 1 && dir.exists(input)) {
+    # Find PNG files in directory
     files = list.files(
       input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
-    # If output is a function, use it; otherwise treat as directory
-    output = if (is.function(output)) {
-      output(file.path(input, files))
+    if (length(files) == 0) return(invisible(character(0)))
+    
+    # Construct full input paths
+    input_paths = file.path(input, files)
+    
+    # Determine output paths
+    if (is.function(output)) {
+      output_paths = output(input_paths)
     } else {
-      file.path(output, files)
+      output_paths = file.path(output, files)
     }
-    for (i in seq_along(files)) {
-      optim_png(
-        file.path(input, files[i]), output[i], level = level,
-        alpha = alpha, preserve = preserve, verbose = verbose
-      )
+  } else {
+    # Handle single file or vector of files
+    input_paths = input
+    
+    # Determine output paths
+    if (is.function(output)) {
+      output_paths = output(input_paths)
+    } else if (length(output) == 1) {
+      # Single output: only allowed with single input, or use output as a function
+      # Otherwise it's ambiguous how to handle multiple inputs
+      if (length(input_paths) == 1) {
+        output_paths = output
+      } else {
+        stop("When providing multiple input files, 'output' must be a function, ",
+             "vector of paths (same length as input), or omitted to use identity function")
+      }
+    } else {
+      output_paths = output
     }
-    return(output)
   }
-
-  # Validate input file
-  if (!file.exists(input)) stop("Input file does not exist: ", input)
-
-  # Determine output path
-  if (is.function(output)) output = output(input)
-
-  # Create output directory if it doesn't exist
-  if (!dir.exists(d <- dirname(output))) dir.create(d, recursive = TRUE)
-
-  # Call Rust function
-  optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
-
-  output_path
+  
+  # Ensure output_paths has same length as input_paths
+  if (length(output_paths) != length(input_paths)) {
+    stop("Output length (", length(output_paths), 
+         ") must match input length (", length(input_paths), ")")
+  }
+  
+  # Validate all input files exist
+  missing = input_paths[!file.exists(input_paths)]
+  if (length(missing) > 0) {
+    stop("Input file(s) do not exist: ", paste(missing, collapse = ", "))
+  }
+  
+  # Create output directories if they don't exist
+  output_dirs = unique(dirname(output_paths))
+  for (d in output_dirs) {
+    if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+  }
+  
+  # Call Rust function with vectors
+  optim_png_impl(
+    input_paths, output_paths, as.integer(level), alpha, preserve, verbose
+  )
+  
+  invisible(output_paths)
 }

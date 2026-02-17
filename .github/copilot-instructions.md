@@ -199,12 +199,13 @@ Before submitting changes:
 1. **Always re-roxygenize**: Run `roxygen2::roxygenize()` after changing any roxygen documentation to update man files
 2. **Always run R CMD check**: Run `R CMD check` before concluding to catch possible errors
 3. **Bump version in PRs**: Bump the patch version number in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR
-4. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
-2. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
-3. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
-4. **Testing**: Use testit assertions with proper error handling
-5. **Dependencies**: Run cargo vendor after any Cargo.toml changes
-6. **Cross-platform**: Test on Linux, macOS, and Windows via CI
+4. **NEVER BREAK CI**: ALWAYS run `R CMD check` before submitting ANY fixes. Wait for CI to be green before quitting. Breaking CI is unacceptable - this policy must be followed strictly for all changes.
+5. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
+6. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
+7. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars
+8. **Testing**: Use testit assertions with proper error handling
+9. **Dependencies**: Run cargo vendor after any Cargo.toml changes
+10. **Cross-platform**: Test on Linux, macOS, and Windows via CI
 
 ## Package API
 

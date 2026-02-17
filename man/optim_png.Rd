@@ -36,8 +36,7 @@ technically lossy but visually lossless.}
 \item{verbose}{Print file size reduction info for each file.}
 }
 \value{
-For single files, returns the output path. For directories, returns a
-character vector of all optimized files.
+Character vector of output file paths (invisibly).
 }
 \description{
 Optimize PNG images using the \strong{oxipng} Rust library. This function compresses

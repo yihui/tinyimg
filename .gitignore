@@ -7,7 +7,6 @@
 
 # Rust build artifacts
 src/rust/target/
-/.cargo/
 src/rust/.cargo/
 *.o
 *.so

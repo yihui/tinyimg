@@ -2,10 +2,10 @@ use extendr_api::prelude::*;
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
 
-/// Optimize a PNG file using oxipng
+/// Optimize PNG files using oxipng
 ///
-/// @param input Path to input PNG file
-/// @param output Path to output PNG file
+/// @param input Vector of input PNG file paths
+/// @param output Vector of output PNG file paths (same length as input)
 /// @param level Optimization level (0-6)
 /// @param alpha Optimize transparent pixels (may be lossy but visually lossless)
 /// @param preserve Preserve file permissions and timestamps
@@ -13,21 +13,21 @@ use std::path::PathBuf;
 /// @export
 #[extendr]
 fn optim_png_impl(
-    input: &str,
-    output: &str,
+    input: Strings,
+    output: Strings,
     level: i32,
     alpha: bool,
     preserve: bool,
     verbose: bool,
 ) -> Result<()> {
-    // Convert paths
-    let input_path = PathBuf::from(input);
-    let output_path = PathBuf::from(output);
+    // Convert to vectors
+    let inputs: Vec<String> = input.into_iter().collect();
+    let outputs: Vec<String> = output.into_iter().collect();
     
-    // Get input file size for reporting
-    let input_size = std::fs::metadata(&input_path)
-        .map(|m| m.len())
-        .unwrap_or(0);
+    // Validate that input and output have same length
+    if inputs.len() != outputs.len() {
+        return Err("Input and output vectors must have the same length".into());
+    }
     
     // Set up oxipng options from preset
     let mut opts = Options::from_preset(level as u8);
@@ -38,36 +38,50 @@ fn optim_png_impl(
     // Configure alpha optimization
     opts.optimize_alpha = alpha;
     
-    // Run optimization
-    let in_file = InFile::Path(input_path);
-    let out_file = OutFile::Path {
-        path: Some(output_path),
-        preserve_attrs: preserve,
-    };
-    
-    match oxipng::optimize(&in_file, &out_file, &opts) {
-        Ok(_) => {
-            // Get output file size for reporting
-            if verbose {
-                let output_size = std::fs::metadata(&output_path)
-                    .map(|m| m.len())
-                    .unwrap_or(0);
-                
-                if input_size > 0 {
-                    let reduction = ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
-                    rprintln!(
-                        "  {} | {} -> {} ({:.1}%)",
-                        output_path.display(),
-                        format_bytes(input_size),
-                        format_bytes(output_size),
-                        reduction
-                    );
+    // Process each file
+    for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
+        let input_path = PathBuf::from(input_str);
+        let output_path = PathBuf::from(output_str);
+        
+        // Get input file size for reporting
+        let input_size = std::fs::metadata(&input_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        
+        // Run optimization
+        let in_file = InFile::Path(input_path.clone());
+        let out_file = OutFile::Path {
+            path: Some(output_path.clone()),
+            preserve_attrs: preserve,
+        };
+        
+        match oxipng::optimize(&in_file, &out_file, &opts) {
+            Ok(_) => {
+                // Get output file size for reporting
+                if verbose {
+                    let output_size = std::fs::metadata(&output_path)
+                        .map(|m| m.len())
+                        .unwrap_or(0);
+                    
+                    if input_size > 0 {
+                        let reduction = ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
+                        rprintln!(
+                            "  {} | {} -> {} ({:.1}%)",
+                            output_path.display(),
+                            format_bytes(input_size),
+                            format_bytes(output_size),
+                            reduction
+                        );
+                    }
                 }
-            }
-            Ok(())
-        },
-        Err(e) => Err(format!("Failed to optimize PNG: {}", e).into()),
+            },
+            Err(e) => {
+                return Err(format!("Failed to optimize {}: {}", input_path.display(), e).into());
+            },
+        }
     }
+    
+    Ok(())
 }
 
 /// Format bytes in human-readable form (similar to xfun::format_bytes)
