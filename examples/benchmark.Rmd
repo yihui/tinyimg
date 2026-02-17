@@ -130,14 +130,14 @@ plot_names = unique(results$Plot)
 pchs = c(19, 17, 15)
 
 # Calculate y-axis range on log scale
-all_sizes = results$Size_KB[results$Level >= 0]
+all_sizes = results$Size_KB
 ylim_range = range(all_sizes)
 
-plot(NA, xlim = c(0, 6), ylim = ylim_range, log = "y",
+plot(NA, xlim = c(-1, 6), ylim = ylim_range, log = "y",
      xlab = "Optimization Level", 
      ylab = "File Size (KB, log scale)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(results, Plot == plot_names[i] & Level >= 0)
+  plot_data = subset(results, Plot == plot_names[i])
   lines(plot_data$Level, plot_data$Size_KB, 
         type = "b", pch = pchs[i], col = i + 1)
 }
@@ -151,14 +151,14 @@ grid()
 par(mar = c(4, 4, 1, 1))
 
 # Calculate y-axis range
-all_times = results$Time_sec[results$Level >= 0]
+all_times = results$Time_sec
 ylim_range = range(all_times)
 
-plot(NA, xlim = c(0, 6), ylim = ylim_range,
+plot(NA, xlim = c(-1, 6), ylim = ylim_range,
      xlab = "Optimization Level", 
      ylab = "Time (seconds)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(results, Plot == plot_names[i] & Level >= 0)
+  plot_data = subset(results, Plot == plot_names[i])
   lines(plot_data$Level, plot_data$Time_sec, 
         type = "b", pch = pchs[i], col = i + 1)
 }
@@ -172,14 +172,14 @@ grid()
 par(mar = c(4, 4, 1, 1))
 
 # Calculate y-axis range
-all_reduction = results$Reduction_pct[results$Level >= 0]
+all_reduction = results$Reduction_pct
 ylim_range = range(all_reduction)
 
-plot(NA, xlim = c(0, 6), ylim = ylim_range,
+plot(NA, xlim = c(-1, 6), ylim = ylim_range,
      xlab = "Optimization Level", 
      ylab = "Size Reduction (%)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(results, Plot == plot_names[i] & Level >= 0)
+  plot_data = subset(results, Plot == plot_names[i])
   lines(plot_data$Level, plot_data$Reduction_pct, 
         type = "b", pch = pchs[i], col = i + 1)
 }
