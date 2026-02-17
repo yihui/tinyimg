@@ -21,8 +21,8 @@
 #' @param input Path to the input PNG file or directory. If a directory is provided,
 #'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
 #'   will be optimized.
-#' @param output Path to the output PNG file or directory. Defaults to `input`,
-#'   which means the input file(s) will be overwritten. When optimizing a directory,
+#' @param output Path to the output PNG file or directory. If not specified,
+#'   the input file(s) will be overwritten. When optimizing a directory,
 #'   `output` must be a directory path.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
@@ -56,10 +56,12 @@ optim_png = function(
       input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
     output_files = file.path(output, files)
-    invisible(Map(
-      function(f, o) optim_png(f, o, level, alpha, preserve, verbose),
-      file.path(input, files), output_files
-    ))
+    for (i in seq_along(files)) {
+      optim_png(
+        file.path(input, files[i]), output_files[i], level = level,
+        alpha = alpha, preserve = preserve, verbose = verbose
+      )
+    }
     return(output_files)
   }
 

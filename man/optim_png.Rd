@@ -19,8 +19,8 @@ optim_png(
 all PNG files in the directory (and subdirectories if \code{recursive = TRUE})
 will be optimized.}
 
-\item{output}{Path to the output PNG file or directory. Defaults to \code{input},
-which means the input file(s) will be overwritten. When optimizing a directory,
+\item{output}{Path to the output PNG file or directory. If not specified,
+the input file(s) will be overwritten. When optimizing a directory,
 \code{output} must be a directory path.}
 
 \item{level}{Optimization level (0-6). Higher values result in better

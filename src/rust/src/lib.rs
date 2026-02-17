@@ -41,7 +41,7 @@ fn optim_png_impl(
     // Run optimization
     let in_file = InFile::Path(input_path);
     let out_file = OutFile::Path {
-        path: Some(output_path.clone()),
+        path: Some(output_path),
         preserve_attrs: preserve,
     };
     
