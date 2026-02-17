@@ -57,6 +57,10 @@ fn optim_png_impl(
     // Configure alpha optimization
     opts.optimize_alpha = alpha;
     
+    // Find common parent directories for display
+    let input_truncate_index = if verbose { find_truncate_index(&inputs) } else { 0 };
+    let output_truncate_index = if verbose { find_truncate_index(&outputs) } else { 0 };
+    
     // Process each file
     for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
         let input_path = PathBuf::from(input_str);
@@ -85,9 +89,21 @@ fn optim_png_impl(
                     if input_size > 0 {
                         let reduction = ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
                         let sign = if output_size < input_size { "-" } else { "+" };
+                        
+                        // Format the display paths
+                        let display_input = truncate_path(input_str, input_truncate_index);
+                        let display_output = truncate_path(output_str, output_truncate_index);
+                        
+                        // Build the output message
+                        let path_display = if input_str == output_str {
+                            display_output
+                        } else {
+                            format!("{} -> {}", display_input, display_output)
+                        };
+                        
                         rprintln!(
-                            "  {} | {} -> {} ({}{:.1}%)",
-                            output_path.display(),
+                            "{} | {} -> {} ({}{:.1}%)",
+                            path_display,
                             format_bytes(input_size),
                             format_bytes(output_size),
                             sign,
@@ -103,6 +119,61 @@ fn optim_png_impl(
     }
     
     Ok(())
+}
+
+/// Find the index position to truncate paths
+/// Returns the position after the last common '/' or '\', or 0 if no truncation needed
+fn find_truncate_index(paths: &[String]) -> usize {
+    if paths.is_empty() {
+        return 0;
+    }
+    
+    if paths.len() == 1 {
+        // For single path, find the last '/' or '\'
+        let path = &paths[0];
+        if let Some(pos) = path.rfind(|c| c == '/' || c == '\\') {
+            return pos + 1;
+        }
+        return 0;
+    }
+    
+    // Find the position of the last '/' or '\' in the first path
+    let first_path = &paths[0];
+    let last_separator = first_path.rfind(|c| c == '/' || c == '\\');
+    
+    if last_separator.is_none() {
+        return 0;
+    }
+    
+    let last_sep_pos = last_separator.unwrap();
+    
+    // Iterate through positions to find the largest common prefix ending at a separator
+    let mut truncate_idx = 0;
+    
+    for pos in 0..=last_sep_pos {
+        let ch = first_path.chars().nth(pos).unwrap();
+        
+        // Check if all paths have the same character at this position
+        if paths.iter().all(|p| p.chars().nth(pos) == Some(ch)) {
+            // If this is a separator, update our truncate index
+            if ch == '/' || ch == '\\' {
+                truncate_idx = pos + 1;
+            }
+        } else {
+            // Found a mismatch, return the last valid truncate index
+            return truncate_idx;
+        }
+    }
+    
+    truncate_idx
+}
+
+/// Truncate a path by removing the first n characters
+fn truncate_path(path: &str, index: usize) -> String {
+    if index == 0 || index >= path.len() {
+        return path.to_string();
+    }
+    path[index..].to_string()
 }
 
 /// Format bytes in human-readable form (similar to xfun::format_bytes)

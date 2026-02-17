@@ -1,5 +1,5 @@
 ---
-title: "optim_png() Benchmarks"
+title: "`optim_png()` Benchmarks"
 ---
 
 ```{r}
@@ -11,10 +11,11 @@ options(xfun.md_table.limit = Inf)
 ## Overview
 
 This document benchmarks the `optim_png()` function from the **tinyimg** package
-across different optimization levels (0-6). We test with two types of plots:
+across different optimization levels (0-6). We test with three types of plots:
 
-1. A simple boxplot (simpler graphics)
-2. A complex 3D perspective plot (more complex graphics)
+1. A scatterplot based on the penguins dataset
+2. A simple boxplot (simpler graphics)
+3. A complex 3D perspective plot (more complex graphics)
 
 For each optimization level, we measure:
 
@@ -23,17 +24,26 @@ For each optimization level, we measure:
 
 ## Test Plots
 
-First, we create two test plots using litedown's default graphics device:
+First, we create test plots using the `png()` device:
 
-```{r create-boxplot}
+```{r create-penguins, fig.cap='Penguin bill length vs flipper length.'}
+par(mar = c(4, 4, 1, 1))
+plot(penguins$flipper_len, penguins$bill_len,
+     pch = 19,
+     xlab = "Flipper Length (mm)",
+     ylab = "Bill Length (mm)")
+```
+
+```{r create-boxplot, fig.cap='Miles per gallon by cylinder count.'}
+par(mar = c(4, 4, 1, 1))
 boxplot(mpg ~ cyl, data = mtcars, 
-        main = "Miles Per Gallon by Cylinder Count",
         xlab = "Number of Cylinders", 
         ylab = "Miles Per Gallon",
         col = c("lightblue", "lightgreen", "lightpink"))
 ```
 
-```{r create-persp}
+```{r create-persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
+par(mar = c(2, 2, 1, 1))
 x = seq(-10, 10, length = 50)
 y = seq(-10, 10, length = 50)
 z = outer(x, y, function(x, y) {
@@ -47,8 +57,7 @@ persp(x, y, z,
       col = "lightblue",
       shade = 0.5,
       ticktype = "detailed",
-      xlab = "X", ylab = "Y", zlab = "Z",
-      main = "Complex 3D Surface: sin(r)/r")
+      xlab = "X", ylab = "Y", zlab = "Z")
 ```
 
 ## Benchmarks
@@ -67,7 +76,16 @@ dir.create(tmp_dir)
 benchmark_file = function(input_file, plot_name) {
   original_size = file.info(input_file)$size
   
-  do.call(rbind, lapply(0:6, function(level) {
+  # Add a row for the raw file (level = -1)
+  raw_row = data.frame(
+    Plot = plot_name,
+    Level = -1L,
+    Size_KB = original_size / 1024,
+    Reduction_pct = 0,
+    Time_sec = 0
+  )
+  
+  optimized_rows = do.call(rbind, lapply(0:6, function(level) {
     output_file = file.path(tmp_dir, sprintf("%s_level_%d.png", plot_name, level))
     
     time_taken = system.time({
@@ -85,110 +103,116 @@ benchmark_file = function(input_file, plot_name) {
       Time_sec = time_taken
     )
   }))
+  
+  rbind(raw_row, optimized_rows)
 }
 
-# Benchmark both plots
+# Benchmark all three plots
 results = rbind(
-  benchmark_file(plot_files[1], "Boxplot"),
-  benchmark_file(plot_files[2], "Persp")
+  benchmark_file(plot_files[1], "Scatterplot"),
+  benchmark_file(plot_files[2], "Boxplot"),
+  benchmark_file(plot_files[3], "Persp")
 )
 
+rownames(results) = NULL
 results
 ```
 
+Note: The optimization level of `-1` represents the raw, unoptimized file (not a valid value for the `level` argument of `optim_png()`). This helps show the effect of `level = 0` more clearly.
+
 ## Visualization
 
-### Size Reduction by Level
+```{r plot-filesize, fig.cap='File size vs optimization level (log scale).'}
+par(mar = c(4, 4, 1, 1))
 
-```{r plot-reduction, fig.width=10, fig.height=5}
-par(mfrow = c(1, 2))
+# Prepare data for all plots
+plot_names = unique(results$Plot)
+pchs = c(19, 17, 15)
 
-boxplot_data = subset(results, Plot == "Boxplot")
-persp_data = subset(results, Plot == "Persp")
+# Calculate y-axis range on log scale
+all_sizes = results$Size_KB
+ylim_range = range(all_sizes)
 
-# Plot 1: File size by optimization level
-plot(boxplot_data$Level, boxplot_data$Size_KB, 
-     type = "b", pch = 19, col = "blue",
+plot(NA, xlim = c(-1, 6), ylim = ylim_range, log = "y",
      xlab = "Optimization Level", 
-     ylab = "File Size (KB)",
-     main = "File Size vs Optimization Level",
-     ylim = range(c(boxplot_data$Size_KB, persp_data$Size_KB)))
-lines(persp_data$Level, persp_data$Size_KB, 
-      type = "b", pch = 17, col = "red")
-legend("topright", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
-grid()
-
-# Plot 2: Processing time by optimization level
-plot(boxplot_data$Level, boxplot_data$Time_sec, 
-     type = "b", pch = 19, col = "blue",
-     xlab = "Optimization Level", 
-     ylab = "Time (seconds)",
-     main = "Processing Time vs Optimization Level",
-     ylim = range(c(boxplot_data$Time_sec, persp_data$Time_sec)))
-lines(persp_data$Level, persp_data$Time_sec, 
-      type = "b", pch = 17, col = "red")
-legend("topleft", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+     ylab = "File Size (KB, log scale)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Level, plot_data$Size_KB, 
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("topright", legend = plot_names, 
+       col = seq_along(plot_names) + 1, 
+       pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
 ```
 
-### Detailed Comparison
+```{r plot-time, fig.cap='Processing time vs optimization level.'}
+par(mar = c(4, 4, 1, 1))
 
-```{r plot-detailed, fig.width=12, fig.height=8}
-par(mfrow = c(2, 2))
+# Calculate y-axis range
+all_times = results$Time_sec
+ylim_range = range(all_times)
 
-# Size reduction percentage
-plot(boxplot_data$Level, boxplot_data$Reduction_pct, 
-     type = "b", pch = 19, col = "blue",
+plot(NA, xlim = c(-1, 6), ylim = ylim_range,
      xlab = "Optimization Level", 
-     ylab = "Size Reduction (%)",
-     main = "Size Reduction Percentage",
-     ylim = range(c(boxplot_data$Reduction_pct, persp_data$Reduction_pct)))
-lines(persp_data$Level, persp_data$Reduction_pct, 
-      type = "b", pch = 17, col = "red")
-legend("topleft", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+     ylab = "Time (seconds)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Level, plot_data$Time_sec, 
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("topleft", legend = plot_names, 
+       col = seq_along(plot_names) + 1, 
+       pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
+```
 
-# Absolute file sizes
-plot(boxplot_data$Level, boxplot_data$Size_KB, 
-     type = "b", pch = 19, col = "blue",
+```{r plot-reduction-pct, fig.cap='Size reduction percentage by optimization level.'}
+par(mar = c(4, 4, 1, 1))
+
+# Calculate y-axis range
+all_reduction = results$Reduction_pct
+ylim_range = range(all_reduction)
+
+plot(NA, xlim = c(-1, 6), ylim = ylim_range,
      xlab = "Optimization Level", 
-     ylab = "File Size (KB)",
-     main = "Absolute File Size",
-     ylim = range(c(boxplot_data$Size_KB, persp_data$Size_KB)))
-lines(persp_data$Level, persp_data$Size_KB, 
-      type = "b", pch = 17, col = "red")
-legend("topright", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
+     ylab = "Size Reduction (%)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Level, plot_data$Reduction_pct, 
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("bottomright", legend = plot_names, 
+       col = seq_along(plot_names) + 1, 
+       pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
+```
 
-# Time comparison
-plot(boxplot_data$Level, boxplot_data$Time_sec, 
-     type = "b", pch = 19, col = "blue",
-     xlab = "Optimization Level", 
-     ylab = "Time (seconds)",
-     main = "Processing Time",
-     ylim = range(c(boxplot_data$Time_sec, persp_data$Time_sec)))
-lines(persp_data$Level, persp_data$Time_sec, 
-      type = "b", pch = 17, col = "red")
-legend("topleft", legend = c("Boxplot", "Persp"), 
-       col = c("blue", "red"), pch = c(19, 17), lty = 1)
-grid()
+```{r plot-size-reduction-bar, fig.cap='Absolute size reduction by optimization level.'}
+par(mar = c(4, 4, 1, 1))
 
-# Bar chart of size reduction by level
-reduction_kb_box = boxplot_data$Size_KB[1] - boxplot_data$Size_KB
-reduction_kb_persp = persp_data$Size_KB[1] - persp_data$Size_KB
-barplot(rbind(reduction_kb_box, reduction_kb_persp),
+# Prepare data for bar chart - reduction from raw (level -1) to each level
+reduction_matrix = do.call(cbind, lapply(plot_names, function(pn) {
+  plot_data = subset(results, Plot == pn)
+  raw_size = plot_data$Size_KB[plot_data$Level == -1]
+  optimized_sizes = plot_data$Size_KB[plot_data$Level >= 0]
+  raw_size - optimized_sizes
+}))
+
+barplot(t(reduction_matrix),
         beside = TRUE,
         names.arg = 0:6,
-        col = c("blue", "red"),
+        col = seq_along(plot_names) + 1,
         xlab = "Optimization Level",
         ylab = "Size Reduction (KB)",
-        main = "Absolute Size Reduction",
-        legend.text = c("Boxplot", "Persp"))
+        legend.text = plot_names,
+        args.legend = list(x = "topleft"))
 grid()
+```
+
+```{r optimize-document-plots, include=FALSE}
+optim_png(litedown::get_context("plot_files"), level = 6)
 ```
 
 ```{r cleanup, include=FALSE}

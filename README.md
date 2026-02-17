@@ -50,7 +50,7 @@ The `level` parameter controls the optimization level (0-6):
 - `2`: Default - good balance between speed and compression
 - `6`: Maximum optimization - best compression but slower
 
-See `?optim_png` for full documentation.
+See the [benchmark results](https://pkg.yihui.org/tinyimg/examples/benchmark.html) for detailed comparisons of optimization levels and `?optim_png` for full documentation.
 
 ## For Package Developers
 
