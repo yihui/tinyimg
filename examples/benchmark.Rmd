@@ -109,7 +109,7 @@ benchmark_file = function(input_file, plot_name) {
 
 # Benchmark all three plots
 results = rbind(
-  benchmark_file(plot_files[1], "Penguins"),
+  benchmark_file(plot_files[1], "Scatterplot"),
   benchmark_file(plot_files[2], "Boxplot"),
   benchmark_file(plot_files[3], "Persp")
 )

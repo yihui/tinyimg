@@ -94,3 +94,52 @@ assert("optim_png works with directory to directory optimization", {
   (dir.exists(output_dir))
   (length(list.files(output_dir, pattern = "\\.png$")) %==% 1L)
 })
+
+# Test verbose output with common parent directory
+test_verbose_dir = tempfile()
+dir.create(test_verbose_dir)
+test_files = character(3)
+for (i in 1:3) {
+  test_files[i] = file.path(test_verbose_dir, paste0("test", i, ".png"))
+  file.copy(create_test_png(), test_files[i])
+}
+
+# Capture verbose output
+verbose_output = capture.output({
+  optim_png(test_files, verbose = TRUE)
+})
+
+assert("verbose output contains truncated paths", {
+  # Verbose output should not contain the full temp directory path
+  # It should show truncated paths like "test1.png", "test2.png", etc.
+  (length(verbose_output) >= 3L)
+  (any(grepl("test1\\.png", verbose_output)))
+  (any(grepl("test2\\.png", verbose_output)))
+  (any(grepl("test3\\.png", verbose_output)))
+})
+
+# Test verbose output with single file (should show basename)
+test_single = create_test_png()
+single_output = capture.output({
+  optim_png(test_single, verbose = TRUE)
+})
+
+assert("verbose output shows basename for single file", {
+  (length(single_output) >= 1L)
+  # Should show just the filename, not the full path
+  (any(grepl(basename(test_single), single_output)))
+})
+
+# Test verbose output with different input/output paths
+test_diff_in = create_test_png()
+test_diff_out = tempfile(fileext = ".png")
+diff_output = capture.output({
+  optim_png(test_diff_in, test_diff_out, verbose = TRUE)
+})
+
+assert("verbose output shows both paths when different", {
+  (length(diff_output) >= 1L)
+  # Should show "input -> output" format
+  (any(grepl("->", diff_output)))
+})
+

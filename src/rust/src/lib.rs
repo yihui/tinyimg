@@ -58,8 +58,8 @@ fn optim_png_impl(
     opts.optimize_alpha = alpha;
     
     // Find common parent directories for display
-    let common_input_prefix = if verbose { find_common_parent(&inputs) } else { String::new() };
-    let common_output_prefix = if verbose { find_common_parent(&outputs) } else { String::new() };
+    let input_truncate_index = if verbose { find_truncate_index(&inputs) } else { 0 };
+    let output_truncate_index = if verbose { find_truncate_index(&outputs) } else { 0 };
     
     // Process each file
     for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
@@ -91,34 +91,24 @@ fn optim_png_impl(
                         let sign = if output_size < input_size { "-" } else { "+" };
                         
                         // Format the display paths
-                        let display_input = format_display_path(input_str, &common_input_prefix, inputs.len() == 1);
-                        let display_output = format_display_path(output_str, &common_output_prefix, outputs.len() == 1);
+                        let display_input = truncate_path(input_str, input_truncate_index);
+                        let display_output = truncate_path(output_str, output_truncate_index);
                         
                         // Build the output message
-                        let message = if input_str == output_str {
-                            // Same path, show only once
-                            format!(
-                                "{} | {} -> {} ({}{:.1}%)",
-                                display_output,
-                                format_bytes(input_size),
-                                format_bytes(output_size),
-                                sign,
-                                reduction.abs()
-                            )
+                        let path_display = if input_str == output_str {
+                            display_output
                         } else {
-                            // Different paths, show both
-                            format!(
-                                "{} -> {} | {} -> {} ({}{:.1}%)",
-                                display_input,
-                                display_output,
-                                format_bytes(input_size),
-                                format_bytes(output_size),
-                                sign,
-                                reduction.abs()
-                            )
+                            format!("{} -> {}", display_input, display_output)
                         };
                         
-                        rprintln!("{}", message);
+                        rprintln!(
+                            "{} | {} -> {} ({}{:.1}%)",
+                            path_display,
+                            format_bytes(input_size),
+                            format_bytes(output_size),
+                            sign,
+                            reduction.abs()
+                        );
                     }
                 }
             },
@@ -131,84 +121,59 @@ fn optim_png_impl(
     Ok(())
 }
 
-/// Find the longest common parent directory of all paths
-fn find_common_parent(paths: &[String]) -> String {
+/// Find the index position to truncate paths
+/// Returns the position after the last common '/' or '\', or 0 if no truncation needed
+fn find_truncate_index(paths: &[String]) -> usize {
     if paths.is_empty() {
-        return String::new();
+        return 0;
     }
     
     if paths.len() == 1 {
-        // For single path, truncate to the last '/'
+        // For single path, find the last '/' or '\'
         let path = &paths[0];
-        let normalized = path.replace('\\', "/");
-        if let Some(pos) = normalized.rfind('/') {
-            return normalized[..pos].to_string();
+        if let Some(pos) = path.rfind(|c| c == '/' || c == '\\') {
+            return pos + 1;
         }
-        return String::new();
+        return 0;
     }
     
-    // Normalize all paths (replace \ with /)
-    let normalized_paths: Vec<String> = paths
-        .iter()
-        .map(|p| p.replace('\\', "/"))
-        .collect();
+    // Find the position of the last '/' or '\' in the first path
+    let first_path = &paths[0];
+    let last_separator = first_path.rfind(|c| c == '/' || c == '\\');
     
-    // Find the position of the last '/' in the first path
-    let first_path = &normalized_paths[0];
-    let last_slash = match first_path.rfind('/') {
-        Some(pos) => pos,
-        None => return String::new(),
-    };
+    if last_separator.is_none() {
+        return 0;
+    }
     
-    // Iterate from the first character to the last '/'
-    for n in 1..=last_slash {
-        let prefix = &first_path[..n];
-        // Check if this prefix is common to all paths
-        if normalized_paths.iter().all(|p| p.starts_with(prefix)) {
-            // Continue to next character
-            continue;
-        } else {
-            // Found a mismatch, return the prefix up to the last '/'
-            if let Some(pos) = prefix[..prefix.len()-1].rfind('/') {
-                return prefix[..pos].to_string();
+    let last_sep_pos = last_separator.unwrap();
+    
+    // Iterate through positions to find the largest common prefix ending at a separator
+    let mut truncate_idx = 0;
+    
+    for pos in 0..=last_sep_pos {
+        let ch = first_path.chars().nth(pos).unwrap();
+        
+        // Check if all paths have the same character at this position
+        if paths.iter().all(|p| p.chars().nth(pos) == Some(ch)) {
+            // If this is a separator, update our truncate index
+            if ch == '/' || ch == '\\' {
+                truncate_idx = pos + 1;
             }
-            return String::new();
+        } else {
+            // Found a mismatch, return the last valid truncate index
+            return truncate_idx;
         }
     }
     
-    // All characters up to last_slash are common
-    first_path[..last_slash].to_string()
+    truncate_idx
 }
 
-/// Format a path for display by removing common prefix or using basename
-fn format_display_path(path: &str, common_prefix: &str, use_basename: bool) -> String {
-    if use_basename {
-        // Single path - use basename only (everything after last '/')
-        let normalized = path.replace('\\', "/");
-        if let Some(pos) = normalized.rfind('/') {
-            return normalized[pos + 1..].to_string();
-        }
+/// Truncate a path by removing the first n characters
+fn truncate_path(path: &str, index: usize) -> String {
+    if index == 0 || index >= path.len() {
         return path.to_string();
     }
-    
-    if common_prefix.is_empty() {
-        return path.to_string();
-    }
-    
-    // Normalize the path
-    let normalized = path.replace('\\', "/");
-    
-    // Remove common prefix
-    if normalized.starts_with(common_prefix) {
-        let mut result = normalized[common_prefix.len()..].to_string();
-        // Remove leading slash if present
-        if result.starts_with('/') {
-            result = result[1..].to_string();
-        }
-        result
-    } else {
-        path.to_string()
-    }
+    path[index..].to_string()
 }
 
 /// Format bytes in human-readable form (similar to xfun::format_bytes)
