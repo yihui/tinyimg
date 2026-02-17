@@ -183,7 +183,7 @@ for (i in seq_along(plot_names)) {
   lines(plot_data$Level, plot_data$Reduction_pct, 
         type = "b", pch = pchs[i], col = i + 1)
 }
-legend("topleft", legend = plot_names, 
+legend("bottomright", legend = plot_names, 
        col = seq_along(plot_names) + 1, 
        pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
@@ -206,7 +206,8 @@ barplot(t(reduction_matrix),
         col = seq_along(plot_names) + 1,
         xlab = "Optimization Level",
         ylab = "Size Reduction (KB)",
-        legend.text = plot_names)
+        legend.text = plot_names,
+        args.legend = list(x = "topleft"))
 grid()
 ```
 
