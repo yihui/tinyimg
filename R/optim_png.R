@@ -21,9 +21,9 @@
 #' @param input Path to the input PNG file or directory. If a directory is provided,
 #'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
 #'   will be optimized.
-#' @param output Path to the output PNG file or directory. If not specified,
-#'   the input file(s) will be overwritten. When optimizing a directory,
-#'   `output` must be a directory path.
+#' @param output Path to the output PNG file or directory, or a function that
+#'   takes an input file path and returns an output path. When optimizing a
+#'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
 #' @param alpha Optimize transparent pixels for better compression. This is
@@ -47,7 +47,7 @@
 #' optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
 #' optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
 optim_png = function(
-  input, output = input, level = 2L, alpha = FALSE, preserve = TRUE,
+  input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE
 ) {
   # Check if input is a directory
@@ -55,7 +55,12 @@ optim_png = function(
     files = list.files(
       input, "\\.a?png$", recursive = recursive, ignore.case = TRUE
     )
-    output_files = file.path(output, files)
+    # If output is a function, use it; otherwise treat as directory
+    if (is.function(output)) {
+      output_files = sapply(file.path(input, files), output)
+    } else {
+      output_files = file.path(output, files)
+    }
     for (i in seq_along(files)) {
       optim_png(
         file.path(input, files[i]), output_files[i], level = level,
@@ -68,12 +73,15 @@ optim_png = function(
   # Validate input file
   if (!file.exists(input)) stop("Input file does not exist: ", input)
 
+  # Determine output path
+  output_path = if (is.function(output)) output(input) else output
+
   # Create output directory if it doesn't exist
-  output_dir = dirname(output)
+  output_dir = dirname(output_path)
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
   # Call Rust function
-  optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
+  optim_png_impl(input, output_path, as.integer(level), alpha, preserve, verbose)
 
-  output
+  output_path
 }
