@@ -21,6 +21,17 @@ $(STATLIB):
 		echo "Extracting vendored dependencies..."; \
 		cd ./rust && tar xf vendor.tar.xz; \
 	fi
+	# Configure cargo to use vendored sources if vendor/ directory exists
+	# The config must be in CARGO_HOME (which we set to $(CARGOTMP) = $(CURDIR)/.cargo)
+	@if [ -d ./rust/vendor ]; then \
+		echo "Configuring cargo to use vendored sources..."; \
+		mkdir -p $(CARGOTMP); \
+		echo '[source.crates-io]' > $(CARGOTMP)/config.toml; \
+		echo 'replace-with = "vendored-sources"' >> $(CARGOTMP)/config.toml; \
+		echo '' >> $(CARGOTMP)/config.toml; \
+		echo '[source.vendored-sources]' >> $(CARGOTMP)/config.toml; \
+		echo 'directory = "rust/vendor"' >> $(CARGOTMP)/config.toml; \
+	fi
 	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
 	# to set it here to ensure that cargo will be found. `rustc --print sysroot`
 	# is a way to get the Rust sysroot without needing cargo itself.

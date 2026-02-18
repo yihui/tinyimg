@@ -18,11 +18,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Yihui Xie \email{xie@yihui.name} (\href{https://orcid.org/0000-0003-0645-5666}{ORCID}) (https://yihui.org)
+\strong{Maintainer}: Yihui Xie \email{xie@yihui.name} (\href{https://orcid.org/0000-0003-0645-5666}{ORCID}) (https://yihui.org) [copyright holder]
 
 Other contributors:
 \itemize{
-  \item Authors of the dependency Rust crates (see AUTHORS file) [contributor]
+  \item Authors of the dependency Rust crates (see AUTHORS file) [contributor, copyright holder]
 }
 
 }
