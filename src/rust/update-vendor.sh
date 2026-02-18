@@ -57,6 +57,41 @@ find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \; 2>/d
 find vendor -type d -name "windows_*_msvc" -exec rm -rf {}/lib/* \; 2>/dev/null || true
 find vendor -type d -name "windows_i686*" -exec rm -rf {}/lib/* \; 2>/dev/null || true
 
+# Fix cargo checksums after removing files
+# When we remove files (like tests/), the .cargo-checksum.json files need to be updated
+# to remove references to the deleted files, otherwise cargo will fail with checksum errors
+echo "Fixing cargo checksums after trimming..."
+find vendor -name ".cargo-checksum.json" -type f | while read -r checksum_file; do
+  # For each checksum file, remove entries for files that no longer exist
+  # We use a temporary Python script for this because JSON manipulation is complex in shell
+  python3 -c "
+import json
+import os
+import sys
+
+checksum_path = '$checksum_file'
+crate_dir = os.path.dirname(checksum_path)
+
+with open(checksum_path, 'r') as f:
+    data = json.load(f)
+
+# Keep only files that actually exist
+if 'files' in data:
+    original_count = len(data['files'])
+    data['files'] = {
+        path: hash_val
+        for path, hash_val in data['files'].items()
+        if os.path.exists(os.path.join(crate_dir, path))
+    }
+    removed_count = original_count - len(data['files'])
+    if removed_count > 0:
+        print(f'  {os.path.basename(crate_dir)}: removed {removed_count} checksum entries', file=sys.stderr)
+
+with open(checksum_path, 'w') as f:
+    json.dump(data, f)
+" 2>&1 || true
+done
+
 # Measure trimmed size (cross-platform compatible)
 VENDOR_SIZE_TRIM_KB=$(du -sk vendor | cut -f1)
 VENDOR_SIZE_TRIM=$((VENDOR_SIZE_TRIM_KB * 1024))
