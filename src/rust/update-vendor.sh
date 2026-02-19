@@ -37,7 +37,8 @@ echo "Original vendor/ size: $VENDOR_SIZE_ORIG_H ($FILE_COUNT_ORIG files)"
 # These include external documentation that's not needed for an R package
 echo "Removing #[doc = include_str!(...)] lines from vendored .rs files..."
 # Use cross-platform sed approach: create .bak files then remove them
-find vendor -name "*.rs" -type f -exec sed -i.bak '/^[[:space:]]*#!\?\[doc[[:space:]]*=[[:space:]]*include_str!/d' {} +
+# Use \; instead of + for compatibility with macOS sed -i
+find vendor -name "*.rs" -type f -exec sed -i.bak '/^[[:space:]]*#!\?\[doc[[:space:]]*=[[:space:]]*include_str!/d' {} \;
 find vendor -name "*.rs.bak" -type f -delete
 
 # Remove .github directories (CI workflows, issue templates)
