@@ -36,63 +36,65 @@ echo "Original vendor/ size: $VENDOR_SIZE_ORIG_H ($FILE_COUNT_ORIG files)"
 # Remove doc include_str lines from Rust source files
 # These include external documentation that's not needed for an R package
 echo "Removing #[doc = include_str!(...)] lines from vendored .rs files..."
-find vendor -name "*.rs" -type f -exec sed -i '/^[[:space:]]*#!\?\[doc[[:space:]]*=[[:space:]]*include_str!/d' {} + 2>/dev/null || true
+# Use cross-platform sed approach: create .bak files then remove them
+find vendor -name "*.rs" -type f -exec sed -i.bak '/^[[:space:]]*#!\?\[doc[[:space:]]*=[[:space:]]*include_str!/d' {} +
+find vendor -name "*.rs.bak" -type f -delete
 
 # Remove .github directories (CI workflows, issue templates)
-find vendor -name ".github" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".github" -type d -prune -exec rm -rf {} +
 
 # Remove CI configuration files
-find vendor -name ".gitlab-ci.yml" -type f -delete 2>/dev/null || true
-find vendor -name ".travis.yml" -type f -delete 2>/dev/null || true
-find vendor -name ".dockerignore" -type f -delete 2>/dev/null || true
-find vendor -name ".cirrus.yml" -type f -delete 2>/dev/null || true
+find vendor -name ".gitlab-ci.yml" -type f -delete
+find vendor -name ".travis.yml" -type f -delete
+find vendor -name ".dockerignore" -type f -delete
+find vendor -name ".cirrus.yml" -type f -delete
 
 # Remove documentation files
-find vendor -name "CHANGELOG*" -type f -delete 2>/dev/null || true
-find vendor -name "CONTRIBUTING*" -type f -delete 2>/dev/null || true
-find vendor -name "CODE_OF_CONDUCT*" -type f -delete 2>/dev/null || true
-find vendor -name "SECURITY*" -type f -delete 2>/dev/null || true
-find vendor -name "NEWS*" -type f -delete 2>/dev/null || true
-find vendor -name "MANUAL*" -type f -delete 2>/dev/null || true
+find vendor -name "CHANGELOG*" -type f -delete
+find vendor -name "CONTRIBUTING*" -type f -delete
+find vendor -name "CODE_OF_CONDUCT*" -type f -delete
+find vendor -name "SECURITY*" -type f -delete
+find vendor -name "NEWS*" -type f -delete
+find vendor -name "MANUAL*" -type f -delete
 
 # Remove all README files (doc include_str lines already removed above)
-find vendor -name "README*" -type f -delete 2>/dev/null || true
+find vendor -name "README*" -type f -delete
 
 # Remove test, benchmark, example, and scripts directories
-find vendor -name "tests" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "benches" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "examples" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "scripts" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "tests" -type d -prune -exec rm -rf {} +
+find vendor -name "benches" -type d -prune -exec rm -rf {} +
+find vendor -name "examples" -type d -prune -exec rm -rf {} +
+find vendor -name "scripts" -type d -prune -exec rm -rf {} +
 
 # Remove all doc directories (doc include_str lines already removed above)
-find vendor -name "doc" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "doc" -type d -prune -exec rm -rf {} +
 
 # Remove development tool configuration files
-find vendor -name "Cargo.toml.orig" -type f -delete 2>/dev/null || true
-find vendor -name "Cargo.lock" -type f -delete 2>/dev/null || true
-find vendor -name ".cargo_vcs_info.json" -type f -delete 2>/dev/null || true
-find vendor -name "clippy.toml" -type f -delete 2>/dev/null || true
-find vendor -name ".rustfmt.toml" -type f -delete 2>/dev/null || true
-find vendor -name "rustfmt.toml" -type f -delete 2>/dev/null || true
-find vendor -name "rust-toolchain.toml" -type f -delete 2>/dev/null || true
-find vendor -name "bors.toml" -type f -delete 2>/dev/null || true
-find vendor -name ".release-plz.toml" -type f -delete 2>/dev/null || true
-find vendor -name "triagebot.toml" -type f -delete 2>/dev/null || true
-find vendor -name "Cross.toml" -type f -delete 2>/dev/null || true
-find vendor -name "deny.toml" -type f -delete 2>/dev/null || true
-find vendor -name ".editorconfig" -type f -delete 2>/dev/null || true
+find vendor -name "Cargo.toml.orig" -type f -delete
+find vendor -name "Cargo.lock" -type f -delete
+find vendor -name ".cargo_vcs_info.json" -type f -delete
+find vendor -name "clippy.toml" -type f -delete
+find vendor -name ".rustfmt.toml" -type f -delete
+find vendor -name "rustfmt.toml" -type f -delete
+find vendor -name "rust-toolchain.toml" -type f -delete
+find vendor -name "bors.toml" -type f -delete
+find vendor -name ".release-plz.toml" -type f -delete
+find vendor -name "triagebot.toml" -type f -delete
+find vendor -name "Cross.toml" -type f -delete
+find vendor -name "deny.toml" -type f -delete
+find vendor -name ".editorconfig" -type f -delete
 
 # Remove git-related files
-find vendor -name ".gitignore" -type f -delete 2>/dev/null || true
-find vendor -name ".git-blame-ignore-revs" -type f -delete 2>/dev/null || true
+find vendor -name ".gitignore" -type f -delete
+find vendor -name ".git-blame-ignore-revs" -type f -delete
 
 # Remove .cargo/ directories from individual crates (not needed for vendored sources)
-find vendor -maxdepth 2 -name ".cargo" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -maxdepth 2 -name ".cargo" -type d -prune -exec rm -rf {} +
 
 # Remove unnecessary Windows lib files (following gifski's approach)
-find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \; 2>/dev/null || true
-find vendor -type d -name "windows_*_msvc" -exec rm -rf {}/lib/* \; 2>/dev/null || true
-find vendor -type d -name "windows_i686*" -exec rm -rf {}/lib/* \; 2>/dev/null || true
+find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \;
+find vendor -type d -name "windows_*_msvc" -exec rm -rf {}/lib/* \;
+find vendor -type d -name "windows_i686*" -exec rm -rf {}/lib/* \;
 
 # Fix cargo checksums after removing/modifying files
 # When we remove or modify files, the .cargo-checksum.json files need to be updated
@@ -147,7 +149,7 @@ if 'files' in data:
 
 with open(checksum_path, 'w') as f:
     json.dump(data, f)
-" 2>&1 || true
+" 2>&1
 done
 
 # Measure trimmed size (cross-platform compatible)
