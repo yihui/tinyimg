@@ -40,17 +40,57 @@ find vendor -name ".github" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 find vendor -name ".gitlab-ci.yml" -type f -delete 2>/dev/null || true
 find vendor -name ".travis.yml" -type f -delete 2>/dev/null || true
 find vendor -name ".dockerignore" -type f -delete 2>/dev/null || true
+find vendor -name ".cirrus.yml" -type f -delete 2>/dev/null || true
 
-# Remove documentation files (but keep LICENSE* and README* as they may be referenced)
+# Remove documentation files
 find vendor -name "CHANGELOG*" -type f -delete 2>/dev/null || true
 find vendor -name "CONTRIBUTING*" -type f -delete 2>/dev/null || true
 find vendor -name "CODE_OF_CONDUCT*" -type f -delete 2>/dev/null || true
 find vendor -name "SECURITY*" -type f -delete 2>/dev/null || true
+find vendor -name "NEWS*" -type f -delete 2>/dev/null || true
+find vendor -name "MANUAL*" -type f -delete 2>/dev/null || true
 
-# Remove test, benchmark, and example directories
+# Remove README files, but keep specific ones that are included in source code via include_str!
+# bitvec, bumpalo, and hashbrown include their README.md in lib.rs documentation
+find vendor -name "README*" -type f \
+  ! -path "vendor/bitvec/README.md" \
+  ! -path "vendor/bumpalo/README.md" \
+  ! -path "vendor/hashbrown/README.md" \
+  -delete 2>/dev/null || true
+
+# Remove test, benchmark, example, and scripts directories
 find vendor -name "tests" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 find vendor -name "benches" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 find vendor -name "examples" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "scripts" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
+# Remove doc directories, but keep bitvec/doc as it's included via include_str!
+find vendor -name "doc" -type d \
+  ! -path "vendor/bitvec/doc" \
+  ! -path "vendor/bitvec/doc/*" \
+  -prune -exec rm -rf {} + 2>/dev/null || true
+
+# Remove development tool configuration files
+find vendor -name "Cargo.toml.orig" -type f -delete 2>/dev/null || true
+find vendor -name "Cargo.lock" -type f -delete 2>/dev/null || true
+find vendor -name ".cargo_vcs_info.json" -type f -delete 2>/dev/null || true
+find vendor -name "clippy.toml" -type f -delete 2>/dev/null || true
+find vendor -name ".rustfmt.toml" -type f -delete 2>/dev/null || true
+find vendor -name "rustfmt.toml" -type f -delete 2>/dev/null || true
+find vendor -name "rust-toolchain.toml" -type f -delete 2>/dev/null || true
+find vendor -name "bors.toml" -type f -delete 2>/dev/null || true
+find vendor -name ".release-plz.toml" -type f -delete 2>/dev/null || true
+find vendor -name "triagebot.toml" -type f -delete 2>/dev/null || true
+find vendor -name "Cross.toml" -type f -delete 2>/dev/null || true
+find vendor -name "deny.toml" -type f -delete 2>/dev/null || true
+find vendor -name ".editorconfig" -type f -delete 2>/dev/null || true
+
+# Remove git-related files
+find vendor -name ".gitignore" -type f -delete 2>/dev/null || true
+find vendor -name ".git-blame-ignore-revs" -type f -delete 2>/dev/null || true
+
+# Remove .cargo/ directories from individual crates (not needed for vendored sources)
+find vendor -maxdepth 2 -name ".cargo" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 
 # Remove unnecessary Windows lib files (following gifski's approach)
 find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \; 2>/dev/null || true
