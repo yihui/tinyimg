@@ -33,81 +33,81 @@ echo ""
 echo "Step 4: Trimming non-essential files from vendored crates..."
 echo "Original vendor/ size: $VENDOR_SIZE_ORIG_H ($FILE_COUNT_ORIG files)"
 
+# Remove doc include_str lines from Rust source files
+# These include external documentation that's not needed for an R package
+echo "Removing #[doc = include_str!(...)] lines from vendored .rs files..."
+# Use perl for cross-platform compatibility (works on both Linux and macOS)
+# Perl's -i flag works consistently across platforms
+find vendor -name "*.rs" -type f -exec perl -i -pe 's/^[\s\t]*#!?\[doc\s*=\s*include_str!.*$//g' {} \;
+
 # Remove .github directories (CI workflows, issue templates)
-find vendor -name ".github" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name ".github" -type d -prune -exec rm -rf {} +
 
 # Remove CI configuration files
-find vendor -name ".gitlab-ci.yml" -type f -delete 2>/dev/null || true
-find vendor -name ".travis.yml" -type f -delete 2>/dev/null || true
-find vendor -name ".dockerignore" -type f -delete 2>/dev/null || true
-find vendor -name ".cirrus.yml" -type f -delete 2>/dev/null || true
+find vendor -name ".gitlab-ci.yml" -type f -delete
+find vendor -name ".travis.yml" -type f -delete
+find vendor -name ".dockerignore" -type f -delete
+find vendor -name ".cirrus.yml" -type f -delete
 
 # Remove documentation files
-find vendor -name "CHANGELOG*" -type f -delete 2>/dev/null || true
-find vendor -name "CONTRIBUTING*" -type f -delete 2>/dev/null || true
-find vendor -name "CODE_OF_CONDUCT*" -type f -delete 2>/dev/null || true
-find vendor -name "SECURITY*" -type f -delete 2>/dev/null || true
-find vendor -name "NEWS*" -type f -delete 2>/dev/null || true
-find vendor -name "MANUAL*" -type f -delete 2>/dev/null || true
+find vendor -name "CHANGELOG*" -type f -delete
+find vendor -name "CONTRIBUTING*" -type f -delete
+find vendor -name "CODE_OF_CONDUCT*" -type f -delete
+find vendor -name "SECURITY*" -type f -delete
+find vendor -name "NEWS*" -type f -delete
+find vendor -name "MANUAL*" -type f -delete
 
-# Remove README files, but keep specific ones that are included in source code via include_str!
-# bitvec, bumpalo, and hashbrown include their README.md in lib.rs documentation
-find vendor -name "README*" -type f \
-  ! -path "vendor/bitvec/README.md" \
-  ! -path "vendor/bumpalo/README.md" \
-  ! -path "vendor/hashbrown/README.md" \
-  -delete 2>/dev/null || true
+# Remove all README files (doc include_str lines already removed above)
+find vendor -name "README*" -type f -delete
 
 # Remove test, benchmark, example, and scripts directories
-find vendor -name "tests" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "benches" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "examples" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find vendor -name "scripts" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -name "tests" -type d -prune -exec rm -rf {} +
+find vendor -name "benches" -type d -prune -exec rm -rf {} +
+find vendor -name "examples" -type d -prune -exec rm -rf {} +
+find vendor -name "scripts" -type d -prune -exec rm -rf {} +
 
-# Remove doc directories, but keep bitvec/doc as it's included via include_str!
-find vendor -name "doc" -type d \
-  ! -path "vendor/bitvec/doc" \
-  ! -path "vendor/bitvec/doc/*" \
-  -prune -exec rm -rf {} + 2>/dev/null || true
+# Remove all doc directories (doc include_str lines already removed above)
+find vendor -name "doc" -type d -prune -exec rm -rf {} +
 
 # Remove development tool configuration files
-find vendor -name "Cargo.toml.orig" -type f -delete 2>/dev/null || true
-find vendor -name "Cargo.lock" -type f -delete 2>/dev/null || true
-find vendor -name ".cargo_vcs_info.json" -type f -delete 2>/dev/null || true
-find vendor -name "clippy.toml" -type f -delete 2>/dev/null || true
-find vendor -name ".rustfmt.toml" -type f -delete 2>/dev/null || true
-find vendor -name "rustfmt.toml" -type f -delete 2>/dev/null || true
-find vendor -name "rust-toolchain.toml" -type f -delete 2>/dev/null || true
-find vendor -name "bors.toml" -type f -delete 2>/dev/null || true
-find vendor -name ".release-plz.toml" -type f -delete 2>/dev/null || true
-find vendor -name "triagebot.toml" -type f -delete 2>/dev/null || true
-find vendor -name "Cross.toml" -type f -delete 2>/dev/null || true
-find vendor -name "deny.toml" -type f -delete 2>/dev/null || true
-find vendor -name ".editorconfig" -type f -delete 2>/dev/null || true
+find vendor -name "Cargo.toml.orig" -type f -delete
+find vendor -name "Cargo.lock" -type f -delete
+find vendor -name ".cargo_vcs_info.json" -type f -delete
+find vendor -name "clippy.toml" -type f -delete
+find vendor -name ".rustfmt.toml" -type f -delete
+find vendor -name "rustfmt.toml" -type f -delete
+find vendor -name "rust-toolchain.toml" -type f -delete
+find vendor -name "bors.toml" -type f -delete
+find vendor -name ".release-plz.toml" -type f -delete
+find vendor -name "triagebot.toml" -type f -delete
+find vendor -name "Cross.toml" -type f -delete
+find vendor -name "deny.toml" -type f -delete
+find vendor -name ".editorconfig" -type f -delete
 
 # Remove git-related files
-find vendor -name ".gitignore" -type f -delete 2>/dev/null || true
-find vendor -name ".git-blame-ignore-revs" -type f -delete 2>/dev/null || true
+find vendor -name ".gitignore" -type f -delete
+find vendor -name ".git-blame-ignore-revs" -type f -delete
 
 # Remove .cargo/ directories from individual crates (not needed for vendored sources)
-find vendor -maxdepth 2 -name ".cargo" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find vendor -maxdepth 2 -name ".cargo" -type d -prune -exec rm -rf {} +
 
 # Remove unnecessary Windows lib files (following gifski's approach)
-find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \; 2>/dev/null || true
-find vendor -type d -name "windows_*_msvc" -exec rm -rf {}/lib/* \; 2>/dev/null || true
-find vendor -type d -name "windows_i686*" -exec rm -rf {}/lib/* \; 2>/dev/null || true
+find vendor -type d -name "windows_x86_64_gnullvm" -exec rm -rf {}/lib/* \;
+find vendor -type d -name "windows_*_msvc" -exec rm -rf {}/lib/* \;
+find vendor -type d -name "windows_i686*" -exec rm -rf {}/lib/* \;
 
-# Fix cargo checksums after removing files
-# When we remove files (like tests/), the .cargo-checksum.json files need to be updated
-# to remove references to the deleted files, otherwise cargo will fail with checksum errors
+# Fix cargo checksums after removing/modifying files
+# When we remove or modify files, the .cargo-checksum.json files need to be updated
+# to remove references to deleted files and recalculate hashes for modified files
 echo "Fixing cargo checksums after trimming..."
 find vendor -name ".cargo-checksum.json" -type f | while read -r checksum_file; do
-  # For each checksum file, remove entries for files that no longer exist
+  # For each checksum file, remove entries for deleted files and recalculate for modified files
   # We use a temporary Python script for this because JSON manipulation is complex in shell
   python3 -c "
 import json
 import os
 import sys
+import hashlib
 
 checksum_path = '$checksum_file'
 crate_dir = os.path.dirname(checksum_path)
@@ -115,21 +115,41 @@ crate_dir = os.path.dirname(checksum_path)
 with open(checksum_path, 'r') as f:
     data = json.load(f)
 
-# Keep only files that actually exist
+# Update files dict: keep only existing files and recalculate their checksums
 if 'files' in data:
     original_count = len(data['files'])
-    data['files'] = {
-        path: hash_val
-        for path, hash_val in data['files'].items()
-        if os.path.exists(os.path.join(crate_dir, path))
-    }
-    removed_count = original_count - len(data['files'])
-    if removed_count > 0:
-        print(f'  {os.path.basename(crate_dir)}: removed {removed_count} checksum entries', file=sys.stderr)
+    new_files = {}
+    removed_count = 0
+    updated_count = 0
+    
+    for path, old_hash in data['files'].items():
+        file_path = os.path.join(crate_dir, path)
+        if os.path.exists(file_path):
+            # Calculate current checksum
+            with open(file_path, 'rb') as f:
+                content = f.read()
+                new_hash = hashlib.sha256(content).hexdigest()
+            new_files[path] = new_hash
+            if new_hash != old_hash:
+                updated_count += 1
+        else:
+            removed_count += 1
+    
+    data['files'] = new_files
+    
+    if removed_count > 0 or updated_count > 0:
+        msg = f'  {os.path.basename(crate_dir)}:'
+        if removed_count > 0:
+            msg += f' removed {removed_count} entries'
+        if updated_count > 0:
+            if removed_count > 0:
+                msg += ','
+            msg += f' updated {updated_count} checksums'
+        print(msg, file=sys.stderr)
 
 with open(checksum_path, 'w') as f:
     json.dump(data, f)
-" 2>&1 || true
+" 2>&1
 done
 
 # Measure trimmed size (cross-platform compatible)
