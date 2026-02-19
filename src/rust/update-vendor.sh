@@ -36,10 +36,9 @@ echo "Original vendor/ size: $VENDOR_SIZE_ORIG_H ($FILE_COUNT_ORIG files)"
 # Remove doc include_str lines from Rust source files
 # These include external documentation that's not needed for an R package
 echo "Removing #[doc = include_str!(...)] lines from vendored .rs files..."
-# Use cross-platform sed approach: create .bak files then remove them
-# Use \; instead of + for compatibility with macOS sed -i
-find vendor -name "*.rs" -type f -exec sed -i.bak '/^[[:space:]]*#!\?\[doc[[:space:]]*=[[:space:]]*include_str!/d' {} \;
-find vendor -name "*.rs.bak" -type f -delete
+# Use perl for cross-platform compatibility (works on both Linux and macOS)
+# Perl's -i flag works consistently across platforms
+find vendor -name "*.rs" -type f -exec perl -i -pe 's/^[\s\t]*#!?\[doc\s*=\s*include_str!.*$//g' {} \;
 
 # Remove .github directories (CI workflows, issue templates)
 find vendor -name ".github" -type d -prune -exec rm -rf {} +
