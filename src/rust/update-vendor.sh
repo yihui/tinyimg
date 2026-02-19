@@ -48,17 +48,30 @@ find vendor -name ".gitlab-ci.yml" -type f -delete
 find vendor -name ".travis.yml" -type f -delete
 find vendor -name ".dockerignore" -type f -delete
 find vendor -name ".cirrus.yml" -type f -delete
+find vendor -name "*.ps1" -type f -delete
 
-# Remove documentation files
-find vendor -name "CHANGELOG*" -type f -delete
-find vendor -name "CONTRIBUTING*" -type f -delete
-find vendor -name "CODE_OF_CONDUCT*" -type f -delete
-find vendor -name "SECURITY*" -type f -delete
-find vendor -name "NEWS*" -type f -delete
-find vendor -name "MANUAL*" -type f -delete
+# Remove documentation files (case-insensitive to catch e.g. changelog.md)
+find vendor -iname "changelog*" -type f -delete
+find vendor -iname "contributing*" -type f -delete
+find vendor -iname "contributors*" -type f -delete
+find vendor -iname "code_of_conduct*" -type f -delete
+find vendor -iname "code-of-conduct*" -type f -delete
+find vendor -iname "security*" -type f -delete
+find vendor -iname "news*" -type f -delete
+find vendor -iname "manual*" -type f -delete
+find vendor -iname "releases*" -type f -delete
+find vendor -iname "maintainers*" -type f -delete
+find vendor -iname "spec.md" -type f -delete
+find vendor -iname "nonapi.txt" -type f -delete
+
+# Remove cmake and pkg-config build system files (not used by Rust/cc builds)
+find vendor -name "CMakeLists.txt" -type f -delete
+find vendor -name "*.cmake.in" -type f -delete
+find vendor -name "*.pc.in" -type f -delete
+find vendor -name "*.h.in" -type f -delete
 
 # Remove all README files (doc include_str lines already removed above)
-find vendor -name "README*" -type f -delete
+find vendor -iname "readme*" -type f -delete
 
 # Remove test, benchmark, example, and scripts directories
 find vendor -name "tests" -type d -prune -exec rm -rf {} +
