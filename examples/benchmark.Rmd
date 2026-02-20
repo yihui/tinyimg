@@ -126,29 +126,32 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 lossy_levels = c(0, 0.25, 0.5, 0.75, 1)
 plot_names = c("Scatterplot", "Boxplot", "Persp")
 lossy_files = list()
+lossy_rows = list()
 
-lossy_results = do.call(rbind, lapply(seq_along(plot_files), function(i) {
+for (i in seq_along(plot_files)) {
   input_file = plot_files[i]
   plot_name = plot_names[i]
   original_size = file.info(input_file)$size
-  do.call(rbind, lapply(lossy_levels, function(lossy) {
+  lossy_files[[plot_name]] = list()
+  for (lossy in lossy_levels) {
     output_file = file.path(
       tmp_dir, sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy))
     )
     time_taken = system.time({
       tinypng(input_file, output = output_file, level = 6, lossy = lossy)
     })["elapsed"]
-    lossy_files[[plot_name]][[as.character(lossy)]] <<- output_file
+    lossy_files[[plot_name]][[as.character(lossy)]] = output_file
     new_size = file.info(output_file)$size
-    data.frame(
+    lossy_rows[[length(lossy_rows) + 1L]] = data.frame(
       Plot = plot_name,
       Lossy = lossy,
       Size_KB = new_size / 1024,
       Reduction_pct = ((original_size - new_size) / original_size) * 100,
       Time_sec = time_taken
     )
-  }))
-}))
+  }
+}
+lossy_results = do.call(rbind, lossy_rows)
 
 rownames(lossy_results) = NULL
 lossy_results

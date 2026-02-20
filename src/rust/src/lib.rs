@@ -79,7 +79,7 @@ fn optim_png_impl(
             .unwrap_or(0);
         
         // Optional lossy preprocessing before lossless optimization
-        let optimize_result: Result<()> = if lossy > 0.0 {
+        match if lossy > 0.0 {
             let lossy_data = apply_lossy_png(&input_path, lossy)?;
             let optimized_data = oxipng::optimize_from_memory(&lossy_data, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
@@ -96,9 +96,8 @@ fn optim_png_impl(
                 preserve_attrs: preserve,
             };
             oxipng::optimize(&in_file, &out_file, &opts)
-                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e).into())
-        };
-        match optimize_result {
+                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))
+        } {
             Ok(_) => {
                 // Get output file size for reporting
                 if verbose {
@@ -133,7 +132,7 @@ fn optim_png_impl(
                 }
             },
             Err(e) => {
-                return Err(e);
+                return Err(e.into());
             },
         }
     }
@@ -151,9 +150,7 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .collect();
     const MAX_COLORS: f64 = 256.0;
     const MIN_COLORS: f64 = 16.0;
-    let num_colors = ((1.0 - lossy) * (MAX_COLORS - MIN_COLORS) + MIN_COLORS)
-        .round()
-        .clamp(MIN_COLORS, MAX_COLORS) as usize;
+    let num_colors = ((1.0 - lossy) * (MAX_COLORS - MIN_COLORS) + MIN_COLORS).round() as usize;
     let (palette, indexed) = convert_to_indexed(
         &pixels,
         image.width,
@@ -169,7 +166,7 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         })
         .collect();
     lodepng::encode32(&quantized, image.width, image.height)
-        .map_err(|e| format!("Failed to write PNG {}: {}", input.display(), e).into())
+        .map_err(|e| format!("Failed to encode PNG {}: {}", input.display(), e).into())
 }
 
 fn preserve_file_attrs(input: &PathBuf, output: &PathBuf) -> Result<()> {
