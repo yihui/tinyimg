@@ -2,6 +2,7 @@ use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Optimize PNG files using oxipng
 ///
@@ -30,6 +31,9 @@ fn optim_png_impl(
     // Validate that input and output have same length
     if inputs.len() != outputs.len() {
         return Err("Input and output vectors must have the same length".into());
+    }
+    if !(0..=4).contains(&lossy) {
+        return Err("Lossy level must be in 0..=4".into());
     }
     
     // Check all input files exist before processing any
@@ -75,9 +79,12 @@ fn optim_png_impl(
             .unwrap_or(0);
         
         // Optional lossy preprocessing before lossless optimization
+        let mut lossy_temp_file = None;
         let optimized_input_path = if lossy > 0 {
-            apply_lossy_png(&input_path, &output_path, lossy)?;
-            output_path.clone()
+            let temp_path = lossy_temp_path();
+            apply_lossy_png(&input_path, &temp_path, lossy)?;
+            lossy_temp_file = Some(temp_path.clone());
+            temp_path
         } else {
             input_path.clone()
         };
@@ -89,7 +96,11 @@ fn optim_png_impl(
             preserve_attrs: preserve,
         };
         
-        match oxipng::optimize(&in_file, &out_file, &opts) {
+        let optimize_result = oxipng::optimize(&in_file, &out_file, &opts);
+        if let Some(temp_path) = lossy_temp_file {
+            let _ = std::fs::remove_file(temp_path);
+        }
+        match optimize_result {
             Ok(_) => {
                 // Get output file size for reporting
                 if verbose {
@@ -140,6 +151,8 @@ fn apply_lossy_png(input: &PathBuf, output: &PathBuf, lossy: i32) -> Result<()> 
         .iter()
         .map(|p| Color::new(p.r, p.g, p.b, p.a))
         .collect();
+    // Keep a small number of lossy levels with progressively stronger palette
+    // reduction while maintaining reasonable visual quality by default.
     let num_colors = match lossy {
         1 => 192,
         2 => 128,
@@ -163,6 +176,14 @@ fn apply_lossy_png(input: &PathBuf, output: &PathBuf, lossy: i32) -> Result<()> 
     lodepng::encode32_file(output, &quantized, image.width, image.height)
         .map_err(|e| format!("Failed to write PNG {}: {}", output.display(), e))?;
     Ok(())
+}
+
+fn lossy_temp_path() -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    std::env::temp_dir().join(format!("tinyimg-lossy-{}-{}.png", std::process::id(), nanos))
 }
 
 /// Find the index position to truncate paths

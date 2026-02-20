@@ -52,8 +52,9 @@ tinypng = function(
   } else {
     if (is.function(output)) output = output(input)
   }
-  if (!(length(lossy) == 1 && !is.na(lossy) && lossy %% 1 == 0 && lossy >= 0 &&
-      lossy <= 4)) stop("`lossy` must be an integer from 0 to 4.")
+  valid_lossy = length(lossy) == 1 && !is.na(lossy) && lossy %% 1 == 0 &&
+    lossy >= 0 && lossy <= 4
+  if (!valid_lossy) stop("`lossy` must be an integer from 0 to 4.")
   if (length(input))
     optim_png_impl(
       input, output, as.integer(level), alpha, preserve, verbose, as.integer(lossy)

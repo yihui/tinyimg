@@ -24,7 +24,7 @@ assert("optim_png ran successfully", {
   (file.exists(test_png))
 })
 
-assert("tinypng is an alias of optim_png", {
+assert("optim_png is an alias of tinypng", {
   test_png_alias_out = tempfile(fileext = ".png")
   (tinypng(test_png, test_png_alias_out) %==% test_png_alias_out)
   (file.exists(test_png_alias_out))
