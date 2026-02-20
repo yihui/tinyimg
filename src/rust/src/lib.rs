@@ -150,6 +150,7 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .collect();
     const MAX_COLORS: f64 = 256.0;
     const MIN_COLORS: f64 = 16.0;
+    // lossy = 0 -> 256 colors; lossy = 1 -> 16 colors; linearly interpolate.
     let num_colors = ((1.0 - lossy) * (MAX_COLORS - MIN_COLORS) + MIN_COLORS).round() as usize;
     let (palette, indexed) = convert_to_indexed(
         &pixels,
@@ -166,7 +167,7 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         })
         .collect();
     lodepng::encode32(&quantized, image.width, image.height)
-        .map_err(|e| format!("Failed to encode PNG {}: {}", input.display(), e).into())
+        .map_err(|e| format!("Failed to encode quantized PNG data: {}", e).into())
 }
 
 fn preserve_file_attrs(input: &PathBuf, output: &PathBuf) -> Result<()> {
