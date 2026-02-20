@@ -64,6 +64,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
+name = "exoquant"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5048aeecde83b7455a63b44aa54da5321d6171cff2adb8a5959849e142e5e4aa"
+
+[[package]]
 name = "extendr-api"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -164,6 +170,16 @@ dependencies = [
  "bitflags",
  "libc",
  "redox_syscall",
+]
+
+[[package]]
+name = "lodepng"
+version = "2.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ecbab7bd925638b68d6c2e0bf35769f879c5f5a238601d6660e62707d5d50c"
+dependencies = [
+ "libc",
+ "rgb",
 ]
 
 [[package]]
@@ -281,7 +297,9 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 name = "tinyimg"
 version = "0.1.0"
 dependencies = [
+ "exoquant",
  "extendr-api",
+ "lodepng",
  "oxipng",
 ]
 

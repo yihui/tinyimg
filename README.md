@@ -6,7 +6,7 @@
 
 <!-- badges: end -->
 
-An R package for optimizing and compressing images using Rust libraries. Currently supports PNG optimization via the [oxipng](https://github.com/oxipng/oxipng) crate.
+An R package for optimizing and compressing images using Rust libraries. Currently supports PNG optimization via [exoquant](https://github.com/exoticorn/exoquant-rs) (lossy palette reduction) and [oxipng](https://github.com/oxipng/oxipng) (lossless optimization).
 
 ## Installation
 
@@ -31,8 +31,9 @@ plot(1:10)
 dev.off()
 
 # Optimize with different levels
-optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
-optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
+tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
+tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
+tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 3)
 ```
 
 ### Directory optimization

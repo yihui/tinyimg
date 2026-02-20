@@ -1,6 +1,7 @@
 #' Optimize PNG images
 #'
-#' Optimize PNG files or directories of PNG files using lossless compression.
+#' Optimize PNG files or directories of PNG files using optional lossy palette
+#' reduction and dithering before lossless compression.
 #'
 #' @param input Path to the input PNG file or directory. If a directory is provided,
 #'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
@@ -10,11 +11,14 @@
 #'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
+#' @param lossy Lossy optimization level (0-4). `0` disables lossy optimization.
+#'   Higher values reduce the color palette more aggressively and apply dithering.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
 #' @param preserve Preserve file permissions and timestamps.
 #' @param recursive When `input` is a directory, recursively process subdirectories.
 #' @param verbose Print file size reduction info for each file.
+#' @param ... Arguments passed to `tinypng()`.
 #'
 #' @return Character vector of output file paths (invisibly).
 #' @export
@@ -27,11 +31,13 @@
 #' dev.off()
 #'
 #' # Optimize with different levels
-#' optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
-#' optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
-optim_png = function(
+#' tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
+#' tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
+#' tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 3)
+#' @export
+tinypng = function(
   input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
-  recursive = TRUE, verbose = TRUE
+  recursive = TRUE, verbose = TRUE, lossy = 0L
 ) {
   # Resolve directory input to PNG file paths
   if (length(input) == 1 && dir.exists(input)) {
@@ -46,7 +52,15 @@ optim_png = function(
   } else {
     if (is.function(output)) output = output(input)
   }
+  if (!(length(lossy) == 1 && !is.na(lossy) && lossy %% 1 == 0 && lossy >= 0 &&
+      lossy <= 4)) stop("`lossy` must be an integer from 0 to 4.")
   if (length(input))
-    optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
+    optim_png_impl(
+      input, output, as.integer(level), alpha, preserve, verbose, as.integer(lossy)
+    )
   invisible(output)
 }
+
+#' @rdname tinypng
+#' @export
+optim_png = function(...) tinypng(...)

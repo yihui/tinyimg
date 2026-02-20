@@ -8,6 +8,7 @@ This file lists the authors of the Rust crates vendored in this package.
 - bytemuck: Lokathor <zefria@gmail.com>
 - cc: Alex Crichton <alex@alexcrichton.com>
 - cfg-if: Alex Crichton <alex@alexcrichton.com>
+- exoquant: Dennis Ranke <dennis.ranke@gmail.com>
 - filetime: Alex Crichton <alex@alexcrichton.com>
 - funty: myrrlyn <self@myrrlyn.dev>
 - hashbrown: Amanieu d'Antras <amanieu@gmail.com>
@@ -15,6 +16,8 @@ This file lists the authors of the Rust crates vendored in this package.
 - libdeflate-sys: Adam Kewley <contact@adamkewley.com>
 - libdeflater: Adam Kewley <contact@adamkewley.com>
 - libredox: 4lDO2 <4lDO2@protonmail.com>
+- lodepng: Kornel <kornel@geekhood.net>
+- lodepng: Lode Vandevenne <lvandeve@gmail.com>
 - log: The Rust Project Developers
 - once_cell: Aleksey Kladov <aleksey.kladov@gmail.com>
 - oxipng: Joshua Holmer <jholmer.in@gmail.com>

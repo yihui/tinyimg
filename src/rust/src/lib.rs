@@ -1,4 +1,5 @@
 use extendr_api::prelude::*;
+use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
 
@@ -10,6 +11,7 @@ use std::path::PathBuf;
 /// @param alpha Optimize transparent pixels (may be lossy but visually lossless)
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
+/// @param lossy Lossy optimization level (0-4)
 /// @export
 #[extendr]
 fn optim_png_impl(
@@ -19,6 +21,7 @@ fn optim_png_impl(
     alpha: bool,
     preserve: bool,
     verbose: bool,
+    lossy: i32,
 ) -> Result<()> {
     // Convert to vectors
     let inputs: Vec<String> = input.iter().map(|s| s.to_string()).collect();
@@ -71,8 +74,16 @@ fn optim_png_impl(
             .map(|m| m.len())
             .unwrap_or(0);
         
+        // Optional lossy preprocessing before lossless optimization
+        let optimized_input_path = if lossy > 0 {
+            apply_lossy_png(&input_path, &output_path, lossy)?;
+            output_path.clone()
+        } else {
+            input_path.clone()
+        };
+
         // Run optimization
-        let in_file = InFile::Path(input_path.clone());
+        let in_file = InFile::Path(optimized_input_path);
         let out_file = OutFile::Path {
             path: Some(output_path.clone()),
             preserve_attrs: preserve,
@@ -118,6 +129,39 @@ fn optim_png_impl(
         }
     }
     
+    Ok(())
+}
+
+fn apply_lossy_png(input: &PathBuf, output: &PathBuf, lossy: i32) -> Result<()> {
+    let image = lodepng::decode32_file(input)
+        .map_err(|e| format!("Failed to read PNG {}: {}", input.display(), e))?;
+    let pixels: Vec<Color> = image
+        .buffer
+        .iter()
+        .map(|p| Color::new(p.r, p.g, p.b, p.a))
+        .collect();
+    let num_colors = match lossy {
+        1 => 192,
+        2 => 128,
+        3 => 96,
+        _ => 64,
+    };
+    let (palette, indexed) = convert_to_indexed(
+        &pixels,
+        image.width,
+        num_colors,
+        &optimizer::KMeans,
+        &ditherer::Ordered,
+    );
+    let quantized: Vec<lodepng::RGBA> = indexed
+        .iter()
+        .map(|&idx| {
+            let c = palette[idx as usize];
+            lodepng::RGBA::new(c.r, c.g, c.b, c.a)
+        })
+        .collect();
+    lodepng::encode32_file(output, &quantized, image.width, image.height)
+        .map_err(|e| format!("Failed to write PNG {}: {}", output.display(), e))?;
     Ok(())
 }
 
