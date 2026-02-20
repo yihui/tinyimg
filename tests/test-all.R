@@ -24,12 +24,6 @@ assert("optim_png ran successfully", {
   (file.exists(test_png))
 })
 
-assert("optim_png is an alias of tinypng", {
-  test_png_alias_out = tempfile(fileext = ".png")
-  (tinypng(test_png, test_png_alias_out) %==% test_png_alias_out)
-  (file.exists(test_png_alias_out))
-})
-
 # Test that optim_png works with output parameter
 assert("optim_png created output file", {
   test_png_out = tempfile(fileext = ".png")
@@ -50,8 +44,12 @@ assert("optim_png works with level = 6", {
 
 assert("tinypng works with lossy optimization", {
   test_png_lossy_out = tempfile(fileext = ".png")
-  tinypng(test_png, test_png_lossy_out, lossy = 3)
+  tinypng(test_png, test_png_lossy_out, lossy = 0.5)
   (file.exists(test_png_lossy_out))
+})
+
+assert("tinypng validates lossy range", {
+  (has_error(tinypng(test_png, lossy = 1.1)))
 })
 
 # Test that optim_png fails with non-existent file

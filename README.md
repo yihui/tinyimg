@@ -33,7 +33,7 @@ dev.off()
 # Optimize with different levels
 tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
 tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
-tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 3)
+tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 0.5)
 ```
 
 ### Directory optimization

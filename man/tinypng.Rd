@@ -13,7 +13,7 @@ tinypng(
   preserve = TRUE,
   recursive = TRUE,
   verbose = TRUE,
-  lossy = 0L
+  lossy = 0
 )
 
 optim_png(...)
@@ -39,8 +39,8 @@ technically lossy but visually lossless.}
 
 \item{verbose}{Print file size reduction info for each file.}
 
-\item{lossy}{Lossy optimization level (0-4). \code{0} disables lossy optimization.
-Higher values reduce the color palette more aggressively and apply dithering.}
+\item{lossy}{Lossy optimization percentage in \verb{[0, 1]}. \code{0} disables lossy
+optimization, and \code{1} uses the smallest palette.}
 
 \item{...}{Arguments passed to \code{tinypng()}.}
 }
@@ -61,5 +61,5 @@ dev.off()
 # Optimize with different levels
 tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
 tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
-tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 3)
+tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 0.5)
 }

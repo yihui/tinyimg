@@ -1,5 +1,5 @@
 ---
-title: "`optim_png()` Benchmarks"
+title: "`tinypng()` Benchmarks"
 ---
 
 ```{r}
@@ -10,7 +10,7 @@ options(xfun.md_table.limit = Inf)
 
 ## Overview
 
-This document benchmarks the `optim_png()` function from the **tinyimg** package
+This document benchmarks the `tinypng()` function from the **tinyimg** package
 across different optimization levels (0-6). We test with three types of plots:
 
 1. A scatterplot based on the penguins dataset
@@ -89,7 +89,7 @@ benchmark_file = function(input_file, plot_name) {
     output_file = file.path(tmp_dir, sprintf("%s_level_%d.png", plot_name, level))
     
     time_taken = system.time({
-      optim_png(input_file, output = output_file, level = level)
+      tinypng(input_file, output = output_file, level = level)
     })["elapsed"]
     
     new_size = file.info(output_file)$size
@@ -118,7 +118,54 @@ rownames(results) = NULL
 results
 ```
 
-Note: The optimization level of `-1` represents the raw, unoptimized file (not a valid value for the `level` argument of `optim_png()`). This helps show the effect of `level = 0` more clearly.
+Note: The optimization level of `-1` represents the raw, unoptimized file (not a valid value for the `level` argument of `tinypng()`). This helps show the effect of `level = 0` more clearly.
+
+## Lossy Optimization
+
+```{r lossy-benchmark}
+lossy_levels = c(0, 0.25, 0.5, 0.75, 1)
+plot_names = c("Scatterplot", "Boxplot", "Persp")
+lossy_files = list()
+
+lossy_results = do.call(rbind, lapply(seq_along(plot_files), function(i) {
+  input_file = plot_files[i]
+  plot_name = plot_names[i]
+  original_size = file.info(input_file)$size
+  do.call(rbind, lapply(lossy_levels, function(lossy) {
+    output_file = file.path(
+      tmp_dir, sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy))
+    )
+    time_taken = system.time({
+      tinypng(input_file, output = output_file, level = 6, lossy = lossy)
+    })["elapsed"]
+    lossy_files[[plot_name]][[as.character(lossy)]] <<- output_file
+    new_size = file.info(output_file)$size
+    data.frame(
+      Plot = plot_name,
+      Lossy = lossy,
+      Size_KB = new_size / 1024,
+      Reduction_pct = ((original_size - new_size) / original_size) * 100,
+      Time_sec = time_taken
+    )
+  }))
+}))
+
+rownames(lossy_results) = NULL
+lossy_results
+```
+
+### Visual comparison {.tabset}
+
+```{r lossy-images, results='asis'}
+for (plot_name in names(lossy_files)) {
+  cat("#### ", plot_name, " {.tabset}\n\n", sep = "")
+  for (lossy in names(lossy_files[[plot_name]])) {
+    img = lossy_files[[plot_name]][[lossy]]
+    cat("##### lossy = ", lossy, "\n\n", sep = "")
+    cat("![](", xfun::base64_uri(img), ")\n\n", sep = "")
+  }
+}
+```
 
 ## Visualization
 
@@ -212,7 +259,7 @@ grid()
 ```
 
 ```{r optimize-document-plots, include=FALSE}
-optim_png(litedown::get_context("plot_files"), level = 6)
+tinypng(litedown::get_context("plot_files"), level = 6)
 ```
 
 ```{r cleanup, include=FALSE}

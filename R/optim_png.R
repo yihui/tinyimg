@@ -11,8 +11,8 @@
 #'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
-#' @param lossy Lossy optimization level (0-4). `0` disables lossy optimization.
-#'   Higher values reduce the color palette more aggressively and apply dithering.
+#' @param lossy Lossy optimization percentage in `[0, 1]`. `0` disables lossy
+#'   optimization, and `1` uses the smallest palette.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
 #' @param preserve Preserve file permissions and timestamps.
@@ -33,11 +33,11 @@
 #' # Optimize with different levels
 #' tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
 #' tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
-#' tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 3)
+#' tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 0.5)
 #' @export
 tinypng = function(
   input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
-  recursive = TRUE, verbose = TRUE, lossy = 0L
+  recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
   # Resolve directory input to PNG file paths
   if (length(input) == 1 && dir.exists(input)) {
@@ -52,12 +52,11 @@ tinypng = function(
   } else {
     if (is.function(output)) output = output(input)
   }
-  valid_lossy = length(lossy) == 1 && !is.na(lossy) && lossy %% 1 == 0 &&
-    lossy >= 0 && lossy <= 4
-  if (!valid_lossy) stop("`lossy` must be an integer from 0 to 4.")
+  valid_lossy = length(lossy) == 1 && is.finite(lossy) && lossy >= 0 && lossy <= 1
+  if (!valid_lossy) stop("`lossy` must be a number in [0, 1].")
   if (length(input))
     optim_png_impl(
-      input, output, as.integer(level), alpha, preserve, verbose, as.integer(lossy)
+      input, output, as.integer(level), alpha, preserve, verbose, as.numeric(lossy)
     )
   invisible(output)
 }

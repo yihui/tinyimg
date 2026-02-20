@@ -1,8 +1,8 @@
 use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
+use filetime::{set_file_times, FileTime};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Optimize PNG files using oxipng
 ///
@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// @param alpha Optimize transparent pixels (may be lossy but visually lossless)
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
-/// @param lossy Lossy optimization level (0-4)
+/// @param lossy Lossy optimization percentage (0-1)
 /// @export
 #[extendr]
 fn optim_png_impl(
@@ -22,7 +22,7 @@ fn optim_png_impl(
     alpha: bool,
     preserve: bool,
     verbose: bool,
-    lossy: i32,
+    lossy: f64,
 ) -> Result<()> {
     // Convert to vectors
     let inputs: Vec<String> = input.iter().map(|s| s.to_string()).collect();
@@ -32,8 +32,8 @@ fn optim_png_impl(
     if inputs.len() != outputs.len() {
         return Err("Input and output vectors must have the same length".into());
     }
-    if !(0..=4).contains(&lossy) {
-        return Err("Lossy level must be in 0..=4".into());
+    if !lossy.is_finite() || !(0.0..=1.0).contains(&lossy) {
+        return Err("Lossy level must be in 0..=1".into());
     }
     
     // Check all input files exist before processing any
@@ -79,27 +79,25 @@ fn optim_png_impl(
             .unwrap_or(0);
         
         // Optional lossy preprocessing before lossless optimization
-        let mut lossy_temp_file = None;
-        let optimized_input_path = if lossy > 0 {
-            let temp_path = lossy_temp_path();
-            apply_lossy_png(&input_path, &temp_path, lossy)?;
-            lossy_temp_file = Some(temp_path.clone());
-            temp_path
+        let optimize_result: Result<()> = if lossy > 0.0 {
+            let lossy_data = apply_lossy_png(&input_path, lossy)?;
+            let optimized_data = oxipng::optimize_from_memory(&lossy_data, &opts)
+                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
+            std::fs::write(&output_path, optimized_data)
+                .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
+            if preserve {
+                preserve_file_attrs(&input_path, &output_path)?;
+            }
+            Ok(())
         } else {
-            input_path.clone()
+            let in_file = InFile::Path(input_path.clone());
+            let out_file = OutFile::Path {
+                path: Some(output_path.clone()),
+                preserve_attrs: preserve,
+            };
+            oxipng::optimize(&in_file, &out_file, &opts)
+                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e).into())
         };
-
-        // Run optimization
-        let in_file = InFile::Path(optimized_input_path);
-        let out_file = OutFile::Path {
-            path: Some(output_path.clone()),
-            preserve_attrs: preserve,
-        };
-        
-        let optimize_result = oxipng::optimize(&in_file, &out_file, &opts);
-        if let Some(temp_path) = lossy_temp_file {
-            let _ = std::fs::remove_file(temp_path);
-        }
         match optimize_result {
             Ok(_) => {
                 // Get output file size for reporting
@@ -135,7 +133,7 @@ fn optim_png_impl(
                 }
             },
             Err(e) => {
-                return Err(format!("Failed to optimize {}: {}", input_path.display(), e).into());
+                return Err(e);
             },
         }
     }
@@ -143,7 +141,7 @@ fn optim_png_impl(
     Ok(())
 }
 
-fn apply_lossy_png(input: &PathBuf, output: &PathBuf, lossy: i32) -> Result<()> {
+fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
     let image = lodepng::decode32_file(input)
         .map_err(|e| format!("Failed to read PNG {}: {}", input.display(), e))?;
     let pixels: Vec<Color> = image
@@ -151,14 +149,11 @@ fn apply_lossy_png(input: &PathBuf, output: &PathBuf, lossy: i32) -> Result<()> 
         .iter()
         .map(|p| Color::new(p.r, p.g, p.b, p.a))
         .collect();
-    // Keep a small number of lossy levels with progressively stronger palette
-    // reduction while maintaining reasonable visual quality by default.
-    let num_colors = match lossy {
-        1 => 192,
-        2 => 128,
-        3 => 96,
-        _ => 64,
-    };
+    const MAX_COLORS: f64 = 256.0;
+    const MIN_COLORS: f64 = 16.0;
+    let num_colors = ((1.0 - lossy) * (MAX_COLORS - MIN_COLORS) + MIN_COLORS)
+        .round()
+        .clamp(MIN_COLORS, MAX_COLORS) as usize;
     let (palette, indexed) = convert_to_indexed(
         &pixels,
         image.width,
@@ -173,17 +168,20 @@ fn apply_lossy_png(input: &PathBuf, output: &PathBuf, lossy: i32) -> Result<()> 
             lodepng::RGBA::new(c.r, c.g, c.b, c.a)
         })
         .collect();
-    lodepng::encode32_file(output, &quantized, image.width, image.height)
-        .map_err(|e| format!("Failed to write PNG {}: {}", output.display(), e))?;
-    Ok(())
+    lodepng::encode32(&quantized, image.width, image.height)
+        .map_err(|e| format!("Failed to write PNG {}: {}", input.display(), e).into())
 }
 
-fn lossy_temp_path() -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    std::env::temp_dir().join(format!("tinyimg-lossy-{}-{}.png", std::process::id(), nanos))
+fn preserve_file_attrs(input: &PathBuf, output: &PathBuf) -> Result<()> {
+    let metadata = std::fs::metadata(input)
+        .map_err(|e| format!("Failed to read metadata {}: {}", input.display(), e))?;
+    std::fs::set_permissions(output, metadata.permissions())
+        .map_err(|e| format!("Failed to preserve permissions {}: {}", output.display(), e))?;
+    let atime = FileTime::from_last_access_time(&metadata);
+    let mtime = FileTime::from_last_modification_time(&metadata);
+    set_file_times(output, atime, mtime)
+        .map_err(|e| format!("Failed to preserve timestamps {}: {}", output.display(), e))?;
+    Ok(())
 }
 
 /// Find the index position to truncate paths

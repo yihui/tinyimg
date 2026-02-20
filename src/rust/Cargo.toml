@@ -12,6 +12,7 @@ extendr-api = "0.7"
 oxipng = { version = "9.1", default-features = false, features = ["filetime", "zopfli"] }
 exoquant = "0.2.0"
 lodepng = "2.7.3"
+filetime = "0.2"
 
 [profile.release]
 opt-level = 3
