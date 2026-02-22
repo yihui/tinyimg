@@ -1,6 +1,5 @@
 use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
-use filetime::{set_file_times, FileTime};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
 
@@ -13,6 +12,8 @@ use std::path::PathBuf;
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
 /// @param lossy Lossy optimization percentage (0-1)
+/// @param optimizer Lossy optimizer
+/// @param ditherer Lossy ditherer
 /// @export
 #[extendr]
 fn optim_png_impl(
@@ -23,6 +24,8 @@ fn optim_png_impl(
     preserve: bool,
     verbose: bool,
     lossy: f64,
+    optimizer: String,
+    ditherer: String,
 ) -> Result<()> {
     // Convert to vectors
     let inputs: Vec<String> = input.iter().map(|s| s.to_string()).collect();
@@ -80,14 +83,11 @@ fn optim_png_impl(
         
         // Optional lossy preprocessing before lossless optimization
         match if lossy > 0.0 {
-            let lossy_data = apply_lossy_png(&input_path, lossy)?;
+            let lossy_data = apply_lossy_png(&input_path, lossy, &optimizer, &ditherer)?;
             let optimized_data = oxipng::optimize_from_memory(&lossy_data, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
             std::fs::write(&output_path, optimized_data)
                 .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
-            if preserve {
-                preserve_file_attrs(&input_path, &output_path)?;
-            }
             Ok(())
         } else {
             let in_file = InFile::Path(input_path.clone());
@@ -140,7 +140,7 @@ fn optim_png_impl(
     Ok(())
 }
 
-fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
+fn apply_lossy_png(input: &PathBuf, lossy: f64, optimizer_name: &str, ditherer_name: &str) -> Result<Vec<u8>> {
     let image = lodepng::decode32_file(input)
         .map_err(|e| format!("Failed to read PNG {}: {}", input.display(), e))?;
     let pixels: Vec<Color> = image
@@ -154,13 +154,9 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
     let num_colors = ((1.0 - lossy) * (MAX_COLORS - MIN_COLORS) + MIN_COLORS)
         .round()
         .clamp(MIN_COLORS, MAX_COLORS) as usize;
-    let (palette, indexed) = convert_to_indexed(
-        &pixels,
-        image.width,
-        num_colors,
-        &optimizer::KMeans,
-        &ditherer::Ordered,
-    );
+    let optimizer = parse_optimizer(optimizer_name)?;
+    let ditherer = parse_ditherer(ditherer_name)?;
+    let (palette, indexed) = quantize_with_choices(&pixels, image.width, num_colors, optimizer, ditherer);
     let quantized: Vec<lodepng::RGBA> = indexed
         .iter()
         .map(|&idx| {
@@ -172,16 +168,112 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .map_err(|e| format!("Failed to encode quantized PNG data: {}", e).into())
 }
 
-fn preserve_file_attrs(input: &PathBuf, output: &PathBuf) -> Result<()> {
-    let metadata = std::fs::metadata(input)
-        .map_err(|e| format!("Failed to read metadata {}: {}", input.display(), e))?;
-    std::fs::set_permissions(output, metadata.permissions())
-        .map_err(|e| format!("Failed to preserve permissions {}: {}", output.display(), e))?;
-    let atime = FileTime::from_last_access_time(&metadata);
-    let mtime = FileTime::from_last_modification_time(&metadata);
-    set_file_times(output, atime, mtime)
-        .map_err(|e| format!("Failed to preserve timestamps {}: {}", output.display(), e))?;
-    Ok(())
+#[derive(Copy, Clone)]
+enum OptimizerChoice {
+    None,
+    KMeans,
+    WeightedKMeans,
+}
+
+#[derive(Copy, Clone)]
+enum DithererChoice {
+    None,
+    Ordered,
+    FloydSteinberg,
+    FloydSteinbergVanilla,
+    FloydSteinbergCheckered,
+}
+
+fn parse_optimizer(name: &str) -> Result<OptimizerChoice> {
+    let name = name.to_ascii_lowercase();
+    match name.as_str() {
+        "none" => Ok(OptimizerChoice::None),
+        "kmeans" => Ok(OptimizerChoice::KMeans),
+        "weightedkmeans" => Ok(OptimizerChoice::WeightedKMeans),
+        _ => Err(format!("Unknown optimizer '{}'", name).into()),
+    }
+}
+
+fn parse_ditherer(name: &str) -> Result<DithererChoice> {
+    let name = name.to_ascii_lowercase();
+    match name.as_str() {
+        "none" => Ok(DithererChoice::None),
+        "ordered" => Ok(DithererChoice::Ordered),
+        "floydsteinberg" => Ok(DithererChoice::FloydSteinberg),
+        "floydsteinbergvanilla" => Ok(DithererChoice::FloydSteinbergVanilla),
+        "floydsteinbergcheckered" => Ok(DithererChoice::FloydSteinbergCheckered),
+        _ => Err(format!("Unknown ditherer '{}'", name).into()),
+    }
+}
+
+fn quantize_with_choices(
+    pixels: &[Color],
+    width: usize,
+    num_colors: usize,
+    optimizer_choice: OptimizerChoice,
+    ditherer_choice: DithererChoice,
+) -> (Vec<Color>, Vec<u8>) {
+    match optimizer_choice {
+        OptimizerChoice::None => {
+            let o = optimizer::None;
+            quantize_with_ditherer(pixels, width, num_colors, &o, ditherer_choice)
+        }
+        OptimizerChoice::KMeans => {
+            let o = optimizer::KMeans;
+            quantize_with_ditherer(pixels, width, num_colors, &o, ditherer_choice)
+        }
+        OptimizerChoice::WeightedKMeans => {
+            let o = optimizer::WeightedKMeans;
+            quantize_with_ditherer(pixels, width, num_colors, &o, ditherer_choice)
+        }
+    }
+}
+
+fn quantize_with_ditherer<O: optimizer::Optimizer>(
+    pixels: &[Color],
+    width: usize,
+    num_colors: usize,
+    optimizer: &O,
+    ditherer_choice: DithererChoice,
+) -> (Vec<Color>, Vec<u8>) {
+    match ditherer_choice {
+        DithererChoice::None => {
+            let d = ditherer::None;
+            convert_to_indexed(pixels, width, num_colors, optimizer, &d)
+        }
+        DithererChoice::Ordered => {
+            let d = ditherer::Ordered;
+            convert_to_indexed(pixels, width, num_colors, optimizer, &d)
+        }
+        DithererChoice::FloydSteinberg => {
+            let d = ditherer::FloydSteinberg::new();
+            convert_to_indexed(pixels, width, num_colors, optimizer, &d)
+        }
+        DithererChoice::FloydSteinbergVanilla => {
+            let d = ditherer::FloydSteinberg::vanilla();
+            convert_to_indexed(pixels, width, num_colors, optimizer, &d)
+        }
+        DithererChoice::FloydSteinbergCheckered => {
+            let d = ditherer::FloydSteinberg::checkered();
+            convert_to_indexed(pixels, width, num_colors, optimizer, &d)
+        }
+    }
+}
+
+/// Get available lossy options.
+#[extendr]
+fn optim_png_lossy_choices_impl() -> List {
+    list!(
+        optimizer = r!(vec!["KMeans", "WeightedKMeans", "None"]),
+        ditherer = r!(vec![
+            "Ordered",
+            "FloydSteinberg",
+            "FloydSteinbergVanilla",
+            "FloydSteinbergCheckered",
+            "None"
+        ]),
+        default = list!(level = 0.0, optimizer = "KMeans", ditherer = "Ordered")
+    )
 }
 
 /// Find the index position to truncate paths
@@ -255,4 +347,5 @@ fn format_bytes(bytes: u64) -> String {
 extendr_module! {
     mod tinyimg;
     fn optim_png_impl;
+    fn optim_png_lossy_choices_impl;
 }

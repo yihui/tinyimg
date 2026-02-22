@@ -299,7 +299,6 @@ version = "0.1.0"
 dependencies = [
  "exoquant",
  "extendr-api",
- "filetime",
  "lodepng",
  "oxipng",
 ]

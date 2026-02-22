@@ -5,11 +5,13 @@
 
 // Forward declaration of Rust wrapper function
 // Mark as visible to override C_VISIBILITY setting
-attribute_visible SEXP wrap__optim_png_impl(SEXP input, SEXP output, SEXP level, SEXP alpha, SEXP preserve, SEXP verbose, SEXP lossy);
+attribute_visible SEXP wrap__optim_png_impl(SEXP input, SEXP output, SEXP level, SEXP alpha, SEXP preserve, SEXP verbose, SEXP lossy, SEXP optimizer, SEXP ditherer);
+attribute_visible SEXP wrap__optim_png_lossy_choices_impl(void);
 
 // Registration table for R's .Call interface
 static const R_CallMethodDef CallEntries[] = {
-    {"wrap__optim_png_impl", (DL_FUNC) &wrap__optim_png_impl, 7},
+    {"wrap__optim_png_impl", (DL_FUNC) &wrap__optim_png_impl, 9},
+    {"wrap__optim_png_lossy_choices_impl", (DL_FUNC) &wrap__optim_png_lossy_choices_impl, 0},
     {NULL, NULL, 0}
 };
 

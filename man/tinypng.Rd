@@ -33,14 +33,16 @@ compression but take longer.}
 \item{alpha}{Optimize transparent pixels for better compression. This is
 technically lossy but visually lossless.}
 
-\item{preserve}{Preserve file permissions and timestamps.}
+\item{preserve}{Preserve file permissions and timestamps. Ignored when
+lossy optimization is enabled (\code{lossy > 0}).}
 
 \item{recursive}{When \code{input} is a directory, recursively process subdirectories.}
 
 \item{verbose}{Print file size reduction info for each file.}
 
-\item{lossy}{Lossy optimization percentage in \verb{[0, 1]}. \code{0} disables lossy
-optimization, and \code{1} uses the smallest palette.}
+\item{lossy}{A numeric percentage in \verb{[0, 1]}, or a list with components
+\code{level}, \code{optimizer}, and \code{ditherer}. Numeric input is equivalent to
+\code{list(level = lossy, optimizer = "KMeans", ditherer = "Ordered")}.}
 
 \item{...}{Arguments passed to \code{tinypng()}.}
 }

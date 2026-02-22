@@ -11,11 +11,13 @@
 #'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
-#' @param lossy Lossy optimization percentage in `[0, 1]`. `0` disables lossy
-#'   optimization, and `1` uses the smallest palette.
+#' @param lossy A numeric percentage in `[0, 1]`, or a list with components
+#'   `level`, `optimizer`, and `ditherer`. Numeric input is equivalent to
+#'   `list(level = lossy, optimizer = "KMeans", ditherer = "Ordered")`.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
-#' @param preserve Preserve file permissions and timestamps.
+#' @param preserve Preserve file permissions and timestamps. Ignored when
+#'   lossy optimization is enabled (`lossy > 0`).
 #' @param recursive When `input` is a directory, recursively process subdirectories.
 #' @param verbose Print file size reduction info for each file.
 #' @param ... Arguments passed to `tinypng()`.
@@ -52,15 +54,35 @@ tinypng = function(
   } else {
     if (is.function(output)) output = output(input)
   }
-  valid_lossy = length(lossy) == 1 && is.finite(lossy) && lossy >= 0 && lossy <= 1
-  if (!valid_lossy) stop("`lossy` must be a number in [0, 1].")
+  if (is.list(lossy)) {
+    lossy = list(
+      level = lossy$level %||% 0,
+      optimizer = lossy$optimizer %||% "KMeans",
+      ditherer = lossy$ditherer %||% "Ordered"
+    )
+  } else {
+    lossy = list(level = lossy, optimizer = "KMeans", ditherer = "Ordered")
+  }
   if (length(input))
     optim_png_impl(
-      input, output, as.integer(level), alpha, preserve, verbose, as.numeric(lossy)
+      input, output, as.integer(level), alpha, preserve, verbose,
+      as.numeric(lossy$level), as.character(lossy$optimizer), as.character(lossy$ditherer)
     )
   invisible(output)
+}
+
+#' Get available lossy optimization methods
+#'
+#' Return available optimizer and ditherer choices for `tinypng(lossy = ...)`.
+#'
+#' @return A list containing vectors `optimizer` and `ditherer`, plus `default`.
+#' @export
+lossy_choices = function() {
+  optim_png_lossy_choices_impl()
 }
 
 #' @rdname tinypng
 #' @export
 optim_png = function(...) tinypng(...)
+
+`%||%` = function(x, y) if (is.null(x)) y else x
