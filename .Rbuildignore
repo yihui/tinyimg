@@ -5,7 +5,6 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^rust/target$
-^src/rust/update-vendor\.sh$
 ^src/rust/vendor$
 ^src/rust/\.cargo$
 ^examples$

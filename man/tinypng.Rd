@@ -34,15 +34,15 @@ compression but take longer.}
 technically lossy but visually lossless.}
 
 \item{preserve}{Preserve file permissions and timestamps. Ignored when
-lossy optimization is enabled (\code{lossy > 0}).}
+lossy optimization is enabled (\code{lossy = TRUE} or \code{lossy > 0}).}
 
 \item{recursive}{When \code{input} is a directory, recursively process subdirectories.}
 
 \item{verbose}{Print file size reduction info for each file.}
 
-\item{lossy}{A numeric percentage in \verb{[0, 1]}, or a list with components
-\code{level}, \code{optimizer}, and \code{ditherer}. Numeric input is equivalent to
-\code{list(level = lossy, optimizer = "KMeans", ditherer = "Ordered")}.}
+\item{lossy}{A numeric percentage in \verb{[0, 1]}, or \code{TRUE} for automatic
+detection of the palette size from the input image. \code{0} means no lossy
+optimization.}
 
 \item{...}{Arguments passed to \code{tinypng()}.}
 }

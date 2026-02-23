@@ -48,19 +48,10 @@ assert("tinypng works with lossy optimization", {
   (file.exists(test_png_lossy_out))
 })
 
-assert("tinypng supports lossy list options", {
-  test_png_lossy_list_out = tempfile(fileext = ".png")
-  tinypng(test_png, test_png_lossy_list_out, lossy = list(
-    level = 0.5, optimizer = "WeightedKMeans", ditherer = "None"
-  ))
-  (file.exists(test_png_lossy_list_out))
-})
-
-assert("lossy_choices returns methods", {
-  methods = lossy_choices()
-  (all(c("optimizer", "ditherer", "default") %in% names(methods)))
-  ("KMeans" %in% methods$optimizer)
-  ("Ordered" %in% methods$ditherer)
+assert("tinypng supports lossy auto mode", {
+  test_png_lossy_auto_out = tempfile(fileext = ".png")
+  tinypng(test_png, test_png_lossy_auto_out, lossy = TRUE)
+  (file.exists(test_png_lossy_auto_out))
 })
 
 assert("tinypng validates lossy range", {

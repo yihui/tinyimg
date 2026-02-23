@@ -135,10 +135,10 @@ for (i in seq_along(plot_files)) {
   lossy_files[[plot_name]] = list()
   for (lossy in lossy_levels) {
     output_file = file.path(
-      tmp_dir, sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy))
+      dirname(input_file), sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy))
     )
     time_taken = system.time({
-      tinypng(input_file, output = output_file, level = 6, lossy = lossy)
+      tinypng(input_file, output = output_file, lossy = lossy)
     })["elapsed"]
     lossy_files[[plot_name]][[as.character(lossy)]] = output_file
     new_size = file.info(output_file)$size
@@ -165,7 +165,7 @@ for (plot_name in names(lossy_files)) {
   for (lossy in names(lossy_files[[plot_name]])) {
     img = lossy_files[[plot_name]][[lossy]]
     cat("##### lossy = ", lossy, "\n\n", sep = "")
-    cat("![](", xfun::base64_uri(img), ")\n\n", sep = "")
+    cat("![](", img, ")\n\n", sep = "")
   }
 }
 ```
