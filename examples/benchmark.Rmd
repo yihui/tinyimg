@@ -129,7 +129,10 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 
 ```{r lossy-benchmark}
 lossy_levels = c(0, 0.25, 0.5, 0.75, 1)
-lossy_inputs = c(as.list(lossy_levels), list(TRUE))
+lossy_inputs = c(
+  lapply(lossy_levels, function(x) list(label = as.character(x), value = x)),
+  list(list(label = "TRUE", value = TRUE))
+)
 plot_names = c("Scatterplot", "Boxplot", "Persp")
 lossy_files = list()
 lossy_rows = list()
@@ -140,20 +143,21 @@ for (i in seq_along(plot_files)) {
   original_size = file.info(input_file)$size
   lossy_files[[plot_name]] = list()
   for (lossy in lossy_inputs) {
-    lossy_label = if (isTRUE(lossy)) "TRUE" else as.character(lossy)
+    lossy_label = lossy$label
+    lossy_value = lossy$value
     output_file = file.path(
       dirname(input_file),
       sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", tolower(lossy_label)))
     )
     time_taken = system.time({
-      tinypng(input_file, output = output_file, lossy = lossy)
+      tinypng(input_file, output = output_file, lossy = lossy_value)
     })["elapsed"]
     lossy_files[[plot_name]][[lossy_label]] = output_file
     new_size = file.info(output_file)$size
     lossy_rows[[length(lossy_rows) + 1L]] = data.frame(
       Plot = plot_name,
       Lossy = lossy_label,
-      LossyNum = if (isTRUE(lossy)) NA_real_ else as.numeric(lossy),
+      LossyNum = if (isTRUE(lossy_value)) NA_real_ else as.numeric(lossy_value),
       Size_KB = new_size / 1024,
       Reduction_pct = ((original_size - new_size) / original_size) * 100,
       Time_sec = time_taken
