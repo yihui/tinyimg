@@ -31,7 +31,7 @@ if [ ! -d "src/rust/vendor" ] && [ ! -f "src/rust/vendor.tar.xz" ]; then
     ./src/rust/update-vendor.sh
     echo "Vendor directory created successfully"
   else
-    echo "Warning: update-vendor.sh not found. Cargo will fetch from crates.io"
+    echo "Note: update-vendor.sh not found. Cargo will fetch from crates.io"
   fi
 fi
 

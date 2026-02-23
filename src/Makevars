@@ -13,7 +13,7 @@ CARGOTMP = $(CURDIR)/.cargo
 $(STATLIB):
 	# Report rustc version for R CMD check (per CRAN policy)
 	@echo "Using Rust compiler:"
-	@rustc --version || echo "rustc not found in PATH"
+	@PATH="$(PATH):$(HOME)/.cargo/bin" rustc --version || echo "rustc not found in PATH"
 	# Extract vendored dependencies if present (for CRAN releases)
 	@if [ -f ./rust/vendor.tar.xz ]; then \
 		echo "Extracting vendored dependencies..."; \
@@ -33,9 +33,16 @@ $(STATLIB):
 	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
 	# to set it here to ensure that cargo will be found. `rustc --print sysroot`
 	# is a way to get the Rust sysroot without needing cargo itself.
+	# Keep Rust/C build targets consistent on macOS to avoid linker warnings about
+	# object files built for newer macOS versions.
 	# Limit to 2 jobs per CRAN policy (cargo build -j defaults to number of logical CPUs)
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
+		if [ -n "$$MACOSX_DEPLOYMENT_TARGET" ]; then \
+			export CFLAGS="$$CFLAGS -mmacos-version-min=$$MACOSX_DEPLOYMENT_TARGET"; \
+			export CXXFLAGS="$$CXXFLAGS -mmacos-version-min=$$MACOSX_DEPLOYMENT_TARGET"; \
+			export RUSTFLAGS="$$RUSTFLAGS -C link-arg=-mmacos-version-min=$$MACOSX_DEPLOYMENT_TARGET"; \
+		fi && \
 		cargo build --lib --release --jobs 2 --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
 	rm -Rf $(CARGOTMP) && \
 		rm -Rf $(LIBDIR)/build && \

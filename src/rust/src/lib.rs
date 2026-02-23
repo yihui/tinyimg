@@ -148,7 +148,7 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64, auto_lossy: bool) -> Result<Vec<
         .map(|p| Color::new(p.r, p.g, p.b, p.a))
         .collect();
     const MAX_COLORS: f64 = 256.0;
-    const MIN_COLORS: f64 = 16.0;
+    const MIN_COLORS: f64 = 2.0;
     let num_colors = if auto_lossy {
         estimate_palette_size(&pixels)
     } else {
