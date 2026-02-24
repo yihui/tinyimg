@@ -131,7 +131,7 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 ## Lossy Optimization
 
 ```{r lossy-benchmark}
-lossy_levels = c(0, 0.01, 0.03, 0.06, 0.1, 0.2, 0.35, 0.55, 0.75, 1)
+lossy_levels = c(0, 0.5, 1, 1.5, 2.3, 3, 4, 6, 10, 16, 32)
 plot_names = c("Scatterplot", "Boxplot", "Persp")
 lossy_files = list()
 lossy_rows = list()
@@ -209,7 +209,7 @@ grid()
 
 ```{r plot-filesize-lossy, fig.cap='File size vs lossy level.'}
 par(mar = c(4, 4, 1, 1))
-plot(NA, xlim = c(0, 1), ylim = range(lossy_results$Size_KB), log = "y",
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Size_KB), log = "y",
      xlab = "Lossy Level", ylab = "File Size (KB, log scale)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(lossy_results, Plot == plot_names[i])
@@ -244,14 +244,14 @@ grid()
 
 ```{r plot-time-lossy, fig.cap='Processing time vs lossy level.'}
 par(mar = c(4, 4, 1, 1))
-plot(NA, xlim = c(0, 1), ylim = range(lossy_results$Time_sec),
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Time_sec),
      xlab = "Lossy Level", ylab = "Time (seconds)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(lossy_results, Plot == plot_names[i])
   lines(plot_data$Lossy, plot_data$Time_sec,
         type = "b", pch = pchs[i], col = i + 1)
 }
-legend("topleft", legend = plot_names,
+legend("bottomright", legend = plot_names,
        col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
 ```
@@ -279,7 +279,7 @@ grid()
 
 ```{r plot-reduction-pct-lossy, fig.cap='Size reduction percentage by lossy level.'}
 par(mar = c(4, 4, 1, 1))
-plot(NA, xlim = c(0, 1), ylim = range(lossy_results$Reduction_pct),
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Reduction_pct),
      xlab = "Lossy Level", ylab = "Size Reduction (%)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(lossy_results, Plot == plot_names[i])

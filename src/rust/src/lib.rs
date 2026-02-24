@@ -11,7 +11,7 @@ use std::path::PathBuf;
 /// @param alpha Optimize transparent pixels (may be lossy but visually lossless)
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
-/// @param lossy Lossy optimization percentage (0-1)
+/// @param lossy Maximum CIE76 Delta E threshold
 /// @export
 #[extendr]
 fn optim_png_impl(
@@ -31,8 +31,8 @@ fn optim_png_impl(
     if inputs.len() != outputs.len() {
         return Err("Input and output vectors must have the same length".into());
     }
-    if !lossy.is_finite() || !(0.0..=1.0).contains(&lossy) {
-        return Err("Lossy level must be in 0..=1".into());
+    if !lossy.is_finite() {
+        return Err("Lossy must be a finite number".into());
     }
     
     // Check all input files exist before processing any
@@ -158,10 +158,8 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
     let mut order: Vec<usize> = (0..palette.len()).collect();
     order.sort_by(|&a, &b| freq[b].cmp(&freq[a]));
 
-    // Map lossy to a perceptual threshold in CIE76 Delta E:
-    // ~2.3 is a common just-noticeable-difference (JND) baseline, and we
-    // increase tolerance quadratically with lossy for smoother control near 0.
-    let max_de = 2.3 + 20.0 * lossy * lossy;
+    // lossy is used directly as the CIE76 Delta E threshold.
+    let max_de = lossy;
     let palette_lab: Vec<[f64; 3]> = palette.iter().map(|c| to_lab(*c)).collect();
 
     // Find minimal N such that worst palette reconstruction error <= threshold.

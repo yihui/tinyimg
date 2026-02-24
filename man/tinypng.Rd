@@ -40,9 +40,23 @@ lossy optimization is enabled (\code{lossy > 0}).}
 
 \item{verbose}{Print file size reduction info for each file.}
 
-\item{lossy}{A numeric percentage in \verb{[0, 1]}, or \code{NA} for automatic
-detection of the palette size from the input image. \code{0} means no lossy
-optimization.}
+\item{lossy}{A numeric Delta E threshold for perceptual color error in lossy
+preprocessing. Values \code{<= 0} mean lossless optimization only.
+
+The lossy algorithm first quantizes to 256 colors, then uses CIE Lab
+Delta E to find the smallest palette size whose worst reconstruction error
+is below \code{lossy}.
+
+Rough interpretation of Delta E values (CIE76):
+\itemize{
+\item \verb{< 1}: typically imperceptible
+\item \code{1 - 2}: perceptible through close inspection
+\item \code{2 - 10}: perceptible at a glance
+\item \code{10 - 50}: strong perceptual difference
+\item \verb{> 50}: very large color shift
+}
+
+In theory Delta E can exceed 100 (up to around 374 for extreme RGB pairs).}
 
 \item{...}{Arguments passed to \code{tinypng()}.}
 }

@@ -5,11 +5,10 @@
   - First quantize at 256 colors and sort palette entries by frequency.
   - Select the smallest palette size whose worst color reconstruction error
     is under a Delta E threshold mapped from `lossy`.
-- `tinypng()` now keeps `lossy` as a numeric parameter in `[0, 1]` (no `lossy = NA` mode).
+- `tinypng()` now interprets `lossy` as a Delta E threshold (arbitrary numeric);
+  values `lossy <= 0` use a lossless-only path.
 - Added `tinypng()` as the primary API and kept `optim_png()` as a wrapper alias.
 - Updated benchmark examples for lossy optimization results, visual comparisons, and lossy-level plots.
-- Added `.gitattributes` rule to mark `src/rust/update-vendor.sh` as linguist-vendored.
-- Updated build/configure messaging and macOS build flag handling to avoid misleading warnings.
 
 # CHANGES IN tinyimg VERSION 0.2
 

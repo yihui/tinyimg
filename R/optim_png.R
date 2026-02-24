@@ -11,8 +11,21 @@
 #'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
-#' @param lossy A numeric percentage in `[0, 1]`, where `0` means no lossy
-#'   optimization.
+#' @param lossy A numeric Delta E threshold for perceptual color error in lossy
+#'   preprocessing. Values `<= 0` mean lossless optimization only.
+#'
+#'   The lossy algorithm first quantizes to 256 colors, then uses CIE Lab
+#'   Delta E to find the smallest palette size whose worst reconstruction error
+#'   is below `lossy`.
+#'
+#'   Rough interpretation of Delta E values (CIE76):
+#'   - `< 1`: typically imperceptible
+#'   - `1 - 2`: perceptible through close inspection
+#'   - `2 - 10`: perceptible at a glance
+#'   - `10 - 50`: strong perceptual difference
+#'   - `> 50`: very large color shift
+#'
+#'   In theory Delta E can exceed 100 (up to around 374 for extreme RGB pairs).
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
 #' @param preserve Preserve file permissions and timestamps. Ignored when
@@ -53,7 +66,7 @@ tinypng = function(
   } else {
     if (is.function(output)) output = output(input)
   }
-  lossy = as.numeric(lossy)
+  lossy = as.numeric(lossy[1])
   if (length(input))
     optim_png_impl(
       input, output, as.integer(level), alpha, preserve, verbose, lossy
