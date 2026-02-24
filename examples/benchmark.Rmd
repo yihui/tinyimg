@@ -177,9 +177,9 @@ get_auto_value = function(plot_name, column) {
 }
 ```
 
-### Visual comparison {.tabset}
+A visual comparison of the lossy optimization results:
 
-```{r lossy-images, results='asis'}
+```{r lossy-images}
 tabs = lapply(names(lossy_files), function(plot_name) {
   setNames(lapply(names(lossy_files[[plot_name]]), function(lossy) {
     img = lossy_files[[plot_name]][[lossy]]
@@ -187,7 +187,7 @@ tabs = lapply(names(lossy_files), function(plot_name) {
   }), paste0("lossy = ", names(lossy_files[[plot_name]])))
 })
 names(tabs) = names(lossy_files)
-cat(xfun::tabset(tabs))
+xfun::tabset(tabs, xfun::tab_content)
 ```
 
 ## Visualization
@@ -356,6 +356,4 @@ tinypng(litedown::get_context("plot_files"), level = 6)
 
 ```{r cleanup, include=FALSE}
 unlink(tmp_dir, recursive = TRUE)
-files = unlist(lossy_files, use.names = FALSE)
-if (length(files)) unlink(files[file.exists(files)], force = TRUE)
 ```
