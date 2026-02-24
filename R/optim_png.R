@@ -11,13 +11,13 @@
 #'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
-#' @param lossy A numeric percentage in `[0, 1]`, or `TRUE` for automatic
+#' @param lossy A numeric percentage in `[0, 1]`, or `NA` for automatic
 #'   detection of the palette size from the input image. `0` means no lossy
 #'   optimization.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
 #' @param preserve Preserve file permissions and timestamps. Ignored when
-#'   lossy optimization is enabled (`lossy = TRUE` or `lossy > 0`).
+#'   lossy optimization is enabled (`lossy = NA` or `lossy > 0`).
 #' @param recursive When `input` is a directory, recursively process subdirectories.
 #' @param verbose Print file size reduction info for each file.
 #' @param ... Arguments passed to `tinypng()`.
@@ -54,7 +54,7 @@ tinypng = function(
   } else {
     if (is.function(output)) output = output(input)
   }
-  auto_lossy = isTRUE(lossy)
+  auto_lossy = length(lossy) == 1 && is.na(lossy)
   lossy = if (auto_lossy) 0 else as.numeric(lossy)
   if (length(input))
     optim_png_impl(

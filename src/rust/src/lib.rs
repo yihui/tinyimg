@@ -152,8 +152,9 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64, auto_lossy: bool) -> Result<Vec<
     let num_colors = if auto_lossy {
         estimate_palette_size(&pixels)
     } else {
-        // lossy = 0 -> 256 colors; lossy = 1 -> 16 colors; linearly interpolate.
-        ((1.0 - lossy) * (MAX_COLORS - MIN_COLORS) + MIN_COLORS)
+        // Interpolate on a log scale for a more gradual visual degradation.
+        (MAX_COLORS.ln() + lossy * (MIN_COLORS.ln() - MAX_COLORS.ln()))
+            .exp()
             .round()
             .clamp(MIN_COLORS, MAX_COLORS) as usize
     };
@@ -172,8 +173,12 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64, auto_lossy: bool) -> Result<Vec<
 }
 
 fn estimate_palette_size(pixels: &[Color]) -> usize {
+    // Sampling up to ~40k pixels keeps auto detection responsive on large images
+    // while still capturing enough color diversity for palette-size estimation.
+    const MAX_SCAN: usize = 40_000;
+    let step = (pixels.len() / MAX_SCAN).max(1);
     let mut colors = HashSet::new();
-    for p in pixels {
+    for p in pixels.iter().step_by(step) {
         colors.insert(((p.r as u32) << 24) | ((p.g as u32) << 16) | ((p.b as u32) << 8) | p.a as u32);
         if colors.len() > 256 {
             return 256;
