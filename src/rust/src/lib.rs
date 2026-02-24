@@ -158,52 +158,28 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
     let mut order: Vec<usize> = (0..palette.len()).collect();
     order.sort_by(|&a, &b| freq[b].cmp(&freq[a]));
 
-    // 3) Pick N entries to cover x% of pixels, where x = 1 - lossy.
-    let target = (((1.0 - lossy) * indexed.len() as f64).ceil() as usize).max(1);
-    let mut cum = 0usize;
-    let mut selected = Vec::<usize>::new();
-    for &i in &order {
-        selected.push(i);
-        cum += freq[i];
-        if cum >= target {
-            break;
-        }
-    }
+    // Map lossy to a perceptual threshold in CIE76 Delta E:
+    // ~2.3 is a common just-noticeable-difference (JND) baseline, and we
+    // increase tolerance quadratically with lossy for smoother control near 0.
+    let max_de = 2.3 + 20.0 * lossy * lossy;
+    let palette_lab: Vec<[f64; 3]> = palette.iter().map(|c| to_lab(*c)).collect();
 
-    const UNSELECTED: usize = usize::MAX;
-    let mut selected_pos = vec![UNSELECTED; palette.len()];
-    let selected_palette: Vec<Color> = selected
-        .iter()
-        .enumerate()
-        .map(|(j, &i)| {
-            selected_pos[i] = j;
-            palette[i]
-        })
-        .collect();
-
-    // Map each original palette index to one selected palette entry.
-    let mut idx_map = vec![0usize; palette.len()];
-    for i in 0..palette.len() {
-        if selected_pos[i] != UNSELECTED {
-            idx_map[i] = selected_pos[i];
+    // Find minimal N such that worst palette reconstruction error <= threshold.
+    let mut lo = 1usize;
+    let mut hi = palette.len().max(1);
+    while lo < hi {
+        let mid = (lo + hi) / 2;
+        let (_, worst) = map_palette(&order, &palette_lab, mid);
+        if worst <= max_de {
+            hi = mid;
         } else {
-            let c = palette[i];
-            let mut best_j = 0usize;
-            let mut best_d = u64::MAX;
-            for (j, s) in selected_palette.iter().enumerate() {
-                let dr = c.r as i32 - s.r as i32;
-                let dg = c.g as i32 - s.g as i32;
-                let db = c.b as i32 - s.b as i32;
-                let da = c.a as i32 - s.a as i32;
-                let d = (dr * dr + dg * dg + db * db + da * da) as u64;
-                if d < best_d {
-                    best_d = d;
-                    best_j = j;
-                }
-            }
-            idx_map[i] = best_j;
+            lo = mid + 1;
         }
     }
+    let n = lo;
+
+    let (idx_map, _) = map_palette(&order, &palette_lab, n);
+    let selected_palette: Vec<Color> = order.iter().take(n).map(|&i| palette[i]).collect();
 
     let quantized: Vec<lodepng::RGBA> = indexed
         .iter()
@@ -214,6 +190,65 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .collect();
     lodepng::encode32(&quantized, image.width, image.height)
         .map_err(|e| format!("Failed to encode quantized PNG data: {}", e).into())
+}
+
+fn map_palette(order: &[usize], palette_lab: &[[f64; 3]], n: usize) -> (Vec<usize>, f64) {
+    let selected = &order[..n];
+    let mut selected_pos = vec![usize::MAX; palette_lab.len()];
+    for (j, &i) in selected.iter().enumerate() {
+        selected_pos[i] = j;
+    }
+    let mut idx_map = vec![0usize; palette_lab.len()];
+    let mut worst = 0.0;
+    for (i, lab) in palette_lab.iter().enumerate() {
+        if selected_pos[i] != usize::MAX {
+            idx_map[i] = selected_pos[i];
+            continue;
+        }
+        let mut best_j = 0usize;
+        let mut best_d = f64::INFINITY;
+        for (j, &k) in selected.iter().enumerate() {
+            let d = delta_e(*lab, palette_lab[k]);
+            if d < best_d {
+                best_d = d;
+                best_j = j;
+            }
+        }
+        idx_map[i] = best_j;
+        if best_d > worst {
+            worst = best_d;
+        }
+    }
+    (idx_map, worst)
+}
+
+fn delta_e(a: [f64; 3], b: [f64; 3]) -> f64 {
+    let dl = a[0] - b[0];
+    let da = a[1] - b[1];
+    let db = a[2] - b[2];
+    (dl * dl + da * da + db * db).sqrt()
+}
+
+fn to_lab(c: Color) -> [f64; 3] {
+    // sRGB transfer function constants (IEC 61966-2-1).
+    fn lin(u: f64) -> f64 {
+        if u > 0.04045 { ((u + 0.055) / 1.055).powf(2.4) } else { u / 12.92 }
+    }
+    // CIE Lab piecewise transform constants (epsilon, kappa).
+    fn f(t: f64) -> f64 {
+        if t > 0.008856 { t.powf(1.0 / 3.0) } else { (903.3 * t + 16.0) / 116.0 }
+    }
+    let r = lin(c.r as f64 / 255.0);
+    let g = lin(c.g as f64 / 255.0);
+    let b = lin(c.b as f64 / 255.0);
+    // sRGB -> XYZ matrix under D65 white point, then white-point normalization.
+    let x = (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / 0.95047;
+    let y = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
+    let z = (0.0193339 * r + 0.1191920 * g + 0.9503041 * b) / 1.08883;
+    let fx = f(x);
+    let fy = f(y);
+    let fz = f(z);
+    [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
 }
 
 /// Find the index position to truncate paths

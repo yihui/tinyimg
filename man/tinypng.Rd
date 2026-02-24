@@ -34,7 +34,7 @@ compression but take longer.}
 technically lossy but visually lossless.}
 
 \item{preserve}{Preserve file permissions and timestamps. Ignored when
-lossy optimization is enabled (\code{lossy = NA} or \code{lossy > 0}).}
+lossy optimization is enabled (\code{lossy > 0}).}
 
 \item{recursive}{When \code{input} is a directory, recursively process subdirectories.}
 

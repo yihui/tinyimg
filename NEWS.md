@@ -1,10 +1,10 @@
 # CHANGES IN tinyimg VERSION 0.3
 
 - Added optional lossy PNG optimization before lossless oxipng optimization.
-- Added support for palette-size selection based on pixel coverage:
-  - First quantize at 256 colors.
-  - Sort palette entries by frequency.
-  - Choose N colors to cover `(1 - lossy)` of pixels.
+- Added support for perceptual (JND-based) palette-size selection:
+  - First quantize at 256 colors and sort palette entries by frequency.
+  - Select the smallest palette size whose worst color reconstruction error
+    is under a Delta E threshold mapped from `lossy`.
 - `tinypng()` now keeps `lossy` as a numeric parameter in `[0, 1]` (no `lossy = NA` mode).
 - Added `tinypng()` as the primary API and kept `optim_png()` as a wrapper alias.
 - Updated benchmark examples for lossy optimization results, visual comparisons, and lossy-level plots.
