@@ -131,7 +131,7 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 ## Lossy Optimization
 
 ```{r lossy-benchmark}
-lossy_levels = c(0, 0.25, 0.5, 0.75, 1, NA)
+lossy_levels = c(0, 0.01, 0.03, 0.06, 0.1, 0.2, 0.35, 0.55, 0.75, 1)
 plot_names = c("Scatterplot", "Boxplot", "Persp")
 lossy_files = list()
 lossy_rows = list()
@@ -142,7 +142,7 @@ for (i in seq_along(plot_files)) {
   original_size = file.info(input_file)$size
   lossy_files[[plot_name]] = list()
   for (lossy in lossy_levels) {
-    lossy_label = if (is.na(lossy)) "NA" else as.character(lossy)
+    lossy_label = as.character(lossy)
     output_file = file.path(
       dirname(input_file),
       sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", tolower(lossy_label)))
@@ -165,13 +165,6 @@ lossy_results = do.call(rbind, lossy_rows)
 
 rownames(lossy_results) = NULL
 lossy_results
-```
-
-```{r lossy-helpers, include=FALSE}
-get_auto_value = function(plot_name, column) {
-  x = subset(lossy_results, Plot == plot_name & is.na(Lossy))[[column]]
-  if (length(x) == 1) x else NA_real_
-}
 ```
 
 A visual comparison of the lossy optimization results:
@@ -214,16 +207,14 @@ legend("topright", legend = plot_names,
 grid()
 ```
 
-```{r plot-filesize-lossy, fig.cap='File size vs lossy level (with dashed line for lossy = NA).'}
+```{r plot-filesize-lossy, fig.cap='File size vs lossy level.'}
 par(mar = c(4, 4, 1, 1))
 plot(NA, xlim = c(0, 1), ylim = range(lossy_results$Size_KB), log = "y",
      xlab = "Lossy Level", ylab = "File Size (KB, log scale)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(lossy_results, Plot == plot_names[i] & !is.na(Lossy))
+  plot_data = subset(lossy_results, Plot == plot_names[i])
   lines(plot_data$Lossy, plot_data$Size_KB,
         type = "b", pch = pchs[i], col = i + 1)
-  auto_size = get_auto_value(plot_names[i], "Size_KB")
-  if (is.finite(auto_size)) abline(h = auto_size, col = i + 1, lty = 2)
 }
 legend("topright", legend = plot_names,
        col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
@@ -251,16 +242,14 @@ legend("topleft", legend = plot_names,
 grid()
 ```
 
-```{r plot-time-lossy, fig.cap='Processing time vs lossy level (with dashed line for lossy = NA).'}
+```{r plot-time-lossy, fig.cap='Processing time vs lossy level.'}
 par(mar = c(4, 4, 1, 1))
 plot(NA, xlim = c(0, 1), ylim = range(lossy_results$Time_sec),
      xlab = "Lossy Level", ylab = "Time (seconds)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(lossy_results, Plot == plot_names[i] & !is.na(Lossy))
+  plot_data = subset(lossy_results, Plot == plot_names[i])
   lines(plot_data$Lossy, plot_data$Time_sec,
         type = "b", pch = pchs[i], col = i + 1)
-  auto_time = get_auto_value(plot_names[i], "Time_sec")
-  if (is.finite(auto_time)) abline(h = auto_time, col = i + 1, lty = 2)
 }
 legend("topleft", legend = plot_names,
        col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
@@ -288,16 +277,14 @@ legend("bottomright", legend = plot_names,
 grid()
 ```
 
-```{r plot-reduction-pct-lossy, fig.cap='Size reduction percentage by lossy level (with dashed line for lossy = NA).'}
+```{r plot-reduction-pct-lossy, fig.cap='Size reduction percentage by lossy level.'}
 par(mar = c(4, 4, 1, 1))
 plot(NA, xlim = c(0, 1), ylim = range(lossy_results$Reduction_pct),
      xlab = "Lossy Level", ylab = "Size Reduction (%)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(lossy_results, Plot == plot_names[i] & !is.na(Lossy))
+  plot_data = subset(lossy_results, Plot == plot_names[i])
   lines(plot_data$Lossy, plot_data$Reduction_pct,
         type = "b", pch = pchs[i], col = i + 1)
-  auto_reduction = get_auto_value(plot_names[i], "Reduction_pct")
-  if (is.finite(auto_reduction)) abline(h = auto_reduction, col = i + 1, lty = 2)
 }
 legend("bottomright", legend = plot_names,
        col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
@@ -326,15 +313,15 @@ barplot(t(reduction_matrix),
 grid()
 ```
 
-```{r plot-size-reduction-bar-lossy, fig.cap='Absolute size reduction by lossy level (including lossy = NA).'}
+```{r plot-size-reduction-bar-lossy, fig.cap='Absolute size reduction by lossy level.'}
 par(mar = c(4, 4, 1, 1))
 lossy_categories = lossy_levels
-lossy_labels = ifelse(is.na(lossy_categories), "NA", as.character(lossy_categories))
+lossy_labels = as.character(lossy_categories)
 lossy_reduction_matrix = do.call(cbind, lapply(plot_names, function(pn) {
   plot_data = subset(lossy_results, Plot == pn)
   raw_size = subset(results, Plot == pn & Level == -1)$Size_KB
   sapply(lossy_categories, function(k) {
-    size_k = subset(plot_data, if (is.na(k)) is.na(Lossy) else !is.na(Lossy) & Lossy == k)$Size_KB
+    size_k = subset(plot_data, Lossy == k)$Size_KB
     if (length(size_k) == 1) raw_size - as.numeric(size_k) else NA_real_
   })
 }))

@@ -48,14 +48,9 @@ assert("tinypng works with lossy optimization", {
   (file.exists(test_png_lossy_out))
 })
 
-assert("tinypng supports lossy auto mode", {
-  test_png_lossy_auto_out = tempfile(fileext = ".png")
-  tinypng(test_png, test_png_lossy_auto_out, lossy = NA)
-  (file.exists(test_png_lossy_auto_out))
-})
-
 assert("tinypng validates lossy range", {
   (has_error(tinypng(test_png, lossy = 1.1)))
+  (has_error(tinypng(test_png, lossy = NA)))
 })
 
 # Test that optim_png fails with non-existent file

@@ -2,7 +2,6 @@ use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::path::PathBuf;
-use std::collections::HashSet;
 
 /// Optimize PNG files using oxipng
 ///
@@ -13,7 +12,6 @@ use std::collections::HashSet;
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
 /// @param lossy Lossy optimization percentage (0-1)
-/// @param auto_lossy Auto detect palette size for lossy optimization
 /// @export
 #[extendr]
 fn optim_png_impl(
@@ -24,7 +22,6 @@ fn optim_png_impl(
     preserve: bool,
     verbose: bool,
     lossy: f64,
-    auto_lossy: bool,
 ) -> Result<()> {
     // Convert to vectors
     let inputs: Vec<String> = input.iter().map(|s| s.to_string()).collect();
@@ -34,7 +31,7 @@ fn optim_png_impl(
     if inputs.len() != outputs.len() {
         return Err("Input and output vectors must have the same length".into());
     }
-    if !auto_lossy && (!lossy.is_finite() || !(0.0..=1.0).contains(&lossy)) {
+    if !lossy.is_finite() || !(0.0..=1.0).contains(&lossy) {
         return Err("Lossy level must be in 0..=1".into());
     }
     
@@ -81,8 +78,8 @@ fn optim_png_impl(
             .unwrap_or(0);
         
         // Optional lossy preprocessing before lossless optimization
-        match if auto_lossy || lossy > 0.0 {
-            let lossy_data = apply_lossy_png(&input_path, lossy, auto_lossy)?;
+        match if lossy > 0.0 {
+            let lossy_data = apply_lossy_png(&input_path, lossy)?;
             let optimized_data = oxipng::optimize_from_memory(&lossy_data, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
             std::fs::write(&output_path, optimized_data)
@@ -139,7 +136,7 @@ fn optim_png_impl(
     Ok(())
 }
 
-fn apply_lossy_png(input: &PathBuf, lossy: f64, auto_lossy: bool) -> Result<Vec<u8>> {
+fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
     let image = lodepng::decode32_file(input)
         .map_err(|e| format!("Failed to read PNG {}: {}", input.display(), e))?;
     let pixels: Vec<Color> = image
@@ -147,44 +144,76 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64, auto_lossy: bool) -> Result<Vec<
         .iter()
         .map(|p| Color::new(p.r, p.g, p.b, p.a))
         .collect();
-    const MAX_COLORS: f64 = 256.0;
-    const MIN_COLORS: f64 = 2.0;
-    let num_colors = if auto_lossy {
-        estimate_palette_size(&pixels)
-    } else {
-        // Interpolate on a log scale for a more gradual visual degradation.
-        (MAX_COLORS.ln() + lossy * (MIN_COLORS.ln() - MAX_COLORS.ln()))
-            .exp()
-            .round()
-            .clamp(MIN_COLORS, MAX_COLORS) as usize
-    };
+
+    // 1) Quantize once at 256 colors.
     let (palette, indexed) = convert_to_indexed(
-        &pixels, image.width, num_colors, &optimizer::KMeans, &ditherer::Ordered
+        &pixels, image.width, 256, &optimizer::KMeans, &ditherer::Ordered
     );
+
+    // 2) Sort palette entries by pixel frequency.
+    let mut freq = vec![0usize; palette.len()];
+    for &idx in &indexed {
+        freq[idx as usize] += 1;
+    }
+    let mut order: Vec<usize> = (0..palette.len()).collect();
+    order.sort_by(|&a, &b| freq[b].cmp(&freq[a]));
+
+    // 3) Pick N entries to cover x% of pixels, where x = 1 - lossy.
+    let target = (((1.0 - lossy) * indexed.len() as f64).ceil() as usize).max(1);
+    let mut cum = 0usize;
+    let mut selected = Vec::<usize>::new();
+    for &i in &order {
+        selected.push(i);
+        cum += freq[i];
+        if cum >= target {
+            break;
+        }
+    }
+
+    const UNSELECTED: usize = usize::MAX;
+    let mut selected_pos = vec![UNSELECTED; palette.len()];
+    let selected_palette: Vec<Color> = selected
+        .iter()
+        .enumerate()
+        .map(|(j, &i)| {
+            selected_pos[i] = j;
+            palette[i]
+        })
+        .collect();
+
+    // Map each original palette index to one selected palette entry.
+    let mut idx_map = vec![0usize; palette.len()];
+    for i in 0..palette.len() {
+        if selected_pos[i] != UNSELECTED {
+            idx_map[i] = selected_pos[i];
+        } else {
+            let c = palette[i];
+            let mut best_j = 0usize;
+            let mut best_d = u64::MAX;
+            for (j, s) in selected_palette.iter().enumerate() {
+                let dr = c.r as i32 - s.r as i32;
+                let dg = c.g as i32 - s.g as i32;
+                let db = c.b as i32 - s.b as i32;
+                let da = c.a as i32 - s.a as i32;
+                let d = (dr * dr + dg * dg + db * db + da * da) as u64;
+                if d < best_d {
+                    best_d = d;
+                    best_j = j;
+                }
+            }
+            idx_map[i] = best_j;
+        }
+    }
+
     let quantized: Vec<lodepng::RGBA> = indexed
         .iter()
         .map(|&idx| {
-            let c = palette[idx as usize];
+            let c = selected_palette[idx_map[idx as usize]];
             lodepng::RGBA::new(c.r, c.g, c.b, c.a)
         })
         .collect();
     lodepng::encode32(&quantized, image.width, image.height)
         .map_err(|e| format!("Failed to encode quantized PNG data: {}", e).into())
-}
-
-fn estimate_palette_size(pixels: &[Color]) -> usize {
-    // Sampling up to ~40k pixels keeps auto detection responsive on large images
-    // while still capturing enough color diversity for palette-size estimation.
-    const MAX_SCAN: usize = 40_000;
-    let step = (pixels.len() / MAX_SCAN).max(1);
-    let mut colors = HashSet::new();
-    for p in pixels.iter().step_by(step) {
-        colors.insert(((p.r as u32) << 24) | ((p.g as u32) << 16) | ((p.b as u32) << 8) | p.a as u32);
-        if colors.len() > 256 {
-            return 256;
-        }
-    }
-    colors.len().max(2)
 }
 
 /// Find the index position to truncate paths

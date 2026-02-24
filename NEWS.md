@@ -1,3 +1,16 @@
+# CHANGES IN tinyimg VERSION 0.3
+
+- Added optional lossy PNG optimization before lossless oxipng optimization.
+- Added support for palette-size selection based on pixel coverage:
+  - First quantize at 256 colors.
+  - Sort palette entries by frequency.
+  - Choose N colors to cover `(1 - lossy)` of pixels.
+- `tinypng()` now keeps `lossy` as a numeric parameter in `[0, 1]` (no `lossy = NA` mode).
+- Added `tinypng()` as the primary API and kept `optim_png()` as a wrapper alias.
+- Updated benchmark examples for lossy optimization results, visual comparisons, and lossy-level plots.
+- Added `.gitattributes` rule to mark `src/rust/update-vendor.sh` as linguist-vendored.
+- Updated build/configure messaging and macOS build flag handling to avoid misleading warnings.
+
 # CHANGES IN tinyimg VERSION 0.2
 
 ## Initial CRAN release
