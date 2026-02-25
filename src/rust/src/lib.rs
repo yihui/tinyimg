@@ -157,12 +157,14 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         let mid = (lo + hi) / 2;
         let quantized_mid = quantize_image(&pixels, image.width, mid);
         let p95 = sample_p95_delta_e(&src_lab, &quantized_mid, &sample_idx);
+        eprintln!("[debug] mid={} p95={:.4} lossy={:.4} sample_idx.len()={} quantized_mid.len()={}", mid, p95, lossy, sample_idx.len(), quantized_mid.len());
         if p95 <= lossy {
             hi = mid;
         } else {
             lo = mid + 1;
         }
     }
+    eprintln!("[debug] final lo={}", lo);
     let quantized = quantize_image(&pixels, image.width, lo);
 
     let encoded: Vec<lodepng::RGBA> = quantized
@@ -196,6 +198,31 @@ fn sample_p95_delta_e(src_lab: &[[f64; 3]], quantized: &[Color], sample_idx: &[u
         .collect();
     if de.is_empty() {
         return 0.0;
+    }
+    // Debug: print some sample values
+    let nonzero: Vec<f64> = de.iter().copied().filter(|&x| x > 0.001).collect();
+    eprintln!("[debug] de.len()={} nonzero count={} max={:.4} min={:.4}",
+        de.len(), nonzero.len(),
+        de.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
+        de.iter().cloned().fold(f64::INFINITY, f64::min));
+    if !nonzero.is_empty() {
+        // Print first few non-zero entries: (sample_idx, orig_lab, quant_lab, de)
+        let mut shown = 0;
+        for (j, &i) in sample_idx.iter().enumerate() {
+            let d = de[j];
+            if d > 0.001 && shown < 3 {
+                eprintln!("[debug] sample j={} pixel_i={} src_lab={:?} quant_color=({},{},{},{}) de={:.4}",
+                    j, i, src_lab[j], quantized[i].r, quantized[i].g, quantized[i].b, quantized[i].a, d);
+                shown += 1;
+            }
+        }
+    } else {
+        // All zero - print first few to show what's happening
+        for j in 0..3.min(sample_idx.len()) {
+            let i = sample_idx[j];
+            eprintln!("[debug] sample j={} pixel_i={} src_lab={:?} quant_color=({},{},{},{}) de={:.4}",
+                j, i, src_lab[j], quantized[i].r, quantized[i].g, quantized[i].b, quantized[i].a, de[j]);
+        }
     }
     de.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let p = ((de.len() as f64 * 0.95).ceil() as usize).saturating_sub(1);
