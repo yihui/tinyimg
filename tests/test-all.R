@@ -52,6 +52,9 @@ assert("tinypng() supports delta-e lossy thresholds", {
   test_png_lossy_jnd_out = tempfile(fileext = ".png")
   tinypng(test_png, test_png_lossy_jnd_out, lossy = 2.3)
   (file.exists(test_png_lossy_jnd_out))
+  # output must be substantially larger than a blank/single-colour PNG (~143B)
+  # to confirm the per-unique-colour algorithm is working correctly
+  (file.size(test_png_lossy_jnd_out) > 500L)
 
   test_png_lossy_neg_out = tempfile(fileext = ".png")
   tinypng(test_png, test_png_lossy_neg_out, lossy = -1)

@@ -1,6 +1,7 @@
 use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use oxipng::{InFile, OutFile, Options, StripChunks};
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 /// Optimize PNG files using oxipng
@@ -143,27 +144,45 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .map(|p| Color::new(p.r, p.g, p.b, p.a))
         .collect();
 
-
     // Sample at most 50k pixels for perceptual error evaluation.
     let sample_idx = sample_indices(pixels.len(), 50_000);
     let src_lab: Vec<[f64; 3]> = sample_idx.iter().map(|&i| to_lab(pixels[i])).collect();
 
-    // Bisection over palette size n in [1, 256]:
-    // for each n, quantize the whole image and evaluate p95(DeltaE(source, quantized))
-    // on sampled pixels. Select the smallest n whose p95 <= lossy.
-    let mut lo = 1usize;
-    let mut hi = 256usize;
-    while lo < hi {
-        let mid = (lo + hi) / 2;
-        let quantized_mid = quantize_image(&pixels, image.width, mid);
-        let p95 = sample_p95_delta_e(&src_lab, &quantized_mid, &sample_idx);
-        if p95 <= lossy {
-            hi = mid;
-        } else {
-            lo = mid + 1;
+    // Pre-compute RGBA keys for sampled pixels once; reused in every bisection step.
+    let sample_keys: Vec<u32> = sample_idx
+        .iter()
+        .map(|&i| color_key(pixels[i]))
+        .collect();
+
+    // Pre-allocate the per-color map; cleared and refilled in each evaluation.
+    let mut color_max_de: HashMap<u32, f64> = HashMap::new();
+
+    // Quantize at 256 colors first to establish an upper bound for the bisection.
+    // If even 256 colors exceeds the threshold, use 256 (best possible quality).
+    // Otherwise the number of distinct colors actually used in the 256-quantized
+    // image is a tighter upper bound: there is no benefit searching above it.
+    let q256 = quantize_image_nodither(&pixels, image.width, 256);
+    let metric256 = palette_p95_delta_e(&src_lab, &sample_keys, &q256, &sample_idx, &mut color_max_de);
+
+    let n = if metric256 > lossy {
+        256
+    } else {
+        let mut lo = 1usize;
+        let mut hi = count_unique_colors(&q256).min(256);
+        while lo < hi {
+            let mid = (lo + hi) / 2;
+            let quantized_mid = quantize_image_nodither(&pixels, image.width, mid);
+            let metric = palette_p95_delta_e(&src_lab, &sample_keys, &quantized_mid, &sample_idx, &mut color_max_de);
+            if metric <= lossy {
+                hi = mid;
+            } else {
+                lo = mid + 1;
+            }
         }
-    }
-    let quantized = quantize_image(&pixels, image.width, lo);
+        lo
+    };
+
+    let quantized = quantize_image(&pixels, image.width, n);
 
     let encoded: Vec<lodepng::RGBA> = quantized
         .iter()
@@ -180,6 +199,13 @@ fn quantize_image(pixels: &[Color], width: usize, n: usize) -> Vec<Color> {
     indexed.iter().map(|&idx| palette[idx as usize]).collect()
 }
 
+fn quantize_image_nodither(pixels: &[Color], width: usize, n: usize) -> Vec<Color> {
+    let (palette, indexed) = convert_to_indexed(
+        pixels, width, n.clamp(1, 256), &optimizer::KMeans, &ditherer::None
+    );
+    indexed.iter().map(|&idx| palette[idx as usize]).collect()
+}
+
 fn sample_indices(len: usize, max_samples: usize) -> Vec<usize> {
     if len == 0 {
         return Vec::new();
@@ -188,18 +214,42 @@ fn sample_indices(len: usize, max_samples: usize) -> Vec<usize> {
     (0..len).step_by(step).collect()
 }
 
-fn sample_p95_delta_e(src_lab: &[[f64; 3]], quantized: &[Color], sample_idx: &[usize]) -> f64 {
-    let mut de: Vec<f64> = sample_idx
-        .iter()
-        .enumerate()
-        .map(|(j, &i)| delta_e(src_lab[j], to_lab(quantized[i])))
-        .collect();
-    if de.is_empty() {
-        return 0.0;
+#[inline]
+fn color_key(c: Color) -> u32 {
+    ((c.r as u32) << 24) | ((c.g as u32) << 16) | ((c.b as u32) << 8) | c.a as u32
+}
+
+fn count_unique_colors(pixels: &[Color]) -> usize {
+    pixels.iter().map(|&c| color_key(c)).collect::<HashSet<u32>>().len()
+}
+
+/// Compute the 95th percentile of per-unique-color max DeltaE.
+/// Pixels are grouped by their original RGBA color so that a dominant
+/// background color gets only a single vote.  Within each group the
+/// worst-case DeltaE is kept; then p95 is taken over those group-level values.
+///
+/// `sample_keys` must be pre-computed from the original pixels (one key per
+/// sampled pixel, in the same order as `sample_idx`).  `color_max_de` is a
+/// caller-owned map that is cleared and refilled on each call, avoiding a
+/// heap allocation per bisection step.
+fn palette_p95_delta_e(
+    src_lab: &[[f64; 3]],
+    sample_keys: &[u32],
+    quantized: &[Color],
+    sample_idx: &[usize],
+    color_max_de: &mut HashMap<u32, f64>,
+) -> f64 {
+    color_max_de.clear();
+    for (j, &i) in sample_idx.iter().enumerate() {
+        let de = delta_e(src_lab[j], to_lab(quantized[i]));
+        let entry = color_max_de.entry(sample_keys[j]).or_insert(0.0_f64);
+        if de > *entry { *entry = de; }
     }
-    de.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let p = ((de.len() as f64 * 0.95).ceil() as usize).saturating_sub(1);
-    de[p.min(de.len() - 1)]
+    let mut des: Vec<f64> = color_max_de.values().copied().collect();
+    if des.is_empty() { return 0.0; }
+    des.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let p = ((des.len() as f64 * 0.95).ceil() as usize).saturating_sub(1);
+    des[p.min(des.len() - 1)]
 }
 
 fn delta_e(a: [f64; 3], b: [f64; 3]) -> f64 {

@@ -57,11 +57,14 @@ The lossy algorithm uses color difference in the International Commission on
 Illumination (CIE) 1976 \eqn{L^*a^*b^*} (often written as CIELAB or Lab)
 color space.
 
-For a candidate palette size \code{n}, the image is quantized with \code{n} colors,
-then the color difference \eqn{\Delta E_{76}} is computed between original
-and quantized pixels on a sample of at most 50,000 pixels. We use the 95th
-percentile of sampled \eqn{\Delta E_{76}} values and bisection on \code{n}
-(1--256) to find the smallest palette size whose 95th percentile is \verb{<= lossy}.
+For a candidate palette size \code{n}, the image is quantized with \code{n} colors
+using nearest-color mapping. Sampled pixels are then \strong{grouped by their
+original color}, so each distinct color in the image gets one equal vote
+regardless of how many pixels share it (preventing a large uniform
+background from masking errors in rarer content colors). The worst-case
+\eqn{\Delta E_{76}} within each color group is recorded, and we take the
+95th percentile of those per-color values. Bisection on \code{n} (1--256) finds
+the smallest palette size whose per-color p95 is \verb{<= lossy}.
 
 \eqn{\Delta E_{76}\approx 2.3} is often considered the just noticeable
 difference (JND) threshold. Larger values allow more color difference and
