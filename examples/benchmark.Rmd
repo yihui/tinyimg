@@ -117,9 +117,9 @@ benchmark_file = function(input_file, plot_name) {
 
 # Benchmark all three plots
 results = rbind(
-  benchmark_file(plot_files[1], "Scatterplot"),
-  benchmark_file(plot_files[2], "Boxplot"),
-  benchmark_file(plot_files[3], "Persp")
+  benchmark_file(plot_files[1], "scatterplot"),
+  benchmark_file(plot_files[2], "boxplot"),
+  benchmark_file(plot_files[3], "persp")
 )
 
 rownames(results) = NULL
@@ -132,7 +132,7 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 
 ```{r lossy-benchmark}
 lossy_levels = c(0, 0.5, 1, 1.5, 2.3, 3, 4, 6, 10, 16, 32)
-plot_names = c("Scatterplot", "Boxplot", "Persp")
+plot_names = c("scatterplot", "boxplot", "persp")
 lossy_files = list()
 lossy_rows = list()
 
@@ -142,10 +142,10 @@ for (i in seq_along(plot_files)) {
   original_size = file.info(input_file)$size
   lossy_files[[plot_name]] = list()
   for (lossy in lossy_levels) {
-    lossy_label = as.character(lossy)
+    lossy_label = sprintf('%.01f', lossy)
     output_file = file.path(
       dirname(input_file),
-      sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", tolower(lossy_label)))
+      sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy_label))
     )
     time_taken = system.time({
       tinypng(input_file, output = output_file, lossy = lossy)
@@ -194,7 +194,7 @@ all_sizes = results$Size_KB
 ylim_range = range(all_sizes)
 
 plot(NA, xlim = c(-1, 6), ylim = ylim_range, log = "y",
-     xlab = "Optimization Level", 
+     xlab = "Lossless Optimization Level", 
      ylab = "File Size (KB, log scale)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i])
@@ -229,7 +229,7 @@ all_times = results$Time_sec
 ylim_range = range(all_times)
 
 plot(NA, xlim = c(-1, 6), ylim = ylim_range,
-     xlab = "Optimization Level", 
+     xlab = "Lossless Optimization Level", 
      ylab = "Time (seconds)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i])
@@ -264,7 +264,7 @@ all_reduction = results$Reduction_pct
 ylim_range = range(all_reduction)
 
 plot(NA, xlim = c(-1, 6), ylim = ylim_range,
-     xlab = "Optimization Level", 
+     xlab = "Lossless Optimization Level", 
      ylab = "Size Reduction (%)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i])
@@ -306,7 +306,7 @@ barplot(t(reduction_matrix),
         beside = TRUE,
         names.arg = 0:6,
         col = seq_along(plot_names) + 1,
-        xlab = "Optimization Level",
+        xlab = "Lossless Optimization Level",
         ylab = "Size Reduction (KB)",
         legend.text = plot_names,
         args.legend = list(x = "topleft"))
