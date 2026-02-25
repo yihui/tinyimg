@@ -37,7 +37,13 @@ $(STATLIB):
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
 		if [ "$$(uname -s)" = "Darwin" ]; then \
-			export MACOSX_DEPLOYMENT_TARGET="$$(R CMD config MACOSX_DEPLOYMENT_TARGET)"; \
+			DEPLOY_TARGET="$$(R CMD config CFLAGS | sed -n 's/.*-mmacosx-version-min=\([0-9.]*\).*/\1/p')"; \
+			if [ -z "$$DEPLOY_TARGET" ]; then \
+				DEPLOY_TARGET="$$(R CMD config LDFLAGS | sed -n 's/.*-mmacosx-version-min=\([0-9.]*\).*/\1/p')"; \
+			fi; \
+			if [ -n "$$DEPLOY_TARGET" ]; then \
+				export MACOSX_DEPLOYMENT_TARGET="$$DEPLOY_TARGET"; \
+			fi; \
 		fi && \
 		cargo build --lib --release --jobs 2 --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
 	rm -Rf $(CARGOTMP) && \
