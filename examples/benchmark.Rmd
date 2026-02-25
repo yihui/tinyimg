@@ -131,7 +131,7 @@ Note: The optimization level of `-1` represents the raw, unoptimized file (not a
 ## Lossy Optimization
 
 ```{r lossy-benchmark}
-lossy_levels = c(0, 0.5, 1, 1.5, 2.3, 3, 4, 6, 10, 16, 32)
+lossy_levels = c(0, 1, 2.3, 3, 6, 16, 32)
 plot_names = c("scatterplot", "boxplot", "persp")
 lossy_files = list()
 lossy_rows = list()
@@ -142,7 +142,7 @@ for (i in seq_along(plot_files)) {
   original_size = file.info(input_file)$size
   lossy_files[[plot_name]] = list()
   for (lossy in lossy_levels) {
-    lossy_label = sprintf('%.01f', lossy)
+    lossy_label = as.character(lossy)
     output_file = file.path(
       dirname(input_file),
       sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy_label))
@@ -172,8 +172,10 @@ A visual comparison of the lossy optimization results:
 ```{r lossy-images}
 tabs = lapply(names(lossy_files), function(plot_name) {
   setNames(lapply(names(lossy_files[[plot_name]]), function(lossy) {
+    # reduction%
+    pct = subset(lossy_results, Plot == plot_name & Lossy == lossy)$Reduction_pct
     img = lossy_files[[plot_name]][[lossy]]
-    paste0("![](", xfun::relative_path(img), ")")
+    c(sprintf('Reduction: %.02f%%', pct), '', paste0("![lossy](", xfun::relative_path(img), ")"))
   }), paste0("lossy = ", names(lossy_files[[plot_name]])))
 })
 names(tabs) = names(lossy_files)
@@ -181,6 +183,8 @@ xfun::tabset(tabs, xfun::tab_content)
 ```
 
 ## Visualization
+
+Note that for the lossy optimization benchmarks, we first did the lossy optimization and then applied the default level of lossless optimization on top of it. The outcome is the combination of both optimizations.
 
 ```{r plot-filesize, fig.cap='File size vs optimization level (log scale).'}
 par(mar = c(4, 4, 1, 1))
