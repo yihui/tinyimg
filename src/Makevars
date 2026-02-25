@@ -36,6 +36,9 @@ $(STATLIB):
 	# Limit to 2 jobs per CRAN policy (cargo build -j defaults to number of logical CPUs)
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
+		if [ "$$(uname -s)" = "Darwin" ]; then \
+			export MACOSX_DEPLOYMENT_TARGET="$$(R CMD config MACOSX_DEPLOYMENT_TARGET)"; \
+		fi && \
 		cargo build --lib --release --jobs 2 --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
 	rm -Rf $(CARGOTMP) && \
 		rm -Rf $(LIBDIR)/build && \
