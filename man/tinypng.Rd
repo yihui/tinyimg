@@ -19,9 +19,8 @@ tinypng(
 optim_png(...)
 }
 \arguments{
-\item{input}{Path to the input PNG file or directory. If a directory is provided,
-all PNG files in the directory (and subdirectories if \code{recursive = TRUE})
-will be optimized.}
+\item{input}{Path to the input PNG file or directory. If a directory is
+provided, all PNG files in the directory (and subdirectories if \code{recursive = TRUE}) will be optimized.}
 
 \item{output}{Path to the output PNG file or directory, or a function that
 takes an input file path and returns an output path. When optimizing a
@@ -33,30 +32,16 @@ compression but take longer.}
 \item{alpha}{Optimize transparent pixels for better compression. This is
 technically lossy but visually lossless.}
 
-\item{preserve}{Preserve file permissions and timestamps. Ignored when
-lossy optimization is enabled (\code{lossy > 0}).}
+\item{preserve}{Preserve file permissions and timestamps. Ignored when lossy
+optimization is enabled (\code{lossy > 0}).}
 
-\item{recursive}{When \code{input} is a directory, recursively process subdirectories.}
+\item{recursive}{When \code{input} is a directory, recursively process
+subdirectories.}
 
 \item{verbose}{Print file size reduction info for each file.}
 
-\item{lossy}{A numeric Delta E threshold for perceptual color error in lossy
-preprocessing. Values \code{<= 0} mean lossless optimization only.
-
-The lossy algorithm first quantizes to 256 colors, then uses CIE Lab
-Delta E to find the smallest palette size whose worst reconstruction error
-is below \code{lossy}.
-
-Rough interpretation of Delta E values (CIE76):
-\itemize{
-\item \verb{< 1}: typically imperceptible
-\item \code{1 - 2}: perceptible through close inspection
-\item \code{2 - 10}: perceptible at a glance
-\item \code{10 - 50}: strong perceptual difference
-\item \verb{> 50}: very large color shift
-}
-
-In theory Delta E can exceed 100 (up to around 374 for extreme RGB pairs).}
+\item{lossy}{A numeric threshold for the color difference in lossy
+processing. Values \verb{<= 0} disable lossy optimization.}
 
 \item{...}{Arguments passed to \code{tinypng()}.}
 }
@@ -66,6 +51,23 @@ Character vector of output file paths (invisibly).
 \description{
 Optimize PNG files or directories of PNG files using optional lossy palette
 reduction and dithering before lossless compression.
+}
+\details{
+The lossy algorithm uses color difference in the International Commission on
+Illumination (CIE) 1976 \eqn{L^*a^*b^*} (often written as CIELAB or Lab)
+color space.
+
+For a candidate palette size \code{n}, the image is quantized with \code{n} colors,
+then the color difference \eqn{\Delta E_{76}} is computed between original
+and quantized pixels on a sample of at most 50,000 pixels. We use the 95th
+percentile of sampled \eqn{\Delta E_{76}} values and bisection on \code{n}
+(1--256) to find the smallest palette size whose 95th percentile is \verb{<= lossy}.
+
+\eqn{\Delta E_{76}\approx 2.3} is often considered the just noticeable
+difference (JND) threshold. Larger values allow more color difference and
+thus smaller
+palette and file sizes, with more loss of color fidelity. In theory, \eqn{\Delta
+E_{76}} can exceed 100.
 }
 \examples{
 # Create a test PNG
@@ -77,5 +79,8 @@ dev.off()
 # Optimize with different levels
 tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
 tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
-tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 0.5)
+tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
+}
+\references{
+\url{https://en.wikipedia.org/wiki/Color_difference}
 }
