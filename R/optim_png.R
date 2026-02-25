@@ -1,10 +1,28 @@
 #' Optimize PNG images
 #'
-#' Optimize PNG files or directories of PNG files using lossless compression.
+#' Optimize PNG files or directories of PNG files using optional lossy palette
+#' reduction and dithering before lossless compression.
 #'
-#' @param input Path to the input PNG file or directory. If a directory is provided,
-#'   all PNG files in the directory (and subdirectories if `recursive = TRUE`)
-#'   will be optimized.
+#' The lossy algorithm uses color difference in the International Commission on
+#' Illumination (CIE) 1976 \eqn{L^*a^*b^*} (often written as CIELAB or Lab)
+#' color space.
+#'
+#' For a candidate palette size `n`, the image is quantized with `n` colors,
+#' then the color difference \eqn{\Delta E_{76}} is computed between original
+#' and quantized pixels on a sample of at most 50,000 pixels. We use the 95th
+#' percentile of sampled \eqn{\Delta E_{76}} values and bisection on `n`
+#' (1--256) to find the smallest palette size whose 95th percentile is `<=
+#' lossy`.
+#'
+#' \eqn{\Delta E_{76}\approx 2.3} is often considered the just noticeable
+#' difference (JND) threshold. Larger values allow more color difference and
+#' thus smaller
+#' palette and file sizes, with more loss of color fidelity. In theory, \eqn{\Delta
+#' E_{76}} can exceed 100.
+#'
+#' @param input Path to the input PNG file or directory. If a directory is
+#'   provided, all PNG files in the directory (and subdirectories if `recursive
+#'   = TRUE`) will be optimized.
 #' @param output Path to the output PNG file or directory, or a function that
 #'   takes an input file path and returns an output path. When optimizing a
 #'   directory, `output` should be a directory path or a function.
@@ -12,13 +30,17 @@
 #'   compression but take longer.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
-#' @param preserve Preserve file permissions and timestamps.
-#' @param recursive When `input` is a directory, recursively process subdirectories.
+#' @param preserve Preserve file permissions and timestamps. Ignored when lossy
+#'   optimization is enabled (`lossy > 0`).
+#' @param recursive When `input` is a directory, recursively process
+#'   subdirectories.
 #' @param verbose Print file size reduction info for each file.
-#'
+#' @param lossy A numeric threshold for the color difference in lossy
+#'   processing. Values `<= 0` disable lossy optimization.
+#' @param ... Arguments passed to `tinypng()`.
 #' @return Character vector of output file paths (invisibly).
+#' @references <https://en.wikipedia.org/wiki/Color_difference>
 #' @export
-#'
 #' @examples
 #' # Create a test PNG
 #' tmp = tempfile()
@@ -27,11 +49,13 @@
 #' dev.off()
 #'
 #' # Optimize with different levels
-#' optim_png(tmp, paste0(tmp, "-o1.png"), level = 1)
-#' optim_png(tmp, paste0(tmp, "-o6.png"), level = 6)
-optim_png = function(
+#' tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
+#' tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
+#' tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
+#' @export
+tinypng = function(
   input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
-  recursive = TRUE, verbose = TRUE
+  recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
   # Resolve directory input to PNG file paths
   if (length(input) == 1 && dir.exists(input)) {
@@ -46,7 +70,12 @@ optim_png = function(
   } else {
     if (is.function(output)) output = output(input)
   }
+  lossy = as.numeric(lossy[1])
   if (length(input))
-    optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose)
+    optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose, lossy)
   invisible(output)
 }
+
+#' @rdname tinypng
+#' @export
+optim_png = function(...) tinypng(...)

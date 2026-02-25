@@ -13,7 +13,7 @@ CARGOTMP = $(CURDIR)/.cargo
 $(STATLIB):
 	# Report rustc version for R CMD check (per CRAN policy)
 	@echo "Using Rust compiler:"
-	@rustc --version || echo "rustc not found in PATH"
+	@PATH="$(PATH):$(HOME)/.cargo/bin" rustc --version || echo "rustc not found in PATH"
 	# Extract vendored dependencies if present (for CRAN releases)
 	@if [ -f ./rust/vendor.tar.xz ]; then \
 		echo "Extracting vendored dependencies..."; \

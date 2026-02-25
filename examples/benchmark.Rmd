@@ -1,5 +1,10 @@
 ---
-title: "`optim_png()` Benchmarks"
+title: "`tinypng()` Benchmarks"
+output:
+  html:
+    meta:
+      css: ["@tabsets"]
+      js: ["@tabsets"]
 ---
 
 ```{r}
@@ -10,7 +15,7 @@ options(xfun.md_table.limit = Inf)
 
 ## Overview
 
-This document benchmarks the `optim_png()` function from the **tinyimg** package
+This document benchmarks the `tinypng()` function from the **tinyimg** package
 across different optimization levels (0-6). We test with three types of plots:
 
 1. A scatterplot based on the penguins dataset
@@ -26,15 +31,18 @@ For each optimization level, we measure:
 
 First, we create test plots using the `png()` device:
 
-```{r create-penguins, fig.cap='Penguin bill length vs flipper length.'}
+```{r scatterplot, fig.cap='Penguin bill length vs flipper length.'}
 par(mar = c(4, 4, 1, 1))
+n = length(penguins$flipper_len)
+cols = grDevices::hcl.colors(n, "Spectral")
 plot(penguins$flipper_len, penguins$bill_len,
      pch = 19,
+     col = cols[seq_along(penguins$flipper_len)],
      xlab = "Flipper Length (mm)",
      ylab = "Bill Length (mm)")
 ```
 
-```{r create-boxplot, fig.cap='Miles per gallon by cylinder count.'}
+```{r boxplot, fig.cap='Miles per gallon by cylinder count.'}
 par(mar = c(4, 4, 1, 1))
 boxplot(mpg ~ cyl, data = mtcars, 
         xlab = "Number of Cylinders", 
@@ -42,7 +50,7 @@ boxplot(mpg ~ cyl, data = mtcars,
         col = c("lightblue", "lightgreen", "lightpink"))
 ```
 
-```{r create-persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
+```{r persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
 par(mar = c(2, 2, 1, 1))
 x = seq(-10, 10, length = 50)
 y = seq(-10, 10, length = 50)
@@ -89,7 +97,7 @@ benchmark_file = function(input_file, plot_name) {
     output_file = file.path(tmp_dir, sprintf("%s_level_%d.png", plot_name, level))
     
     time_taken = system.time({
-      optim_png(input_file, output = output_file, level = level)
+      tinypng(input_file, output = output_file, level = level)
     })["elapsed"]
     
     new_size = file.info(output_file)$size
@@ -109,18 +117,74 @@ benchmark_file = function(input_file, plot_name) {
 
 # Benchmark all three plots
 results = rbind(
-  benchmark_file(plot_files[1], "Scatterplot"),
-  benchmark_file(plot_files[2], "Boxplot"),
-  benchmark_file(plot_files[3], "Persp")
+  benchmark_file(plot_files[1], "scatterplot"),
+  benchmark_file(plot_files[2], "boxplot"),
+  benchmark_file(plot_files[3], "persp")
 )
 
 rownames(results) = NULL
 results
 ```
 
-Note: The optimization level of `-1` represents the raw, unoptimized file (not a valid value for the `level` argument of `optim_png()`). This helps show the effect of `level = 0` more clearly.
+Note: The optimization level of `-1` represents the raw, unoptimized file (not a valid value for the `level` argument of `tinypng()`). This helps show the effect of `level = 0` more clearly.
+
+## Lossy Optimization
+
+```{r lossy-benchmark}
+lossy_levels = c(0, 1, 2.3, 3, 6, 16, 32)
+plot_names = c("scatterplot", "boxplot", "persp")
+lossy_files = list()
+lossy_rows = list()
+
+for (i in seq_along(plot_files)) {
+  input_file = plot_files[i]
+  plot_name = plot_names[i]
+  original_size = file.info(input_file)$size
+  lossy_files[[plot_name]] = list()
+  for (lossy in lossy_levels) {
+    lossy_label = as.character(lossy)
+    output_file = file.path(
+      dirname(input_file),
+      sprintf("%s_lossy_%s.png", plot_name, gsub("\\.", "_", lossy_label))
+    )
+    time_taken = system.time({
+      tinypng(input_file, output = output_file, lossy = lossy)
+    })["elapsed"]
+    lossy_files[[plot_name]][[lossy_label]] = output_file
+    new_size = file.info(output_file)$size
+    lossy_rows[[length(lossy_rows) + 1L]] = data.frame(
+      Plot = plot_name,
+      Lossy = lossy,
+      Size_KB = new_size / 1024,
+      Reduction_pct = ((original_size - new_size) / original_size) * 100,
+      Time_sec = time_taken
+    )
+  }
+}
+lossy_results = do.call(rbind, lossy_rows)
+
+rownames(lossy_results) = NULL
+lossy_results
+```
+
+A visual comparison of the lossy optimization results:
+
+```{r lossy-images}
+tabs = lapply(names(lossy_files), function(plot_name) {
+  setNames(lapply(names(lossy_files[[plot_name]]), function(lossy) {
+    # reduction%
+    pct = subset(lossy_results, Plot == plot_name & Lossy == lossy)$Reduction_pct
+    img = lossy_files[[plot_name]][[lossy]]
+    c(sprintf('Reduction: %.02f%%', pct), '', paste0("![lossy](", xfun::relative_path(img), ")"))
+  }), paste0("lossy = ", names(lossy_files[[plot_name]])))
+})
+names(tabs) = names(lossy_files)
+xfun::tabset(tabs, xfun::tab_content)
+```
 
 ## Visualization
+
+Note that for the lossy optimization benchmarks, we first did the lossy optimization and then applied the default level of lossless optimization on top of it. The outcome is the combination of both optimizations.
 
 ```{r plot-filesize, fig.cap='File size vs optimization level (log scale).'}
 par(mar = c(4, 4, 1, 1))
@@ -134,7 +198,7 @@ all_sizes = results$Size_KB
 ylim_range = range(all_sizes)
 
 plot(NA, xlim = c(-1, 6), ylim = ylim_range, log = "y",
-     xlab = "Optimization Level", 
+     xlab = "Lossless Optimization Level", 
      ylab = "File Size (KB, log scale)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i])
@@ -147,6 +211,20 @@ legend("topright", legend = plot_names,
 grid()
 ```
 
+```{r plot-filesize-lossy, fig.cap='File size vs lossy level.'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Size_KB), log = "y",
+     xlab = "Lossy Level", ylab = "File Size (KB, log scale)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(lossy_results, Plot == plot_names[i])
+  lines(plot_data$Lossy, plot_data$Size_KB,
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("topright", legend = plot_names,
+       col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
 ```{r plot-time, fig.cap='Processing time vs optimization level.'}
 par(mar = c(4, 4, 1, 1))
 
@@ -155,7 +233,7 @@ all_times = results$Time_sec
 ylim_range = range(all_times)
 
 plot(NA, xlim = c(-1, 6), ylim = ylim_range,
-     xlab = "Optimization Level", 
+     xlab = "Lossless Optimization Level", 
      ylab = "Time (seconds)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i])
@@ -168,6 +246,20 @@ legend("topleft", legend = plot_names,
 grid()
 ```
 
+```{r plot-time-lossy, fig.cap='Processing time vs lossy level.'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Time_sec),
+     xlab = "Lossy Level", ylab = "Time (seconds)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(lossy_results, Plot == plot_names[i])
+  lines(plot_data$Lossy, plot_data$Time_sec,
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("bottomright", legend = plot_names,
+       col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
 ```{r plot-reduction-pct, fig.cap='Size reduction percentage by optimization level.'}
 par(mar = c(4, 4, 1, 1))
 
@@ -176,7 +268,7 @@ all_reduction = results$Reduction_pct
 ylim_range = range(all_reduction)
 
 plot(NA, xlim = c(-1, 6), ylim = ylim_range,
-     xlab = "Optimization Level", 
+     xlab = "Lossless Optimization Level", 
      ylab = "Size Reduction (%)")
 for (i in seq_along(plot_names)) {
   plot_data = subset(results, Plot == plot_names[i])
@@ -186,6 +278,20 @@ for (i in seq_along(plot_names)) {
 legend("bottomright", legend = plot_names, 
        col = seq_along(plot_names) + 1, 
        pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-reduction-pct-lossy, fig.cap='Size reduction percentage by lossy level.'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Reduction_pct),
+     xlab = "Lossy Level", ylab = "Size Reduction (%)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(lossy_results, Plot == plot_names[i])
+  lines(plot_data$Lossy, plot_data$Reduction_pct,
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("bottomright", legend = plot_names,
+       col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
 grid()
 ```
 
@@ -204,7 +310,30 @@ barplot(t(reduction_matrix),
         beside = TRUE,
         names.arg = 0:6,
         col = seq_along(plot_names) + 1,
-        xlab = "Optimization Level",
+        xlab = "Lossless Optimization Level",
+        ylab = "Size Reduction (KB)",
+        legend.text = plot_names,
+        args.legend = list(x = "topleft"))
+grid()
+```
+
+```{r plot-size-reduction-bar-lossy, fig.cap='Absolute size reduction by lossy level.'}
+par(mar = c(4, 4, 1, 1))
+lossy_categories = lossy_levels
+lossy_labels = as.character(lossy_categories)
+lossy_reduction_matrix = do.call(cbind, lapply(plot_names, function(pn) {
+  plot_data = subset(lossy_results, Plot == pn)
+  raw_size = subset(results, Plot == pn & Level == -1)$Size_KB
+  sapply(lossy_categories, function(k) {
+    size_k = subset(plot_data, Lossy == k)$Size_KB
+    if (length(size_k) == 1) raw_size - as.numeric(size_k) else NA_real_
+  })
+}))
+barplot(t(lossy_reduction_matrix),
+        beside = TRUE,
+        names.arg = lossy_labels,
+        col = seq_along(plot_names) + 1,
+        xlab = "Lossy Level",
         ylab = "Size Reduction (KB)",
         legend.text = plot_names,
         args.legend = list(x = "topleft"))
@@ -212,7 +341,7 @@ grid()
 ```
 
 ```{r optimize-document-plots, include=FALSE}
-optim_png(litedown::get_context("plot_files"), level = 6)
+tinypng(litedown::get_context("plot_files"), level = 6)
 ```
 
 ```{r cleanup, include=FALSE}

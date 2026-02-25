@@ -42,6 +42,22 @@ assert("optim_png works with level = 6", {
   (file.exists(test_png))
 })
 
+assert("tinypng works with lossy optimization", {
+  test_png_lossy_out = tempfile(fileext = ".png")
+  tinypng(test_png, test_png_lossy_out, lossy = 0.5)
+  (file.exists(test_png_lossy_out))
+})
+
+assert("tinypng supports delta-e lossy thresholds", {
+  test_png_lossy_jnd_out = tempfile(fileext = ".png")
+  tinypng(test_png, test_png_lossy_jnd_out, lossy = 2.3)
+  (file.exists(test_png_lossy_jnd_out))
+
+  test_png_lossy_neg_out = tempfile(fileext = ".png")
+  tinypng(test_png, test_png_lossy_neg_out, lossy = -1)
+  (file.exists(test_png_lossy_neg_out))
+})
+
 # Test that optim_png fails with non-existent file
 assert("optim_png fails with non-existent file", {
   (has_error(optim_png(tempfile())))
