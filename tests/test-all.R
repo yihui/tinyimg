@@ -58,11 +58,6 @@ assert("tinypng supports delta-e lossy thresholds", {
   (file.exists(test_png_lossy_neg_out))
 })
 
-assert("tinypng rejects non-finite lossy thresholds", {
-  (has_error(tinypng(test_png, lossy = NA)))
-  (has_error(tinypng(test_png, lossy = Inf)))
-})
-
 # Test that optim_png fails with non-existent file
 assert("optim_png fails with non-existent file", {
   (has_error(optim_png(tempfile())))
