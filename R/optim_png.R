@@ -11,35 +11,28 @@
 #'   directory, `output` should be a directory path or a function.
 #' @param level Optimization level (0-6). Higher values result in better
 #'   compression but take longer.
-#' @param lossy A numeric \eqn{\Delta E} (delta E) threshold for perceptual color
+#' @param lossy A numeric $$\Delta E$$ (delta E) threshold for perceptual color
 #'   error in lossy preprocessing. Values `<= 0` mean lossless optimization only.
 #'
 #'   The lossy algorithm uses color difference in the
 #'   International Commission on Illumination (CIE) 1976
-#'   \eqn{L^*a^*b^*} (often written as CIELAB or Lab) color space.
+#'   $$L^*a^*b^*$$ (often written as CIELAB or Lab) color space.
 #'
 #'   For a candidate palette size `n`, the image is quantized with `n` colors,
-#'   then the color difference \eqn{\Delta E_{76}} is computed between original and
+#'   then the color difference $$\Delta E_{76}$$ is computed between original and
 #'   quantized pixels on a sample of at most 50,000 pixels. We use the 95th
-#'   percentile of sampled \eqn{\Delta E_{76}} values and bisection on `n` (1--256)
+#'   percentile of sampled $$\Delta E_{76}$$ values and bisection on `n` (1--256)
 #'   to find the smallest palette size whose 95th percentile is `<= lossy`.
 #'
-#'   Rough interpretation of \eqn{\Delta E_{76}} values:
+#'   Rough interpretation of $$\Delta E_{76}$$ values:
 #'   - `< 1`: typically imperceptible
 #'   - `1 - 2`: perceptible through close inspection
 #'   - `2 - 10`: perceptible at a glance
 #'   - `10 - 50`: strong perceptual difference
 #'   - `> 50`: very large color shift
 #'
-#'   In theory \eqn{\Delta E_{76}} can exceed 100 (up to around 374 for extreme
+#'   In theory $$\Delta E_{76}$$ can exceed 100 (up to around 374 for extreme
 #'   RGB pairs).
-#'
-#'   References:
-#'   - CIE (1978). Recommendations on Uniform Color Spaces, Color Difference
-#'   Equations, Psychometric Color Terms.
-#'   - Sharma, G., Wu, W., & Dalal, E. N. (2005). The CIEDE2000
-#'   color-difference formula: Implementation notes, supplementary test data,
-#'   and mathematical observations.
 #' @param alpha Optimize transparent pixels for better compression. This is
 #'   technically lossy but visually lossless.
 #' @param preserve Preserve file permissions and timestamps. Ignored when
@@ -49,6 +42,14 @@
 #' @param ... Arguments passed to `tinypng()`.
 #'
 #' @return Character vector of output file paths (invisibly).
+#' @references
+#' CIE (1978). *Recommendations on Uniform Color Spaces, Color Difference
+#' Equations, Psychometric Color Terms*. Supplement No. 2 to CIE Publication
+#' No. 15 (E-1.3.1) 1971/(TC-1.3), Bureau Central de la CIE, Paris.
+#'
+#' Sharma, G., Wu, W., & Dalal, E. N. (2005). The CIEDE2000 color-difference
+#' formula: Implementation notes, supplementary test data, and mathematical
+#' observations. *Color Research & Application*, 30(1), 21--30.
 #' @export
 #'
 #' @examples
