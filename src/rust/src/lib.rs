@@ -137,6 +137,7 @@ fn optim_png_impl(
 }
 
 fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
+    // Decode source image into RGBA pixels used as the ground truth.
     let image = lodepng::decode32_file(input)
         .map_err(|e| format!("Failed to read PNG {}: {}", input.display(), e))?;
     let pixels: Vec<Color> = image
@@ -145,79 +146,65 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .map(|p| Color::new(p.r, p.g, p.b, p.a))
         .collect();
 
-    // 1) Quantize once at 256 colors.
-    let (palette, indexed) = convert_to_indexed(
-        &pixels, image.width, 256, &optimizer::KMeans, &ditherer::Ordered
-    );
-
-    // 2) Sort palette entries by pixel frequency.
-    let mut freq = vec![0usize; palette.len()];
-    for &idx in &indexed {
-        freq[idx as usize] += 1;
-    }
-    let mut order: Vec<usize> = (0..palette.len()).collect();
-    order.sort_by(|&a, &b| freq[b].cmp(&freq[a]));
-
-    // lossy is used directly as the CIE76 Delta E threshold.
+    // lossy is used directly as the CIE76 Delta E threshold (JND baseline ~2.3).
     let max_de = lossy;
-    let palette_lab: Vec<[f64; 3]> = palette.iter().map(|c| to_lab(*c)).collect();
 
-    // Find minimal N such that worst palette reconstruction error <= threshold.
+    // Sample at most 50k pixels for perceptual error evaluation.
+    let sample_idx = sample_indices(pixels.len(), 50_000);
+    let src_lab: Vec<[f64; 3]> = sample_idx.iter().map(|&i| to_lab(pixels[i])).collect();
+
+    // Bisection over palette size n in [1, 256]:
+    // for each n, quantize the whole image and evaluate p95(DeltaE(source, quantized))
+    // on sampled pixels. Select the smallest n whose p95 <= max_de.
     let mut lo = 1usize;
-    let mut hi = palette.len().max(1);
+    let mut hi = 256usize;
     while lo < hi {
         let mid = (lo + hi) / 2;
-        let (_, worst) = map_palette(&order, &palette_lab, mid);
-        if worst <= max_de {
+        let quantized_mid = quantize_image(&pixels, image.width, mid);
+        let p95 = sample_p95_delta_e(&src_lab, &quantized_mid, &sample_idx);
+        if p95 <= max_de {
             hi = mid;
         } else {
             lo = mid + 1;
         }
     }
-    let n = lo;
+    let quantized = quantize_image(&pixels, image.width, lo);
 
-    let (idx_map, _) = map_palette(&order, &palette_lab, n);
-    let selected_palette: Vec<Color> = order.iter().take(n).map(|&i| palette[i]).collect();
-
-    let quantized: Vec<lodepng::RGBA> = indexed
+    let encoded: Vec<lodepng::RGBA> = quantized
         .iter()
-        .map(|&idx| {
-            let c = selected_palette[idx_map[idx as usize]];
-            lodepng::RGBA::new(c.r, c.g, c.b, c.a)
-        })
+        .map(|c| lodepng::RGBA::new(c.r, c.g, c.b, c.a))
         .collect();
-    lodepng::encode32(&quantized, image.width, image.height)
+    lodepng::encode32(&encoded, image.width, image.height)
         .map_err(|e| format!("Failed to encode quantized PNG data: {}", e).into())
 }
 
-fn map_palette(order: &[usize], palette_lab: &[[f64; 3]], n: usize) -> (Vec<usize>, f64) {
-    let selected = &order[..n];
-    let mut selected_pos = vec![usize::MAX; palette_lab.len()];
-    for (j, &i) in selected.iter().enumerate() {
-        selected_pos[i] = j;
+fn quantize_image(pixels: &[Color], width: usize, n: usize) -> Vec<Color> {
+    let (palette, indexed) = convert_to_indexed(
+        pixels, width, n.clamp(1, 256), &optimizer::KMeans, &ditherer::Ordered
+    );
+    indexed.iter().map(|&idx| palette[idx as usize]).collect()
+}
+
+fn sample_indices(len: usize, max_samples: usize) -> Vec<usize> {
+    if len == 0 {
+        return Vec::new();
     }
-    let mut idx_map = vec![0usize; palette_lab.len()];
-    let mut worst = 0.0;
-    for (i, lab) in palette_lab.iter().enumerate() {
-        if selected_pos[i] != usize::MAX {
-            idx_map[i] = selected_pos[i];
-            continue;
-        }
-        let mut best_j = 0usize;
-        let mut best_d = f64::INFINITY;
-        for (j, &k) in selected.iter().enumerate() {
-            let d = delta_e(*lab, palette_lab[k]);
-            if d < best_d {
-                best_d = d;
-                best_j = j;
-            }
-        }
-        idx_map[i] = best_j;
-        if best_d > worst {
-            worst = best_d;
-        }
+    let step = (len / max_samples).max(1);
+    (0..len).step_by(step).collect()
+}
+
+fn sample_p95_delta_e(src_lab: &[[f64; 3]], quantized: &[Color], sample_idx: &[usize]) -> f64 {
+    let mut de: Vec<f64> = sample_idx
+        .iter()
+        .enumerate()
+        .map(|(j, &i)| delta_e(src_lab[j], to_lab(quantized[i])))
+        .collect();
+    if de.is_empty() {
+        return 0.0;
     }
-    (idx_map, worst)
+    de.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let p = ((de.len() as f64 * 0.95).ceil() as usize).saturating_sub(1);
+    de[p.min(de.len() - 1)]
 }
 
 fn delta_e(a: [f64; 3], b: [f64; 3]) -> f64 {
