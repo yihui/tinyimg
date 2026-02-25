@@ -86,7 +86,7 @@ This is an R package that optimizes and compresses images using Rust libraries. 
 - `README.md` - Package documentation
 
 **R code** (`R/`):
-- `optim_png.R` - Main user-facing function
+- `tinypng.R` - Main user-facing function
 - `extendr-wrappers.R` - Auto-generated R wrappers for Rust functions
 - `tinyimg-package.R` - Package documentation
 
@@ -213,7 +213,7 @@ Before submitting changes:
 
 Main function:
 ```r
-optim_png(input, output = input, level = 2L)
+tinypng(input, output = input, level = 2L)
 ```
 - `input`: Path to input PNG file
 - `output`: Path to output PNG file (defaults to overwrite input)

@@ -72,7 +72,7 @@ tinypng = function(
   }
   lossy = as.numeric(lossy[1])
   if (length(input))
-    optim_png_impl(input, output, as.integer(level), alpha, preserve, verbose, lossy)
+    tinypng_impl(input, output, as.integer(level), alpha, preserve, verbose, lossy)
   invisible(output)
 }
 

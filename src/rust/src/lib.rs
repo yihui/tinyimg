@@ -14,7 +14,7 @@ use std::path::PathBuf;
 /// @param lossy Maximum CIE76 Delta E threshold
 /// @export
 #[extendr]
-fn optim_png_impl(
+fn tinypng_impl(
     input: Strings,
     output: Strings,
     level: i32,
@@ -301,5 +301,5 @@ fn format_bytes(bytes: u64) -> String {
 // Macro to generate exports
 extendr_module! {
     mod tinyimg;
-    fn optim_png_impl;
+    fn tinypng_impl;
 }
