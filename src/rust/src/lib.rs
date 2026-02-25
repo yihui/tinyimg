@@ -148,23 +148,27 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
     let sample_idx = sample_indices(pixels.len(), 50_000);
     let src_lab: Vec<[f64; 3]> = sample_idx.iter().map(|&i| to_lab(pixels[i])).collect();
 
-    // Bisection over palette size n in [1, 256]:
-    // for each n, quantize the whole image and evaluate p95(DeltaE(source, quantized))
-    // on sampled pixels. Select the smallest n whose p95 <= lossy.
+    // Bisection over palette size n in [1, 256].
+    // Evaluate each candidate with no dithering (nearest-colour mapping only),
+    // so that every unique original colour maps deterministically to one palette
+    // entry.  Group sampled pixels by their original colour, take the worst-case
+    // DeltaE for each unique colour, then use the 95th percentile over those
+    // unique colours.  This gives each distinct colour in the image one equal
+    // vote regardless of how many pixels share it, so a large uniform background
+    // cannot mask errors in rarer content colours.  The final output still uses
+    // the Ordered ditherer for visual quality.
     let mut lo = 1usize;
     let mut hi = 256usize;
     while lo < hi {
         let mid = (lo + hi) / 2;
-        let quantized_mid = quantize_image(&pixels, image.width, mid);
-        let p95 = sample_p95_delta_e(&src_lab, &quantized_mid, &sample_idx);
-        eprintln!("[debug] mid={} p95={:.4} lossy={:.4} sample_idx.len()={} quantized_mid.len()={}", mid, p95, lossy, sample_idx.len(), quantized_mid.len());
-        if p95 <= lossy {
+        let quantized_mid = quantize_image_nodither(&pixels, image.width, mid);
+        let metric = palette_p95_delta_e(&src_lab, &pixels, &quantized_mid, &sample_idx);
+        if metric <= lossy {
             hi = mid;
         } else {
             lo = mid + 1;
         }
     }
-    eprintln!("[debug] final lo={}", lo);
     let quantized = quantize_image(&pixels, image.width, lo);
 
     let encoded: Vec<lodepng::RGBA> = quantized
@@ -182,6 +186,13 @@ fn quantize_image(pixels: &[Color], width: usize, n: usize) -> Vec<Color> {
     indexed.iter().map(|&idx| palette[idx as usize]).collect()
 }
 
+fn quantize_image_nodither(pixels: &[Color], width: usize, n: usize) -> Vec<Color> {
+    let (palette, indexed) = convert_to_indexed(
+        pixels, width, n.clamp(1, 256), &optimizer::KMeans, &ditherer::None
+    );
+    indexed.iter().map(|&idx| palette[idx as usize]).collect()
+}
+
 fn sample_indices(len: usize, max_samples: usize) -> Vec<usize> {
     if len == 0 {
         return Vec::new();
@@ -190,43 +201,31 @@ fn sample_indices(len: usize, max_samples: usize) -> Vec<usize> {
     (0..len).step_by(step).collect()
 }
 
-fn sample_p95_delta_e(src_lab: &[[f64; 3]], quantized: &[Color], sample_idx: &[usize]) -> f64 {
-    let mut de: Vec<f64> = sample_idx
-        .iter()
-        .enumerate()
-        .map(|(j, &i)| delta_e(src_lab[j], to_lab(quantized[i])))
-        .collect();
-    if de.is_empty() {
-        return 0.0;
+/// Compute the 95th percentile of per-unique-colour max DeltaE.
+/// Pixels are grouped by their original RGBA colour so that a dominant
+/// background colour (which would otherwise contribute the vast majority of
+/// zero-error samples) gets only a single vote.  Within each group the
+/// worst-case DeltaE is kept; then p95 is taken over those group-level values.
+fn palette_p95_delta_e(
+    src_lab: &[[f64; 3]],
+    original: &[Color],
+    quantized: &[Color],
+    sample_idx: &[usize],
+) -> f64 {
+    use std::collections::HashMap;
+    let mut color_max_de: HashMap<u32, f64> = HashMap::new();
+    for (j, &i) in sample_idx.iter().enumerate() {
+        let c = original[i];
+        let key = ((c.r as u32) << 24) | ((c.g as u32) << 16) | ((c.b as u32) << 8) | c.a as u32;
+        let de = delta_e(src_lab[j], to_lab(quantized[i]));
+        let entry = color_max_de.entry(key).or_insert(0.0_f64);
+        if de > *entry { *entry = de; }
     }
-    // Debug: print some sample values
-    let nonzero: Vec<f64> = de.iter().copied().filter(|&x| x > 0.001).collect();
-    eprintln!("[debug] de.len()={} nonzero count={} max={:.4} min={:.4}",
-        de.len(), nonzero.len(),
-        de.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
-        de.iter().cloned().fold(f64::INFINITY, f64::min));
-    if !nonzero.is_empty() {
-        // Print first few non-zero entries: (sample_idx, orig_lab, quant_lab, de)
-        let mut shown = 0;
-        for (j, &i) in sample_idx.iter().enumerate() {
-            let d = de[j];
-            if d > 0.001 && shown < 3 {
-                eprintln!("[debug] sample j={} pixel_i={} src_lab={:?} quant_color=({},{},{},{}) de={:.4}",
-                    j, i, src_lab[j], quantized[i].r, quantized[i].g, quantized[i].b, quantized[i].a, d);
-                shown += 1;
-            }
-        }
-    } else {
-        // All zero - print first few to show what's happening
-        for j in 0..3.min(sample_idx.len()) {
-            let i = sample_idx[j];
-            eprintln!("[debug] sample j={} pixel_i={} src_lab={:?} quant_color=({},{},{},{}) de={:.4}",
-                j, i, src_lab[j], quantized[i].r, quantized[i].g, quantized[i].b, quantized[i].a, de[j]);
-        }
-    }
-    de.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let p = ((de.len() as f64 * 0.95).ceil() as usize).saturating_sub(1);
-    de[p.min(de.len() - 1)]
+    let mut des: Vec<f64> = color_max_de.into_values().collect();
+    if des.is_empty() { return 0.0; }
+    des.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let p = ((des.len() as f64 * 0.95).ceil() as usize).saturating_sub(1);
+    des[p.min(des.len() - 1)]
 }
 
 fn delta_e(a: [f64; 3], b: [f64; 3]) -> f64 {
