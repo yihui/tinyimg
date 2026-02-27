@@ -73,8 +73,10 @@ tinypng = function(
     if (is.function(output)) output = output(input)
   }
   lossy = as.numeric(lossy[1])
-  if (length(input))
-    tinypng_impl(input, output, as.integer(level), alpha, preserve, verbose, lossy)
+  if (length(input)) tinypng_impl(
+    path.expand(input), path.expand(output), as.integer(level), alpha, preserve,
+    verbose, lossy
+  )
   invisible(output)
 }
 
