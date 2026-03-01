@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +39,7 @@ jobs:
       
       - name: Create Pull Request
         if: steps.cargo_update.outputs.cargo_updated == 'true'
+        id: create_pr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -54,3 +56,10 @@ jobs:
             the vendored dependencies for the next CRAN release.
           branch: cargo-update-${{ github.run_number }}
           delete-branch: true
+      
+      - name: Trigger R-CMD-check on PR branch
+        if: steps.cargo_update.outputs.cargo_updated == 'true' && steps.create_pr.outputs.pull-request-number != ''
+        run: |
+          gh workflow run R-CMD-check.yaml --ref cargo-update-${{ github.run_number }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
