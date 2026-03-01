@@ -22,6 +22,7 @@ This file lists the authors of the Rust crates vendored in this package.
 - once_cell: Aleksey Kladov <aleksey.kladov@gmail.com>
 - oxipng: Joshua Holmer <jholmer.in@gmail.com>
 - paste: David Tolnay <dtolnay@gmail.com>
+- plain: jzr
 - quote: David Tolnay <dtolnay@gmail.com>
 - radium: Nika Layzell <nika@thelayzells.com>
 - radium: myrrlyn <self@myrrlyn.dev>
