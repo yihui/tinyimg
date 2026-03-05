@@ -6,7 +6,7 @@ Authors@R: c(
     person("Authors of the dependency Rust crates", role = c("ctb", "cph"), 
       comment = "see AUTHORS file"))
 Description: Optimize and compress images using 'Rust' libraries to reduce
-    file sizes while maintaining image quality. Supports lossy PNG palette
+    file sizes while maintaining image quality. Supports PNG palette
     reduction and dithering via the 'exoquant' crate before lossless PNG
     optimization via the 'oxipng' crate. The package provides functions to
     optimize individual image files or entire directories, with configurable
