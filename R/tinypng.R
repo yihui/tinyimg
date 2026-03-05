@@ -39,7 +39,6 @@
 #' @param verbose Print file size reduction info for each file.
 #' @param lossy A numeric threshold for the color difference in lossy
 #'   processing. Values `<= 0` disable lossy optimization.
-#' @param ... Arguments passed to `tinypng()`.
 #' @return Character vector of output file paths (invisibly).
 #' @references <https://en.wikipedia.org/wiki/Color_difference>
 #' @export
@@ -79,7 +78,3 @@ tinypng = function(
   )
   invisible(output)
 }
-
-#' @rdname tinypng
-#' @export
-optim_png = function(...) tinypng(...)

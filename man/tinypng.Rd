@@ -2,7 +2,6 @@
 % Please edit documentation in R/tinypng.R
 \name{tinypng}
 \alias{tinypng}
-\alias{optim_png}
 \title{Optimize PNG images}
 \usage{
 tinypng(
@@ -15,8 +14,6 @@ tinypng(
   verbose = TRUE,
   lossy = 0
 )
-
-optim_png(...)
 }
 \arguments{
 \item{input}{Path to the input PNG file or directory. If a directory is
@@ -42,8 +39,6 @@ subdirectories.}
 
 \item{lossy}{A numeric threshold for the color difference in lossy
 processing. Values \verb{<= 0} disable lossy optimization.}
-
-\item{...}{Arguments passed to \code{tinypng()}.}
 }
 \value{
 Character vector of output file paths (invisibly).

@@ -2,7 +2,7 @@
 
 - Added optional lossy PNG optimization before lossless oxipng optimization.
 
-- Added `tinypng()` as the primary API and kept `optim_png()` as a wrapper alias.
+- Changed the primary API from `optim_png()` to `tinypng()`.
 
 - Updated benchmark examples for lossy optimization results, visual comparisons, and lossy-level plots.
 
