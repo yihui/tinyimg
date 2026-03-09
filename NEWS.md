@@ -1,3 +1,6 @@
+# CHANGES IN tinyimg VERSION 0.4
+
+
 # CHANGES IN tinyimg VERSION 0.3
 
 - Added optional lossy PNG optimization before lossless oxipng optimization.
