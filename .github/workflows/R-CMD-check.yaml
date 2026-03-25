@@ -18,7 +18,7 @@ jobs:
       matrix:
         config:
           - {os: ubuntu-latest, r: 'release'}
-          - {os: ubuntu-latest, r: 'devel'}
+          - {os: ubuntu-latest, r: 'devel', http-user-agent: 'release'}
           - {os: macos-latest, r: 'release'}
           - {os: windows-latest, r: 'release'}
 
@@ -41,6 +41,7 @@ jobs:
         uses: r-lib/actions/setup-r@HEAD
         with:
           r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
       - uses: yihui/actions/setup-r-dependencies@HEAD
