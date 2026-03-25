@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@HEAD
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -27,3 +27,5 @@ jobs:
         uses: r-lib/actions/setup-r@HEAD
         with:
           use-public-rspm: true
+
+      - uses: yihui/actions/setup-r-dependencies@HEAD
