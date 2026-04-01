@@ -6,10 +6,46 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Cargo Update"]
+    types: [completed]
 
 jobs:
+  prepare:
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      ref: ${{ steps.get-ref.outputs.ref }}
+    steps:
+      - name: Download PR branch artifact
+        id: download
+        uses: actions/download-artifact@v8
+        with:
+          name: pr-branch
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Get PR branch ref
+        id: get-ref
+        run: |
+          if [ -f pr-branch.txt ]; then
+            echo "ref=$(cat pr-branch.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "ref=" >> $GITHUB_OUTPUT
+          fi
+
   R-CMD-check:
+    needs: [prepare]
+    if: |
+      always() &&
+      (needs.prepare.result == 'skipped' || needs.prepare.result == 'success') &&
+      (github.event_name != 'workflow_run' || needs.prepare.outputs.ref != '')
     runs-on: ${{ matrix.config.os }}
+    permissions:
+      contents: read
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
@@ -28,6 +64,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@HEAD
+        with:
+          ref: ${{ needs.prepare.outputs.ref || github.ref }}
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
