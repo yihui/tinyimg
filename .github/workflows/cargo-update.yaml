@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload PR branch artifact
         if: steps.cargo_update.outputs.cargo_updated == 'true' && steps.create_pr.outputs.pull-request-number != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pr-branch
           path: pr-branch.txt
