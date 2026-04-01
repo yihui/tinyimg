@@ -13,7 +13,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      actions: write
     
     steps:
       - uses: actions/checkout@v4
@@ -57,9 +56,14 @@ jobs:
           branch: cargo-update-${{ github.run_number }}
           delete-branch: true
       
-      - name: Trigger R-CMD-check on PR branch
+      - name: Save PR branch for R-CMD-check trigger
         if: steps.cargo_update.outputs.cargo_updated == 'true' && steps.create_pr.outputs.pull-request-number != ''
-        run: |
-          gh workflow run R-CMD-check.yaml --ref cargo-update-${{ github.run_number }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "cargo-update-${{ github.run_number }}" > pr-branch.txt
+
+      - name: Upload PR branch artifact
+        if: steps.cargo_update.outputs.cargo_updated == 'true' && steps.create_pr.outputs.pull-request-number != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-branch
+          path: pr-branch.txt
+          retention-days: 7
