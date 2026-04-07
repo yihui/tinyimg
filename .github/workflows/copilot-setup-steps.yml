@@ -26,6 +26,7 @@ jobs:
       - name: Install R
         uses: r-lib/actions/setup-r@HEAD
         with:
+          r-version: devel
           use-public-rspm: true
 
       - uses: yihui/actions/setup-r-dependencies@HEAD
