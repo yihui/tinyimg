@@ -9,10 +9,11 @@
   suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the default `output` for
   all three optimizers.
 
-- Fixed a `non-API call to R` NOTE in R-devel (`R_UnboundValue`) by patching
-  the vendored `extendr-api` and `extendr-ffi` to use the `#[cfg(r_4_5)]` API
-  compliance mechanism, avoiding the non-API `R_UnboundValue` symbol reference
-  under R >= 4.5.
+- Fixed `non-API call to R` NOTEs (`R_UnboundValue` in R-devel, `R_MissingArg`
+  in R-patched) by patching vendored `extendr-api`/`extendr-ffi`: use structural
+  `PRINTNAME` checks instead of non-API extern statics, and gate `R_MissingArg`
+  as `#[cfg(r_4_5)]` (API only in R >= 4.5). Patches live in
+  `src/rust/patches/` and are applied by `update-vendor.sh`.
 
 
 # CHANGES IN tinyimg VERSION 0.3

@@ -33,12 +33,11 @@
  pub fn missing_arg() -> Symbol {
      unsafe { Symbol::from_sexp(R_MissingArg) }
  }
-@@ -234,7 +234,9 @@
+@@ -234,7 +234,7 @@
      #[test]
      fn test_constant_symbols() {
          test! {
-+            #[cfg(not(r_4_5))]
-             assert!(unbound_value().is_symbol());
+-            assert!(unbound_value().is_symbol());
 +            #[cfg(r_4_5)]
              assert!(missing_arg().is_symbol());
              assert!(base_symbol().is_symbol());

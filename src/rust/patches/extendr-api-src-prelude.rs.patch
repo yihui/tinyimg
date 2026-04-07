@@ -1,6 +1,6 @@
 --- a/extendr-api/src/prelude.rs
 +++ b/extendr-api/src/prelude.rs
-@@ -22,11 +22,15 @@
+@@ -22,11 +22,13 @@
  pub use super::wrapper::symbol::{
      base_symbol, brace_symbol, bracket_2_symbol, bracket_symbol, class_symbol, device_symbol,
      dim_symbol, dimnames_symbol, dollar_symbol, dot_defined, dot_method, dot_package_name,
@@ -13,8 +13,6 @@
  };
 +#[cfg(r_4_5)]
 +pub use super::wrapper::symbol::missing_arg;
-+#[cfg(not(r_4_5))]
-+pub use super::wrapper::symbol::unbound_value;
  
  // Exported macros have crate scope.
  pub use crate::{append, append_lang, append_with_name, args, lang, make_lang};
