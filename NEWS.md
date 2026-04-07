@@ -1,5 +1,14 @@
 # CHANGES IN tinyimg VERSION 0.4
 
+- Added `tinyjpg()` for JPEG optimization (using the `mozjpeg` Rust crate).
+
+- Added `tinyimg()` as a general entry point for optimizing both PNG and JPEG
+  files in a directory or a vector of paths.
+
+- Added `tiny_output()` helper to generate safe output paths with lossy/quality
+  suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the default `output` for
+  all three optimizers.
+
 
 # CHANGES IN tinyimg VERSION 0.3
 

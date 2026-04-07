@@ -1,6 +1,6 @@
 Package: tinyimg
 Title: Optimize and Compress Images
-Version: 0.3.2
+Version: 0.3.3
 Authors@R: c(
     person("Yihui", "Xie", role = c("aut", "cre", "cph"), email = "xie@yihui.name", comment = c(ORCID = "0000-0003-0645-5666", URL = "https://yihui.org")),
     person("Authors of the dependency Rust crates", role = c("ctb", "cph"), 
@@ -8,9 +8,10 @@ Authors@R: c(
 Description: Optimize and compress images using 'Rust' libraries to reduce
     file sizes while maintaining image quality. Supports PNG palette
     reduction and dithering via the 'exoquant' crate before lossless PNG
-    optimization via the 'oxipng' crate. The package provides functions to
-    optimize individual image files or entire directories, with configurable
-    compression levels.
+    optimization via the 'oxipng' crate, and JPEG re-encoding via the
+    'mozjpeg' crate. The package provides functions to optimize individual
+    image files or entire directories, with configurable compression levels.
+    Use tinyimg() as a convenient entry point for mixed PNG/JPEG workflows.
 License: MIT + file LICENSE
 URL: https://github.com/yihui/tinyimg
 BugReports: https://github.com/yihui/tinyimg/issues

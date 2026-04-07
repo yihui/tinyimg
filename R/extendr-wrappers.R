@@ -3,3 +3,7 @@
 tinypng_impl = function(input, output, level, alpha, preserve, verbose, lossy) {
     .Call(wrap__tinypng_impl, input, output, level, alpha, preserve, verbose, lossy)
 }
+
+tinyjpg_impl = function(input, output, quality, verbose) {
+    .Call(wrap__tinyjpg_impl, input, output, quality, verbose)
+}

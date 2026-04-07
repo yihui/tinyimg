@@ -1,8 +1,100 @@
 use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
+use mozjpeg::{ColorSpace, Compress, Decompress};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+
+// ---------------------------------------------------------------------------
+// Shared I/O helpers
+// ---------------------------------------------------------------------------
+
+/// Validate that inputs and outputs have the same length, all input files
+/// exist, and all output parent directories are created as needed.
+fn validate_io(inputs: &[String], outputs: &[String]) -> Result<()> {
+    if inputs.len() != outputs.len() {
+        return Err("Input and output vectors must have the same length".into());
+    }
+    for s in inputs {
+        if !PathBuf::from(s).exists() {
+            return Err(format!("Input file does not exist: {}", s).into());
+        }
+    }
+    for s in outputs {
+        let p = PathBuf::from(s);
+        if let Some(parent) = p.parent() {
+            if !parent.exists() {
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    format!("Failed to create directory {}: {}", parent.display(), e)
+                })?;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Print a one-line size-change summary for a processed file.
+fn report_verbose(
+    input_str: &str,
+    output_str: &str,
+    input_size: u64,
+    output_path: &PathBuf,
+    input_truncate_index: usize,
+    output_truncate_index: usize,
+) {
+    if input_size == 0 { return; }  // 0-byte input: nothing to report
+    let output_size = std::fs::metadata(output_path).map(|m| m.len()).unwrap_or(0);
+    let reduction =
+        ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
+    let sign = if output_size < input_size { "-" } else { "+" };
+    let display_input  = truncate_path(input_str,  input_truncate_index);
+    let display_output = truncate_path(output_str, output_truncate_index);
+    let path_display = if input_str == output_str {
+        display_output
+    } else {
+        format!("{} -> {}", display_input, display_output)
+    };
+    rprintln!(
+        "{} | {} -> {} ({}{:.1}%)",
+        path_display,
+        format_bytes(input_size),
+        format_bytes(output_size),
+        sign,
+        reduction.abs()
+    );
+}
+
+/// Iterate over validated input/output pairs, call `process_fn` on each, and
+/// optionally print verbose size-change summaries.
+fn process_files<F>(
+    inputs: &[String],
+    outputs: &[String],
+    verbose: bool,
+    process_fn: F,
+) -> Result<()>
+where
+    F: Fn(&PathBuf, &PathBuf) -> Result<()>,
+{
+    let input_trunc  = if verbose { find_truncate_index(inputs)  } else { 0 };
+    let output_trunc = if verbose { find_truncate_index(outputs) } else { 0 };
+    for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
+        let input_path  = PathBuf::from(input_str);
+        let output_path = PathBuf::from(output_str);
+        let input_size  = std::fs::metadata(&input_path).map(|m| m.len()).unwrap_or(0);
+        process_fn(&input_path, &output_path)?;
+        if verbose {
+            report_verbose(
+                input_str, output_str, input_size,
+                &output_path, input_trunc, output_trunc,
+            );
+        }
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// PNG optimisation
+// ---------------------------------------------------------------------------
 
 /// Optimize PNG files using oxipng
 ///
@@ -24,114 +116,108 @@ fn tinypng_impl(
     verbose: bool,
     lossy: f64,
 ) -> Result<()> {
-    // Convert to vectors
-    let inputs: Vec<String> = input.iter().map(|s| s.to_string()).collect();
+    let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
     let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
+    validate_io(&inputs, &outputs)?;
 
-    // Validate that input and output have same length
-    if inputs.len() != outputs.len() {
-        return Err("Input and output vectors must have the same length".into());
-    }
-
-    // Check all input files exist before processing any
-    for input_str in &inputs {
-        let input_path = PathBuf::from(input_str);
-        if !input_path.exists() {
-            return Err(format!("Input file does not exist: {}", input_str).into());
-        }
-    }
-
-    // Create output directories if needed
-    for output_str in &outputs {
-        let output_path = PathBuf::from(output_str);
-        if let Some(parent) = output_path.parent() {
-            if !parent.exists() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
-            }
-        }
-    }
-
-    // Set up oxipng options from preset
     let mut opts = Options::from_preset(level as u8);
-
-    // Strip all metadata by default
     opts.strip = StripChunks::All;
-
-    // Configure alpha optimization
     opts.optimize_alpha = alpha;
 
-    // Find common parent directories for display
-    let input_truncate_index = if verbose { find_truncate_index(&inputs) } else { 0 };
-    let output_truncate_index = if verbose { find_truncate_index(&outputs) } else { 0 };
-
-    // Process each file
-    for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
-        let input_path = PathBuf::from(input_str);
-        let output_path = PathBuf::from(output_str);
-
-        // Get input file size for reporting
-        let input_size = std::fs::metadata(&input_path)
-            .map(|m| m.len())
-            .unwrap_or(0);
-
-        // Optional lossy preprocessing before lossless optimization
-        match if lossy > 0.0 {
-            let lossy_data = apply_lossy_png(&input_path, lossy)?;
-            let optimized_data = oxipng::optimize_from_memory(&lossy_data, &opts)
+    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
+        if lossy > 0.0 {
+            let lossy_data = apply_lossy_png(input_path, lossy)?;
+            let optimized = oxipng::optimize_from_memory(&lossy_data, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
-            std::fs::write(&output_path, optimized_data)
+            std::fs::write(output_path, optimized)
                 .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
-            Ok(())
         } else {
-            let in_file = InFile::Path(input_path.clone());
+            let in_file  = InFile::Path(input_path.clone());
             let out_file = OutFile::Path {
                 path: Some(output_path.clone()),
                 preserve_attrs: preserve,
             };
             oxipng::optimize(&in_file, &out_file, &opts)
-                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))
-        } {
-            Ok(_) => {
-                // Get output file size for reporting
-                if verbose {
-                    let output_size = std::fs::metadata(&output_path)
-                        .map(|m| m.len())
-                        .unwrap_or(0);
-
-                    if input_size > 0 {
-                        let reduction = ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
-                        let sign = if output_size < input_size { "-" } else { "+" };
-
-                        // Format the display paths
-                        let display_input = truncate_path(input_str, input_truncate_index);
-                        let display_output = truncate_path(output_str, output_truncate_index);
-
-                        // Build the output message
-                        let path_display = if input_str == output_str {
-                            display_output
-                        } else {
-                            format!("{} -> {}", display_input, display_output)
-                        };
-
-                        rprintln!(
-                            "{} | {} -> {} ({}{:.1}%)",
-                            path_display,
-                            format_bytes(input_size),
-                            format_bytes(output_size),
-                            sign,
-                            reduction.abs()
-                        );
-                    }
-                }
-            },
-            Err(e) => {
-                return Err(e.into());
-            },
+                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
         }
-    }
+        Ok(())
+    })
+}
 
+// ---------------------------------------------------------------------------
+// JPEG optimisation
+// ---------------------------------------------------------------------------
+
+fn optimize_jpeg(input: &PathBuf, output: &PathBuf, quality: f32) -> Result<()> {
+    if quality >= 100.0 {
+        if input != output {
+            std::fs::copy(input, output)
+                .map_err(|e| format!("Failed to copy {}: {}", input.display(), e))?;
+        }
+        return Ok(());
+    }
+    let src_data = std::fs::read(input)
+        .map_err(|e| format!("Failed to read {}: {}", input.display(), e))?;
+
+    let d = Decompress::with_markers(mozjpeg::ALL_MARKERS)
+        .from_mem(&src_data)
+        .map_err(|e| format!("Failed to decompress {}: {}", input.display(), e))?;
+    let width  = d.width();
+    let height = d.height();
+
+    let (flat_pixels, colorspace) = if d.color_space() == ColorSpace::JCS_GRAYSCALE {
+        let mut img = d.grayscale()
+            .map_err(|e| format!("Failed to convert colorspace for {}: {}", input.display(), e))?;
+        let pixels: Vec<[u8; 1]> = img.read_scanlines()
+            .map_err(|e| format!("Failed to read scanlines from {}: {}", input.display(), e))?;
+        let _ = img.finish();
+        let flat: Vec<u8> = pixels.iter().flatten().copied().collect();
+        (flat, ColorSpace::JCS_GRAYSCALE)
+    } else {
+        let mut img = d.rgb()
+            .map_err(|e| format!("Failed to convert colorspace for {}: {}", input.display(), e))?;
+        let pixels: Vec<[u8; 3]> = img.read_scanlines()
+            .map_err(|e| format!("Failed to read scanlines from {}: {}", input.display(), e))?;
+        let _ = img.finish();
+        let flat: Vec<u8> = pixels.iter().flatten().copied().collect();
+        (flat, ColorSpace::JCS_RGB)
+    };
+
+    let mut comp = Compress::new(colorspace);
+    comp.set_size(width, height);
+    comp.set_quality(quality);
+    comp.set_optimize_coding(true);
+    let mut comp = comp.start_compress(Vec::new())
+        .map_err(|e| format!("Failed to start JPEG compression for {}: {}", output.display(), e))?;
+    comp.write_scanlines(&flat_pixels)
+        .map_err(|e| format!("Failed to write JPEG scanlines to {}: {}", output.display(), e))?;
+    let data = comp.finish()
+        .map_err(|e| format!("Failed to finish JPEG compression for {}: {}", output.display(), e))?;
+    std::fs::write(output, &data)
+        .map_err(|e| format!("Failed to write {}: {}", output.display(), e))?;
     Ok(())
+}
+
+/// Optimize JPEG files using mozjpeg
+///
+/// @param input Vector of input JPEG file paths
+/// @param output Vector of output JPEG file paths (same length as input)
+/// @param quality Quality level (0-100); higher means better quality and larger files
+/// @param verbose Print file size reduction info
+/// @export
+#[extendr]
+fn tinyjpg_impl(
+    input: Strings,
+    output: Strings,
+    quality: f64,
+    verbose: bool,
+) -> Result<()> {
+    let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
+    let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
+    validate_io(&inputs, &outputs)?;
+    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
+        optimize_jpeg(input_path, output_path, quality as f32)
+    })
 }
 
 fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
@@ -352,4 +438,5 @@ fn format_bytes(bytes: u64) -> String {
 extendr_module! {
     mod tinyimg;
     fn tinypng_impl;
+    fn tinyjpg_impl;
 }
