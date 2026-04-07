@@ -79,6 +79,7 @@ resolve_output = function(files, output, input_dir) {
   if (!length(files)) return(files)
   if (is.function(output)) return(output(files))
   # output is a directory: preserve relative paths under that directory
+  # +2L: skip input_dir length and the trailing path separator character
   rel = substring(files, nchar(input_dir) + 2L)
   file.path(output, rel)
 }

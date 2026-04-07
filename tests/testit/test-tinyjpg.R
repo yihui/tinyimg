@@ -36,9 +36,13 @@ assert("tinyjpg() works with quality = 30", {
 })
 
 assert("tinyjpg() works with quality = 95", {
-  out = tempfile(fileext = ".jpg")
-  tinyjpg(test_jpg, out, quality = 95)
-  (file.exists(out))
+  out95 = tempfile(fileext = ".jpg")
+  out30 = tempfile(fileext = ".jpg")
+  tinyjpg(test_jpg, out95, quality = 95)
+  tinyjpg(test_jpg, out30, quality = 30)
+  (file.exists(out95))
+  # higher quality should produce a larger (or equal) file
+  (file.size(out95) >= file.size(out30))
 })
 
 # Non-existent input

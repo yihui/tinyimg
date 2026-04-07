@@ -42,7 +42,7 @@ fn report_verbose(
     input_truncate_index: usize,
     output_truncate_index: usize,
 ) {
-    if input_size == 0 { return; }
+    if input_size == 0 { return; }  // 0-byte input: nothing to report
     let output_size = std::fs::metadata(output_path).map(|m| m.len()).unwrap_or(0);
     let reduction =
         ((input_size as f64 - output_size as f64) / input_size as f64) * 100.0;
