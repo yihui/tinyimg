@@ -82,3 +82,6 @@ tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
 \references{
 \url{https://en.wikipedia.org/wiki/Color_difference}
 }
+\seealso{
+\code{\link[=tinyimg]{tinyimg()}} to optimize both PNG and JPEG files at once.
+}

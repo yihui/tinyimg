@@ -9,6 +9,7 @@ name = "tinyimg"
 
 [dependencies]
 extendr-api = "0.7"
+mozjpeg = { version = "0.10", default-features = false }
 oxipng = { version = "9.1", default-features = false, features = ["filetime", "zopfli"] }
 exoquant = "0.2.0"
 lodepng = "2.7.3"

@@ -6,7 +6,10 @@
 
 <!-- badges: end -->
 
-An R package for optimizing and compressing images using Rust libraries. Currently supports PNG optimization via [exoquant](https://github.com/exoticorn/exoquant-rs) (lossy palette reduction) and [oxipng](https://github.com/oxipng/oxipng) (lossless optimization).
+An R package for optimizing and compressing images using Rust libraries.
+Supports PNG optimization via [exoquant](https://github.com/exoticorn/exoquant-rs)
+(lossy palette reduction) and [oxipng](https://github.com/oxipng/oxipng) (lossless
+optimization), and JPEG re-encoding via [mozjpeg](https://github.com/mozilla/mozjpeg).
 
 ## Installation
 
@@ -18,11 +21,21 @@ install.packages("tinyimg", repos = "https://yihui.r-universe.dev")
 
 ## Usage
 
-### Basic PNG optimization
+### Optimize any images
 
 ```r
 library(tinyimg)
 
+# Optimize all images in a directory (PNG and JPEG)
+tinyimg("path/to/directory")
+
+# Optimize specific files (mixed formats)
+tinyimg(c("photo.jpg", "diagram.png"))
+```
+
+### PNG optimization
+
+```r
 # Create a test PNG
 tmp = tempfile()
 png(tmp, width = 400, height = 400)
@@ -36,22 +49,38 @@ tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
 tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
 ```
 
-### Directory optimization
+### JPEG optimization
 
 ```r
-# Optimize all PNGs in a directory
-tinypng("path/to/directory")
+# Create a test JPEG
+tmp = tempfile(fileext = ".jpg")
+jpeg(tmp, width = 400, height = 400)
+plot(1:10)
+dev.off()
+
+# Optimize with default quality (75)
+tinyjpg(tmp)
+
+# Optimize to a new file at a lower quality
+tinyjpg(tmp, paste0(tmp, "-q60.jpg"), quality = 60)
 ```
 
-### Optimization levels
+### Optimization levels and quality
 
-The `level` parameter controls the optimization level (0-6):
+For PNG, the `level` parameter controls the optimization level (0-6):
 
 - `0`: Fast optimization with minimal compression
 - `2`: Default - good balance between speed and compression
 - `6`: Maximum optimization - best compression but slower
 
-See the [benchmark results](https://pkg.yihui.org/tinyimg/examples/benchmark.html) for detailed comparisons of optimization levels and `?tinypng` for full documentation.
+For JPEG, the `quality` parameter (0-100) controls quality vs. file size:
+
+- `75`: Default - good balance between quality and file size
+- `60` and below: Smaller files with visible JPEG artefacts
+- `90` and above: Near-original quality, larger files
+
+See the [benchmark results](https://pkg.yihui.org/tinyimg/examples/benchmark.html) for
+detailed comparisons, and `?tinyimg`, `?tinypng`, `?tinyjpg` for full documentation.
 
 ## For Package Developers
 

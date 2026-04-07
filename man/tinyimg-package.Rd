@@ -2,12 +2,13 @@
 % Please edit documentation in R/tinyimg-package.R
 \docType{package}
 \name{tinyimg-package}
-\alias{tinyimg}
 \alias{tinyimg-package}
 \title{tinyimg: Optimize and Compress Images}
 \description{
 The tinyimg package provides tools for optimizing and compressing images
-using Rust libraries.
+using Rust libraries. Use \code{\link[=tinyimg]{tinyimg()}} for a convenient entry point that
+handles both PNG and JPEG files, \code{\link[=tinypng]{tinypng()}} for PNG-only optimization, or
+\code{\link[=tinyjpg]{tinyjpg()}} for JPEG-only optimization.
 }
 \seealso{
 Useful links:

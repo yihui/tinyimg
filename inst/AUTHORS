@@ -3,11 +3,13 @@ Authors of Rust Crates Included in tinyimg
 
 This file lists the authors of the Rust crates vendored in this package.
 
+- arrayvec: bluss
 - bitflags: The Rust Project Developers
 - bumpalo: Nick Fitzgerald <fitzgen@gmail.com>
 - bytemuck: Lokathor <zefria@gmail.com>
 - cc: Alex Crichton <alex@alexcrichton.com>
 - cfg-if: Alex Crichton <alex@alexcrichton.com>
+- dunce: Kornel <kornel@geekhood.net>
 - exoquant: Dennis Ranke <dennis.ranke@gmail.com>
 - filetime: Alex Crichton <alex@alexcrichton.com>
 - funty: myrrlyn <self@myrrlyn.dev>
@@ -19,6 +21,8 @@ This file lists the authors of the Rust crates vendored in this package.
 - lodepng: Kornel <kornel@geekhood.net>
 - lodepng: Lode Vandevenne <lvandeve@gmail.com>
 - log: The Rust Project Developers
+- mozjpeg-sys: Kornel <kornel@geekhood.net>
+- mozjpeg: Kornel <kornel@geekhood.net>
 - once_cell: Aleksey Kladov <aleksey.kladov@gmail.com>
 - oxipng: Joshua Holmer <jholmer.in@gmail.com>
 - paste: David Tolnay <dtolnay@gmail.com>

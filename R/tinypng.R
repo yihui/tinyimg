@@ -1,3 +1,26 @@
+#' Resolve input/output file paths for image optimization
+#'
+#' @param input Input path(s) or directory.
+#' @param output Output path(s), directory, or function.
+#' @param pattern Regex pattern for matching files in a directory.
+#' @param recursive Recursively search subdirectories.
+#' @return Named list with `input` and `output` character vectors (paths expanded).
+#' @noRd
+tinyopt_files = function(input, output, pattern, recursive) {
+  if (length(input) == 1 && dir.exists(input)) {
+    files = list.files(input, pattern, recursive = recursive)
+    output = if (is.function(output)) {
+      output(file.path(input, files))
+    } else {
+      file.path(output, files)
+    }
+    input = file.path(input, files)
+  } else {
+    if (is.function(output)) output = output(input)
+  }
+  list(input = path.expand(input), output = path.expand(output))
+}
+
 #' Optimize PNG images
 #'
 #' Optimize PNG files or directories of PNG files using optional lossy palette
@@ -40,6 +63,7 @@
 #' @param lossy A numeric threshold for the color difference in lossy
 #'   processing. Values `<= 0` disable lossy optimization.
 #' @return Character vector of output file paths (invisibly).
+#' @seealso [tinyimg()] to optimize both PNG and JPEG files at once.
 #' @references <https://en.wikipedia.org/wiki/Color_difference>
 #' @export
 #' @examples
@@ -53,28 +77,14 @@
 #' tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
 #' tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
 #' tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
-#' @export
 tinypng = function(
   input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
-  # Resolve directory input to PNG file paths
-  if (length(input) == 1 && dir.exists(input)) {
-    files = list.files(input, "\\.a?png$", recursive = recursive)
-    # Apply output function or construct output paths
-    output = if (is.function(output)) {
-      output(file.path(input, files))
-    } else {
-      file.path(output, files)
-    }
-    input = file.path(input, files)
-  } else {
-    if (is.function(output)) output = output(input)
-  }
+  paths = tinyopt_files(input, output, "\\.a?png$", recursive)
   lossy = as.numeric(lossy[1])
-  if (length(input)) tinypng_impl(
-    path.expand(input), path.expand(output), as.integer(level), alpha, preserve,
-    verbose, lossy
+  if (length(paths$input)) tinypng_impl(
+    paths$input, paths$output, as.integer(level), alpha, preserve, verbose, lossy
   )
-  invisible(output)
+  invisible(paths$output)
 }
