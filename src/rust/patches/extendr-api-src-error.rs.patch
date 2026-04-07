@@ -1,0 +1,71 @@
+--- a/extendr-api/src/error.rs	2026-04-07 23:17:15.750786402 +0000
++++ b/extendr-api/src/error.rs	2026-04-07 23:16:55.657467255 +0000
+@@ -27,7 +27,7 @@
+     }
+ }
+ 
+-#[derive(Debug, PartialEq)]
++#[derive(PartialEq)]
+ pub enum Error {
+     Panic(Robj),
+     NotFound(Robj),
+@@ -95,15 +95,23 @@
+     TryFromSliceError(String),
+ }
+ 
++// Custom Debug impl to avoid using Debug for Robj, which references non-API
++// R statics (R_MissingArg, R_UnboundValue) not present in all R builds.
++impl std::fmt::Debug for Error {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        std::fmt::Display::fmt(self, f)
++    }
++}
++
+ impl std::fmt::Display for Error {
+     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+         match self {
+-            Error::Panic(robj) => write!(f, "Panic detected {:?}.", robj),
+-            Error::NotFound(robj) => write!(f, "Not found. {:?}", robj),
+-            Error::EvalError(robj) => write!(f, "Evaluation error in {:?}.", robj),
+-            Error::ParseError(code) => write!(f, "Parse error in {:?}.", code),
++            Error::Panic(robj) => write!(f, "Panic detected {:?}.", robj.rtype()),
++            Error::NotFound(robj) => write!(f, "Not found: {:?}", robj.rtype()),
++            Error::EvalError(robj) => write!(f, "Evaluation error in {:?}.", robj.rtype()),
++            Error::ParseError(code) => write!(f, "Parse error in {:?}.", code.rtype()),
+             Error::NamesLengthMismatch(robj) => {
+-                write!(f, "Length of names does not match vector. {:?}", robj)
++                write!(f, "Length of names does not match vector: {:?}", robj.rtype())
+             }
+ 
+             Error::ExpectedNull(robj) => write!(f, "Expected Null got {:?}", robj.rtype()),
+@@ -158,10 +166,10 @@
+             Error::MustNotBeNA(_robj) => write!(f, "Must not be NA."),
+             Error::ExpectedNonZeroLength(_robj) => write!(f, "Expected non zero length"),
+             Error::ExpectedLength(len) => write!(f, "Expected length: {len}"),
+-            Error::OutOfLimits(robj) => write!(f, "The value is too big: {:?}", robj),
++            Error::OutOfLimits(robj) => write!(f, "The value is too big: {:?}", robj.rtype()),
+             Error::TypeMismatch(_robj) => write!(f, "Type mismatch"),
+ 
+-            Error::NamespaceNotFound(robj) => write!(f, "Namespace {:?} not found", robj),
++            Error::NamespaceNotFound(robj) => write!(f, "Namespace {:?} not found", robj.rtype()),
+             Error::ExpectedExternalPtrType(_robj, type_name) => {
+                 write!(f, "Incorrect external pointer type {}", type_name)
+             }
+@@ -169,7 +177,7 @@
+                 write!(
+                     f,
+                     "expected non-null pointer in externalptr, instead {:?}",
+-                    robj
++                    robj.rtype()
+                 )
+             }
+             Error::ExpectedExternalPtrReference => {
+@@ -184,7 +192,7 @@
+                 write!(
+                     f,
+                     "Failed to convert a float to a whole number: {}. Actual value received: {:?}",
+-                    conversion_error, robj
++                    conversion_error, robj.rtype()
+                 )
+             }
+ 

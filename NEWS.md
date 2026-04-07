@@ -10,10 +10,13 @@
   all three optimizers.
 
 - Fixed `non-API call to R` NOTEs (`R_UnboundValue` in R-devel, `R_MissingArg`
-  in R-patched) by patching vendored `extendr-api`/`extendr-ffi`: use structural
-  `PRINTNAME` checks instead of non-API extern statics, and gate `R_MissingArg`
-  as `#[cfg(r_4_5)]` (API only in R >= 4.5). Patches live in
-  `src/rust/patches/` and are applied by `update-vendor.sh`.
+  in R-patched). The root cause was `Debug for extendr_api::Error` (auto-derived)
+  referencing `Debug for Robj`, which references the non-API `R_MissingArg` and
+  `R_UnboundValue` statics. The fix patches `extendr-api` to replace the derived
+  `Debug for Error` with a custom implementation delegating to `Display`, and
+  changes all `Display for Error` arms to use `robj.rtype()` instead of `{:?}` on
+  `Robj` directly. The `#[extendr]` functions now return `()` and call
+  `throw_r_error()` on failure.
 
 
 # CHANGES IN tinyimg VERSION 0.3

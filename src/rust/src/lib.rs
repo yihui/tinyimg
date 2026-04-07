@@ -5,19 +5,24 @@ use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
+// Plain-string error type used in all internal (non-extendr) functions so that
+// extendr_api::Error and its Debug/Display impls (which reference non-API R
+// statics) are never monomorphized in this crate.
+type Res<T> = std::result::Result<T, String>;
+
 // ---------------------------------------------------------------------------
 // Shared I/O helpers
 // ---------------------------------------------------------------------------
 
 /// Validate that inputs and outputs have the same length, all input files
 /// exist, and all output parent directories are created as needed.
-fn validate_io(inputs: &[String], outputs: &[String]) -> Result<()> {
+fn validate_io(inputs: &[String], outputs: &[String]) -> Res<()> {
     if inputs.len() != outputs.len() {
-        return Err("Input and output vectors must have the same length".into());
+        return Err("Input and output vectors must have the same length".to_string());
     }
     for s in inputs {
         if !PathBuf::from(s).exists() {
-            return Err(format!("Input file does not exist: {}", s).into());
+            return Err(format!("Input file does not exist: {}", s));
         }
     }
     for s in outputs {
@@ -71,9 +76,9 @@ fn process_files<F>(
     outputs: &[String],
     verbose: bool,
     process_fn: F,
-) -> Result<()>
+) -> Res<()>
 where
-    F: Fn(&PathBuf, &PathBuf) -> Result<()>,
+    F: Fn(&PathBuf, &PathBuf) -> Res<()>,
 {
     let input_trunc  = if verbose { find_truncate_index(inputs)  } else { 0 };
     let output_trunc = if verbose { find_truncate_index(outputs) } else { 0 };
@@ -115,40 +120,43 @@ fn tinypng_impl(
     preserve: bool,
     verbose: bool,
     lossy: f64,
-) -> Result<()> {
+) {
     let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
     let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
-    validate_io(&inputs, &outputs)?;
-
-    let mut opts = Options::from_preset(level as u8);
-    opts.strip = StripChunks::All;
-    opts.optimize_alpha = alpha;
-
-    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
-        if lossy > 0.0 {
-            let lossy_data = apply_lossy_png(input_path, lossy)?;
-            let optimized = oxipng::optimize_from_memory(&lossy_data, &opts)
-                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
-            std::fs::write(output_path, optimized)
-                .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
-        } else {
-            let in_file  = InFile::Path(input_path.clone());
-            let out_file = OutFile::Path {
-                path: Some(output_path.clone()),
-                preserve_attrs: preserve,
-            };
-            oxipng::optimize(&in_file, &out_file, &opts)
-                .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
-        }
-        Ok(())
-    })
+    let run = || -> Res<()> {
+        validate_io(&inputs, &outputs)?;
+        let mut opts = Options::from_preset(level as u8);
+        opts.strip = StripChunks::All;
+        opts.optimize_alpha = alpha;
+        process_files(&inputs, &outputs, verbose, |input_path, output_path| {
+            if lossy > 0.0 {
+                let lossy_data = apply_lossy_png(input_path, lossy)?;
+                let optimized = oxipng::optimize_from_memory(&lossy_data, &opts)
+                    .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
+                std::fs::write(output_path, optimized)
+                    .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
+            } else {
+                let in_file  = InFile::Path(input_path.clone());
+                let out_file = OutFile::Path {
+                    path: Some(output_path.clone()),
+                    preserve_attrs: preserve,
+                };
+                oxipng::optimize(&in_file, &out_file, &opts)
+                    .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
+            }
+            Ok(())
+        })
+    };
+    if let Err(e) = run() {
+        throw_r_error(e);
+    }
 }
 
 // ---------------------------------------------------------------------------
 // JPEG optimisation
 // ---------------------------------------------------------------------------
 
-fn optimize_jpeg(input: &PathBuf, output: &PathBuf, quality: f32) -> Result<()> {
+fn optimize_jpeg(input: &PathBuf, output: &PathBuf, quality: f32) -> Res<()> {
     if quality >= 100.0 {
         if input != output {
             std::fs::copy(input, output)
@@ -211,16 +219,21 @@ fn tinyjpg_impl(
     output: Strings,
     quality: f64,
     verbose: bool,
-) -> Result<()> {
+) {
     let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
     let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
-    validate_io(&inputs, &outputs)?;
-    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
-        optimize_jpeg(input_path, output_path, quality as f32)
-    })
+    let run = || -> Res<()> {
+        validate_io(&inputs, &outputs)?;
+        process_files(&inputs, &outputs, verbose, |input_path, output_path| {
+            optimize_jpeg(input_path, output_path, quality as f32)
+        })
+    };
+    if let Err(e) = run() {
+        throw_r_error(e);
+    }
 }
 
-fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
+fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Res<Vec<u8>> {
     // Decode source image into RGBA pixels used as the ground truth.
     let image = lodepng::decode32_file(input)
         .map_err(|e| format!("Failed to read PNG {}: {}", input.display(), e))?;
@@ -275,7 +288,7 @@ fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
         .map(|c| lodepng::RGBA::new(c.r, c.g, c.b, c.a))
         .collect();
     lodepng::encode32(&encoded, image.width, image.height)
-        .map_err(|e| format!("Failed to encode quantized PNG data: {}", e).into())
+        .map_err(|e| format!("Failed to encode quantized PNG data: {}", e))
 }
 
 fn quantize_image(pixels: &[Color], width: usize, n: usize) -> Vec<Color> {
