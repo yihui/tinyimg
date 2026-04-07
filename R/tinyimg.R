@@ -90,7 +90,7 @@ tinyimg = function(
 ) {
   all = tinyopt_files(
     input, output, paste0(rx_png, "|", rx_jpg), recursive,
-    lossy = as.numeric(lossy), quality = as.numeric(quality)
+    lossy = lossy, quality = quality
   )
   is_png = grepl(rx_png, all$input, ignore.case = TRUE)
   is_jpg = grepl(rx_jpg, all$input, ignore.case = TRUE)

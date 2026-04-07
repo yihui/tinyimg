@@ -21,7 +21,7 @@ tinyimg(
 tinyjpg(
   input,
   output = tiny_output,
-  quality = 75L,
+  quality = 75,
   recursive = TRUE,
   verbose = TRUE
 )
