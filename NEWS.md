@@ -9,6 +9,11 @@
   suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the default `output` for
   all three optimizers.
 
+- Fixed a `non-API call to R` NOTE in R-devel (`R_UnboundValue`) by patching
+  the vendored `extendr-api` and `extendr-ffi` to use the `#[cfg(r_4_5)]` API
+  compliance mechanism, avoiding the non-API `R_UnboundValue` symbol reference
+  under R >= 4.5.
+
 
 # CHANGES IN tinyimg VERSION 0.3
 
