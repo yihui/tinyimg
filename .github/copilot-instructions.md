@@ -200,7 +200,7 @@ Before submitting changes:
 1. **Always re-roxygenize**: Run `roxygen2::roxygenize()` after changing any roxygen documentation to update man files
 2. **MANDATORY: R CMD check before EVERY commit**: You MUST run `R CMD check` successfully before submitting ANY code changes. If R or required R packages are not available, you MUST install them first using `sudo apt-get install r-base` and `Rscript -e "install.packages(...)"`. There are NO exceptions to this rule.
 3. **MANDATORY: Wait for CI to be green**: After pushing code, you MUST wait for GitHub Actions CI to complete successfully before claiming the task is done. Never quit while CI is running or failing.
-4. **Bump version in PRs**: Bump the patch version number in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR
+4. **Bump version in PRs**: Bump the **patch** version number (third component) in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR. For example, `0.3.2` → `0.3.3`. Never bump the minor or major version (i.e., do not change `0.3.x` to `0.4.0`).
 5. **NEVER BREAK CI**: Breaking CI is completely unacceptable. If CI fails, you must immediately fix it. This policy must be followed strictly for ALL changes without exception.
 6. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
 7. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)

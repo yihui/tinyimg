@@ -15,10 +15,20 @@ create_test_jpg = function(new = FALSE) {
 
 create_test_jpg()
 
-# Basic round-trip
-assert("tinyjpg() ran successfully", {
-  (tinyjpg(test_jpg) %==% test_jpg)
-  (file.exists(test_jpg))
+# Default output uses tiny_output (adds _q75 suffix)
+assert("tinyjpg() default output uses tiny_output", {
+  result = tinyjpg(test_jpg)
+  expected = tiny_output(test_jpg, quality = 75L)
+  (result %==% expected)
+  (file.exists(result))
+})
+
+# In-place with output = identity
+assert("tinyjpg() optimizes in place with output = identity", {
+  copy = tempfile(fileext = ".jpg")
+  file.copy(test_jpg, copy)
+  (tinyjpg(copy, identity) %==% copy)
+  (file.exists(copy))
 })
 
 # Output to a new file
@@ -57,7 +67,7 @@ assert("tinyjpg() works with verbose = FALSE", {
   (file.exists(out))
 })
 
-# Directory input
+# Directory input (default output adds _q75 suffixes)
 assert("tinyjpg() works with directory input", {
   d = tempfile()
   dir.create(d)

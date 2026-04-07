@@ -1,0 +1,230 @@
+---
+title: "`tinyjpg()` Benchmarks"
+output:
+  html:
+    meta:
+      css: ["@tabsets"]
+      js: ["@tabsets"]
+---
+
+```{r}
+litedown::reactor(echo = FALSE)
+library(tinyimg)
+options(xfun.md_table.limit = Inf)
+```
+
+## Overview
+
+This document benchmarks the `tinyjpg()` function from the **tinyimg** package
+across different quality levels (50–100). We test with three types of plots:
+
+1. A scatterplot
+2. A simple boxplot
+3. A complex 3D perspective plot
+
+For each quality level, we measure file size reduction (in KB and percentage)
+and time taken for optimization.
+
+## Test Plots
+
+We create test JPEG files at high quality (95) to serve as originals:
+
+```{r scatterplot, fig.cap='Flipper length vs bill length of 344 penguins.'}
+par(mar = c(4, 4, 1, 1))
+n = length(penguins$flipper_len)
+cols = grDevices::hcl.colors(n, "Spectral")
+plot(penguins$flipper_len, penguins$bill_len, pch = 19,
+     col = cols[seq_along(penguins$flipper_len)],
+     xlab = "Flipper Length (mm)", ylab = "Bill Length (mm)")
+```
+
+```{r boxplot, fig.cap='Miles per gallon by cylinder count.'}
+par(mar = c(4, 4, 1, 1))
+boxplot(mpg ~ cyl, data = mtcars, xlab = "Number of Cylinders",
+        ylab = "Miles Per Gallon",
+        col = c("lightblue", "lightgreen", "lightpink"))
+```
+
+```{r persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
+par(mar = c(2, 2, 1, 1))
+x = seq(-10, 10, length = 50); y = seq(-10, 10, length = 50)
+z = outer(x, y, function(x, y) { r = sqrt(x^2 + y^2); 10 * sin(r) / r })
+z[is.nan(z)] = 10
+persp(x, y, z, theta = 30, phi = 20, col = "lightblue", shade = 0.4,
+      xlab = "X", ylab = "Y", zlab = "Z")
+```
+
+```{r create-jpgs}
+# Save the above plots as JPEG files (quality 95) to use as originals
+png_files = litedown::get_context("plot_files")
+
+create_jpeg = function(input_png, quality = 95) {
+  out = sub("\\.png$", ".jpg", input_png)
+  img = png::readPNG(input_png)
+  jpeg(out, width = dim(img)[2], height = dim(img)[1], quality = quality,
+       units = "px")
+  graphics::rasterImage(img, 0, 0, 1, 1, xlim = c(0, 1), ylim = c(0, 1))
+  dev.off()
+  out
+}
+
+# Fall back: write JPEG directly if png package unavailable
+make_orig_jpg = function(code_expr, nm) {
+  f = tempfile(fileext = ".jpg")
+  jpeg(f, width = 800, height = 600, quality = 95)
+  eval(code_expr)
+  dev.off()
+  f
+}
+
+scatter_orig = make_orig_jpg(quote({
+  par(mar = c(4, 4, 1, 1))
+  n = length(penguins$flipper_len)
+  cols = grDevices::hcl.colors(n, "Spectral")
+  plot(penguins$flipper_len, penguins$bill_len, pch = 19,
+       col = cols[seq_along(penguins$flipper_len)],
+       xlab = "Flipper Length (mm)", ylab = "Bill Length (mm)")
+}), "scatter")
+
+boxplot_orig = make_orig_jpg(quote({
+  par(mar = c(4, 4, 1, 1))
+  boxplot(mpg ~ cyl, data = mtcars, xlab = "Number of Cylinders",
+          ylab = "Miles Per Gallon",
+          col = c("lightblue", "lightgreen", "lightpink"))
+}), "boxplot")
+
+persp_orig = make_orig_jpg(quote({
+  par(mar = c(2, 2, 1, 1))
+  x = seq(-10, 10, length = 50); y = seq(-10, 10, length = 50)
+  z = outer(x, y, function(x, y) { r = sqrt(x^2 + y^2); 10 * sin(r) / r })
+  z[is.nan(z)] = 10
+  persp(x, y, z, theta = 30, phi = 20, col = "lightblue", shade = 0.4,
+        xlab = "X", ylab = "Y", zlab = "Z")
+}), "persp")
+
+orig_files = c(scatter = scatter_orig, boxplot = boxplot_orig, persp = persp_orig)
+```
+
+## Benchmarks
+
+Now let's optimize these JPEG files at different quality levels and measure
+the results:
+
+```{r benchmark}
+quality_levels = c(50, 60, 70, 75, 80, 90, 95, 100)
+
+benchmark_file = function(input_file, plot_name) {
+  original_size = file.info(input_file)$size
+
+  raw_row = data.frame(
+    Plot = plot_name, Quality = NA_integer_,
+    Size_KB = original_size / 1024, Reduction_pct = 0, Time_sec = 0
+  )
+
+  opt_rows = do.call(rbind, lapply(quality_levels, function(q) {
+    out = tempfile(fileext = ".jpg")
+    t = system.time(tinyjpg(input_file, out, quality = q, verbose = FALSE))["elapsed"]
+    new_size = file.info(out)$size
+    data.frame(
+      Plot = plot_name, Quality = q,
+      Size_KB = new_size / 1024,
+      Reduction_pct = 100 * (original_size - new_size) / original_size,
+      Time_sec = t
+    )
+  }))
+
+  rbind(raw_row, opt_rows)
+}
+
+results = rbind(
+  benchmark_file(orig_files["scatter"], "scatterplot"),
+  benchmark_file(orig_files["boxplot"],  "boxplot"),
+  benchmark_file(orig_files["persp"],    "persp")
+)
+
+results$Size_KB       = round(results$Size_KB, 1)
+results$Reduction_pct = round(results$Reduction_pct, 1)
+results$Time_sec      = round(results$Time_sec, 3)
+```
+
+### Results table
+
+::: tabset
+
+#### scatterplot
+
+```{r scatter-table}
+knitr::kable(
+  results[results$Plot == "scatterplot", -1],
+  row.names = FALSE,
+  col.names = c("Quality", "Size (KB)", "Reduction (%)", "Time (s)")
+)
+```
+
+#### boxplot
+
+```{r boxplot-table}
+knitr::kable(
+  results[results$Plot == "boxplot", -1],
+  row.names = FALSE,
+  col.names = c("Quality", "Size (KB)", "Reduction (%)", "Time (s)")
+)
+```
+
+#### persp
+
+```{r persp-table}
+knitr::kable(
+  results[results$Plot == "persp", -1],
+  row.names = FALSE,
+  col.names = c("Quality", "Size (KB)", "Reduction (%)", "Time (s)")
+)
+```
+
+:::
+
+## Visualization
+
+### File size by quality
+
+```{r size-plot, fig.cap='File size as a percentage of the original across quality levels.'}
+par(mar = c(4, 4, 1, 1))
+cols = c(scatterplot = "steelblue", boxplot = "tomato", persp = "seagreen")
+plot(range(quality_levels), c(0, 120), type = "n",
+     xlab = "Quality", ylab = "File size (% of original)")
+abline(h = 100, lty = 2, col = "grey70")
+for (nm in names(cols)) {
+  sub = results[results$Plot == nm & !is.na(results$Quality), ]
+  pct = 100 - sub$Reduction_pct
+  lines(sub$Quality, pct, col = cols[nm], lwd = 2)
+  points(sub$Quality, pct, col = cols[nm], pch = 19)
+}
+legend("topleft", names(cols), col = cols, lwd = 2, pch = 19, bty = "n")
+```
+
+### Optimization time
+
+```{r time-plot, fig.cap='Optimization time across quality levels.'}
+par(mar = c(4, 4, 1, 1))
+plot(range(quality_levels), c(0, max(results$Time_sec, na.rm = TRUE) * 1.1),
+     type = "n", xlab = "Quality", ylab = "Time (seconds)")
+for (nm in names(cols)) {
+  sub = results[results$Plot == nm & !is.na(results$Quality), ]
+  lines(sub$Quality, sub$Time_sec, col = cols[nm], lwd = 2)
+  points(sub$Quality, sub$Time_sec, col = cols[nm], pch = 19)
+}
+legend("topleft", names(cols), col = cols, lwd = 2, pch = 19, bty = "n")
+```
+
+## Summary
+
+Average results across the three plots:
+
+```{r summary}
+agg = aggregate(cbind(Reduction_pct, Time_sec) ~ Quality,
+                data = results[!is.na(results$Quality), ], FUN = mean)
+agg$Reduction_pct = round(agg$Reduction_pct, 1)
+agg$Time_sec      = round(agg$Time_sec, 3)
+names(agg) = c("Quality", "Mean reduction (%)", "Mean time (s)")
+knitr::kable(agg, row.names = FALSE)
+```

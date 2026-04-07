@@ -1,13 +1,13 @@
-# CHANGES IN tinyimg VERSION 0.4
+# CHANGES IN tinyimg VERSION 0.3.3
 
-- Added `tinyjpg()` for JPEG optimization via the `mozjpeg` Rust crate.
+- Added `tinyjpg()` for JPEG optimization (using the `mozjpeg` Rust crate).
 
-- Added `tinyimg()` as a general entry point that dispatches PNG files to
-  `tinypng()` and JPEG files to `tinyjpg()`.
+- Added `tinyimg()` as a general entry point for optimizing both PNG and JPEG
+  files in a directory or a vector of paths.
 
-- Factored out shared R helper `tinyopt_files()` and shared Rust helpers
-  `validate_io()` / `process_files()` to eliminate code duplication across
-  optimizers (DRY).
+- Added `tiny_output()` helper to generate safe output paths with lossy/quality
+  suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the default `output` for
+  all three optimizers.
 
 
 # CHANGES IN tinyimg VERSION 0.3

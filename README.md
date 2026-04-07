@@ -21,7 +21,7 @@ install.packages("tinyimg", repos = "https://yihui.r-universe.dev")
 
 ## Usage
 
-### Optimize any images
+### Optimize PNG and JPEG images
 
 ```r
 library(tinyimg)
@@ -73,11 +73,8 @@ For PNG, the `level` parameter controls the optimization level (0-6):
 - `2`: Default - good balance between speed and compression
 - `6`: Maximum optimization - best compression but slower
 
-For JPEG, the `quality` parameter (0-100) controls quality vs. file size:
-
-- `75`: Default - good balance between quality and file size
-- `60` and below: Smaller files with visible JPEG artefacts
-- `90` and above: Near-original quality, larger files
+For JPEG, the `quality` parameter (0-100) controls the trade-off between
+quality and file size; higher quality means larger files and vice versa.
 
 See the [benchmark results](https://pkg.yihui.org/tinyimg/examples/benchmark.html) for
 detailed comparisons, and `?tinyimg`, `?tinypng`, `?tinyjpg` for full documentation.

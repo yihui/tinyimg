@@ -21,7 +21,7 @@ create_jpg = function() {
 test_png = create_png()
 test_jpg = create_jpg()
 
-# Mixed vector of files
+# Mixed vector: PNG optimized in-place (lossless), JPEG gets _q75 suffix
 assert("tinyimg() optimizes both PNG and JPEG in a vector", {
   result = tinyimg(c(test_png, test_jpg))
   (length(result) %==% 2L)
@@ -98,4 +98,14 @@ assert("tinyimg() handles an empty directory", {
   dir.create(d)
   result = tinyimg(d, verbose = FALSE)
   (length(result) %==% 0L)
+})
+
+# tiny_output() generates correct suffixes
+assert("tiny_output() generates correct suffixes", {
+  png_in = "/tmp/plot.png"
+  jpg_in = "/tmp/photo.jpg"
+  (tiny_output(png_in, lossy = 0)    %==% png_in)           # lossless: no suffix
+  (tiny_output(png_in, lossy = 2.3)  %==% "/tmp/plot_l2.3.png")
+  (tiny_output(jpg_in, quality = 75) %==% "/tmp/photo_q75.jpg")
+  (tiny_output(jpg_in, quality = 100) %==% jpg_in)           # q100: no suffix
 })

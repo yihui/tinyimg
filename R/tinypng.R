@@ -1,3 +1,7 @@
+# Regex patterns for image file extensions (no leading ^ so list.files works)
+rx_png = "\\.a?png$"
+rx_jpg = "\\.jpe?g$"
+
 #' Resolve input/output file paths for image optimization
 #'
 #' @param input Input path(s) or directory.
@@ -8,7 +12,7 @@
 #' @noRd
 tinyopt_files = function(input, output, pattern, recursive) {
   if (length(input) == 1 && dir.exists(input)) {
-    files = list.files(input, pattern, recursive = recursive)
+    files = list.files(input, pattern, recursive = recursive, ignore.case = TRUE)
     output = if (is.function(output)) {
       output(file.path(input, files))
     } else {
@@ -21,67 +25,30 @@ tinyopt_files = function(input, output, pattern, recursive) {
   list(input = path.expand(input), output = path.expand(output))
 }
 
-#' Optimize PNG images
-#'
-#' Optimize PNG files or directories of PNG files using optional lossy palette
-#' reduction and dithering before lossless compression.
-#'
-#' The lossy algorithm uses color difference in the International Commission on
-#' Illumination (CIE) 1976 \eqn{L^*a^*b^*} (often written as CIELAB or Lab)
-#' color space.
-#'
-#' For a candidate palette size `n`, the image is quantized with `n` colors
-#' using nearest-color mapping. Sampled pixels are then **grouped by their
-#' original color**, so each distinct color in the image gets one equal vote
-#' regardless of how many pixels share it (preventing a large uniform
-#' background from masking errors in rarer content colors). The worst-case
-#' \eqn{\Delta E_{76}} within each color group is recorded, and we take the
-#' 95th percentile of those per-color values. Bisection on `n` (1--256) finds
-#' the smallest palette size whose per-color p95 is `<= lossy`.
-#'
-#' \eqn{\Delta E_{76}\approx 2.3} is often considered the just noticeable
-#' difference (JND) threshold. Larger values allow more color difference and
-#' thus smaller
-#' palette and file sizes, with more loss of color fidelity. In theory, \eqn{\Delta
-#' E_{76}} can exceed 100.
-#'
-#' @param input Path to the input PNG file or directory. If a directory is
-#'   provided, all PNG files in the directory (and subdirectories if `recursive
-#'   = TRUE`) will be optimized.
-#' @param output Path to the output PNG file or directory, or a function that
-#'   takes an input file path and returns an output path. When optimizing a
-#'   directory, `output` should be a directory path or a function.
-#' @param level Optimization level (0-6). Higher values result in better
-#'   compression but take longer.
-#' @param alpha Optimize transparent pixels for better compression. This is
-#'   technically lossy but visually lossless.
-#' @param preserve Preserve file permissions and timestamps. Ignored when lossy
-#'   optimization is enabled (`lossy > 0`).
-#' @param recursive When `input` is a directory, recursively process
-#'   subdirectories.
-#' @param verbose Print file size reduction info for each file.
-#' @param lossy A numeric threshold for the color difference in lossy
-#'   processing. Values `<= 0` disable lossy optimization.
-#' @return Character vector of output file paths (invisibly).
-#' @seealso [tinyimg()] to optimize both PNG and JPEG files at once.
-#' @references <https://en.wikipedia.org/wiki/Color_difference>
+#' @rdname tinyimg
 #' @export
-#' @examples
-#' # Create a test PNG
-#' tmp = tempfile()
-#' png(tmp, width = 400, height = 400)
-#' plot(1:10)
-#' dev.off()
-#'
-#' # Optimize with different levels
-#' tinypng(tmp, paste0(tmp, "-o1.png"), level = 1)
-#' tinypng(tmp, paste0(tmp, "-o6.png"), level = 6)
-#' tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
+tiny_output = function(input, lossy = 0, quality = 75) {
+  if (!length(input)) return(character(0))
+  mapply(function(f, l, q) {
+    ext  = tolower(tools::file_ext(f))
+    base = tools::file_path_sans_ext(f)
+    if (ext %in% c("png", "apng")) {
+      if (l > 0) paste0(base, "_l", l, ".", ext) else f
+    } else if (ext %in% c("jpg", "jpeg")) {
+      if (q < 100) paste0(base, "_q", q, ".", ext) else f
+    } else f
+  }, input, lossy, quality, SIMPLIFY = TRUE, USE.NAMES = FALSE)
+}
+
+#' @rdname tinyimg
+#' @export
 tinypng = function(
-  input, output = identity, level = 2L, alpha = FALSE, preserve = TRUE,
+  input, output = tiny_output, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
-  paths = tinyopt_files(input, output, "\\.a?png$", recursive)
+  if (identical(output, tiny_output))
+    output = function(x) tiny_output(x, lossy = lossy)
+  paths = tinyopt_files(input, output, rx_png, recursive)
   lossy = as.numeric(lossy[1])
   if (length(paths$input)) tinypng_impl(
     paths$input, paths$output, as.integer(level), alpha, preserve, verbose, lossy
