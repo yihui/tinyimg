@@ -202,7 +202,7 @@ Before submitting changes:
 3. **MANDATORY: Wait for CI to be green**: After pushing code, you MUST wait for GitHub Actions CI to complete successfully before claiming the task is done. Never quit while CI is running or failing.
 4. **Bump version in PRs**: Bump the **patch** version number (third component) in DESCRIPTION once per PR (on the first commit or when you first make changes), not on every commit to the PR. For example, `0.3.2` → `0.3.3`. Never bump the minor or major version (i.e., do not change `0.3.x` to `0.4.0`).
 5. **NEWS.md version headers use `x.y` format**: The first (top) section in NEWS.md represents the dev version that will be published to CRAN as the next release. Its header must be `x.y` (e.g., `0.4`), **not** `x.y.z`. Never change the version number in NEWS.md headers — just add bullet points under the existing first section. Only CRAN-released versions use `x.y` section headers; the dev section stays at the next minor version.
-5. **NEVER BREAK CI**: Breaking CI is completely unacceptable. If CI fails, you must immediately fix it. This policy must be followed strictly for ALL changes without exception.
+6. **NEVER BREAK CI**: Breaking CI is completely unacceptable. If CI fails, you must immediately fix it. This policy must be followed strictly for ALL changes without exception.
 6. **Never commit vendor files**: Both `vendor/` and `vendor.tar.xz` are gitignored
 7. **Never commit binary files**: Avoid version-controlling binary files, especially automatically generated ones (they can be hosted on a website, but not in GIT)
 8. **Symbol visibility**: Always use `$(C_VISIBILITY)` in Makevars

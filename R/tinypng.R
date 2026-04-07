@@ -45,10 +45,10 @@ tinypng = function(
   input, output = tiny_output, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
-  paths = tinyopt_files(input, output, rx_png, recursive, lossy = as.numeric(lossy[1]))
+  lossy = as.numeric(lossy[1])
+  paths = tinyopt_files(input, output, rx_png, recursive, lossy = lossy)
   if (length(paths$input)) tinypng_impl(
-    paths$input, paths$output, as.integer(level), alpha, preserve, verbose,
-    as.numeric(lossy[1])
+    paths$input, paths$output, as.integer(level), alpha, preserve, verbose, lossy
   )
   invisible(paths$output)
 }
