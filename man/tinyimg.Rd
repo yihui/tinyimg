@@ -13,7 +13,7 @@ tinyimg(
   recursive = TRUE,
   verbose = TRUE,
   level = 2L,
-  quality = 75L,
+  quality = 75,
   lossy = 0,
   ...
 )

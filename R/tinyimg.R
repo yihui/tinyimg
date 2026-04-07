@@ -86,7 +86,7 @@
 #' @export
 tinyimg = function(
   input, output = tiny_output, recursive = TRUE, verbose = TRUE,
-  level = 2L, quality = 75L, lossy = 0, ...
+  level = 2L, quality = 75, lossy = 0, ...
 ) {
   all = tinyopt_files(
     input, output, paste0(rx_png, "|", rx_jpg), recursive,
