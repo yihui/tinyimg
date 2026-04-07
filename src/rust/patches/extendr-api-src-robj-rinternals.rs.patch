@@ -1,0 +1,62 @@
+--- a/extendr-api/src/robj/rinternals.rs
++++ b/extendr-api/src/robj/rinternals.rs
+@@ -2,14 +2,14 @@
+ use extendr_ffi::{
+     get_var, R_CFinalizer_t, R_ExternalPtrAddr, R_ExternalPtrProtected, R_ExternalPtrTag,
+     R_GetCurrentSrcref, R_GetSrcFilename, R_IsNamespaceEnv, R_IsPackageEnv, R_MakeExternalPtr,
+-    R_MissingArg, R_NamespaceEnvSpec, R_PackageEnvName, R_RegisterCFinalizerEx, R_UnboundValue,
++    R_NamespaceEnvSpec, R_PackageEnvName, R_RegisterCFinalizerEx,
+     R_xlen_t, Rboolean, Rf_PairToVectorList, Rf_VectorToPairList, Rf_allocMatrix, Rf_allocVector,
+     Rf_asChar, Rf_asCharacterFactor, Rf_coerceVector, Rf_conformable, Rf_duplicate, Rf_findFun,
+     Rf_isArray, Rf_isComplex, Rf_isEnvironment, Rf_isExpression, Rf_isFactor, Rf_isFrame,
+     Rf_isFunction, Rf_isInteger, Rf_isLanguage, Rf_isList, Rf_isLogical, Rf_isMatrix, Rf_isNewList,
+     Rf_isNull, Rf_isNumber, Rf_isObject, Rf_isPrimitive, Rf_isReal, Rf_isS4, Rf_isString,
+     Rf_isSymbol, Rf_isTs, Rf_isUserBinop, Rf_isVector, Rf_isVectorAtomic, Rf_isVectorList,
+-    Rf_isVectorizable, Rf_ncols, Rf_nrows, Rf_xlengthgets, ALTREP, TYPEOF,
++    Rf_isVectorizable, Rf_ncols, Rf_nrows, Rf_xlengthgets, Rf_xlength, ALTREP, PRINTNAME, TYPEOF,
+ };
+ ///////////////////////////////////////////////////////////////
+ /// The following impls wrap specific Rinternals.h functions.
+@@ -199,10 +199,13 @@
+         unsafe {
+             let sexp = self.get();
+             if let Ok(var) = catch_r_error(|| get_var(key.get(), sexp)) {
+-                if var != R_UnboundValue {
+-                    Ok(Robj::from_sexp(var))
+-                } else {
++                // Use is_unbound_value() which uses PRINTNAME check, avoiding non-API R_UnboundValue.
++                // For R >= 4.5, get_var uses R_getVar which throws on not-found (caught above),
++                // so a successful Ok(var) here always means the variable was found.
++                if Robj::from_sexp(var).is_unbound_value() {
+                     Err(Error::NotFound(key.into()))
++                } else {
++                    Ok(Robj::from_sexp(var))
+                 }
+             } else {
+                 Err(Error::NotFound(key.into()))
+@@ -421,11 +424,23 @@
+     }
+ 
+     fn is_missing_arg(&self) -> bool {
+-        unsafe { self.get() == R_MissingArg }
++        // R_MissingArg is a SYMSXP with an empty-string CHARSXP as PRINTNAME.
++        // Using PRINTNAME check avoids a non-API extern static reference in older R.
++        unsafe {
++            TYPEOF(self.get()) == SEXPTYPE::SYMSXP && {
++                let pname = PRINTNAME(self.get());
++                TYPEOF(pname) == SEXPTYPE::CHARSXP && Rf_xlength(pname) == 0
++            }
++        }
+     }
+ 
+     fn is_unbound_value(&self) -> bool {
+-        unsafe { self.get() == R_UnboundValue }
++        // R_UnboundValue is a SYMSXP with R_NilValue as PRINTNAME.
++        // Using PRINTNAME check avoids a non-API extern static reference in all R versions.
++        unsafe {
++            TYPEOF(self.get()) == SEXPTYPE::SYMSXP
++                && PRINTNAME(self.get()) == extendr_ffi::R_NilValue
++        }
+     }
+ 
+     fn is_package_env(&self) -> bool {

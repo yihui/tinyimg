@@ -181,7 +181,47 @@ echo "Trimmed vendor/ size:  $VENDOR_SIZE_TRIM_H ($FILE_COUNT_TRIM files)"
 echo "Space saved: ${SAVED_MB}MB (${SAVED_PERCENT}%) | Files removed: $FILES_REMOVED"
 
 echo ""
-echo "Step 5: Creating compressed vendor.tar.xz archive..."
+echo "Step 5: Applying local patches to vendored crates..."
+PATCHES_DIR="$SCRIPT_DIR/patches"
+if [ -d "$PATCHES_DIR" ] && compgen -G "$PATCHES_DIR/*.patch" > /dev/null; then
+  for patch_file in "$PATCHES_DIR"/*.patch; do
+    echo "  Applying $(basename "$patch_file")..."
+    if ! patch -p1 -d vendor < "$patch_file"; then
+      echo "ERROR: patch failed for $patch_file" >&2
+      echo "       The upstream crate may have changed. Update or drop the patch." >&2
+      exit 1
+    fi
+  done
+  echo "Updating cargo checksums after patching..."
+  find vendor -name ".cargo-checksum.json" -type f | while read -r checksum_file; do
+    python3 -c "
+import json, os, hashlib, sys
+checksum_path = '$checksum_file'
+crate_dir = os.path.dirname(checksum_path)
+with open(checksum_path, 'r') as f:
+    data = json.load(f)
+if 'files' in data:
+    updated = 0
+    for path, old_hash in list(data['files'].items()):
+        file_path = os.path.join(crate_dir, path)
+        if os.path.exists(file_path):
+            with open(file_path, 'rb') as f:
+                new_hash = hashlib.sha256(f.read()).hexdigest()
+            if new_hash != old_hash:
+                data['files'][path] = new_hash
+                updated += 1
+    if updated > 0:
+        print(f'  {os.path.basename(crate_dir)}: updated {updated} checksums', file=sys.stderr)
+        with open(checksum_path, 'w') as f:
+            json.dump(data, f)
+" 2>&1
+  done
+else
+  echo "  No patches to apply."
+fi
+
+echo ""
+echo "Step 6: Creating compressed vendor.tar.xz archive..."
 XZ_OPT=-9 tar -cJf vendor.tar.xz vendor/
 TAR_SIZE_KB=$(du -k vendor.tar.xz | cut -f1)
 TAR_SIZE=$((TAR_SIZE_KB * 1024))
@@ -208,7 +248,7 @@ echo ""
 echo "========================================"
 echo ""
 
-echo "Step 6: Generating AUTHORS file from dependency crates..."
+echo "Step 7: Generating AUTHORS file from dependency crates..."
 # Navigate to package root (two directories up from src/rust)
 PACKAGE_ROOT="$SCRIPT_DIR/../.."
 mkdir -p "$PACKAGE_ROOT/inst"

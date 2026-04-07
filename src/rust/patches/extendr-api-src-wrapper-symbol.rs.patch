@@ -1,0 +1,45 @@
+--- a/extendr-api/src/wrapper/symbol.rs
++++ b/extendr-api/src/wrapper/symbol.rs
+@@ -3,12 +3,15 @@
+ use extendr_ffi::{
+     R_BaseSymbol, R_BraceSymbol, R_Bracket2Symbol, R_BracketSymbol, R_ClassSymbol, R_DeviceSymbol,
+     R_DimNamesSymbol, R_DimSymbol, R_DollarSymbol, R_DotsSymbol, R_DoubleColonSymbol,
+-    R_LastvalueSymbol, R_LevelsSymbol, R_MissingArg, R_ModeSymbol, R_NaRmSymbol, R_NameSymbol,
++    R_LastvalueSymbol, R_LevelsSymbol, R_ModeSymbol, R_NaRmSymbol, R_NameSymbol,
+     R_NamesSymbol, R_NamespaceEnvSymbol, R_PackageSymbol, R_PreviousSymbol, R_QuoteSymbol,
+     R_RowNamesSymbol, R_SeedsSymbol, R_SortListSymbol, R_SourceSymbol, R_SpecSymbol,
+-    R_TripleColonSymbol, R_TspSymbol, R_UnboundValue, R_dot_Method, R_dot_defined,
++    R_TripleColonSymbol, R_TspSymbol, R_dot_Method, R_dot_defined,
+     R_dot_packageName, R_dot_target, PRINTNAME, TYPEOF,
+ };
++// R_MissingArg is API in R >= 4.5 only
++#[cfg(r_4_5)]
++use extendr_ffi::R_MissingArg;
+ /// Wrapper for creating symbol objects.
+ ///
+ /// ```
+@@ -74,12 +77,9 @@
+     }
+ }
+ 
+-/// Unbound marker
+-pub fn unbound_value() -> Symbol {
+-    unsafe { Symbol::from_sexp(R_UnboundValue) }
+-}
+-
+ /// Missing argument marker
++/// Only available in R >= 4.5 where R_MissingArg is part of the public API.
++#[cfg(r_4_5)]
+ pub fn missing_arg() -> Symbol {
+     unsafe { Symbol::from_sexp(R_MissingArg) }
+ }
+@@ -234,7 +234,9 @@
+     #[test]
+     fn test_constant_symbols() {
+         test! {
++            #[cfg(not(r_4_5))]
+             assert!(unbound_value().is_symbol());
++            #[cfg(r_4_5)]
+             assert!(missing_arg().is_symbol());
+             assert!(base_symbol().is_symbol());
+             assert!(brace_symbol().is_symbol());
