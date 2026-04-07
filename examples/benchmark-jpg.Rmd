@@ -79,10 +79,6 @@ the results:
 plot_files = litedown::get_context("plot_files")
 plot_names = c("scatterplot", "boxplot", "persp")
 
-# Create a temporary directory for optimized files
-tmp_dir = tempfile()
-dir.create(tmp_dir)
-
 quality_levels = c(10, 30, 50, 70, 80, 90, 95)
 
 opt_files = list()
@@ -95,7 +91,7 @@ for (i in seq_along(plot_files)) {
   opt_files[[plot_name]] = list()
   for (q in quality_levels) {
     q_label = as.character(q)
-    output_file = file.path(tmp_dir, sprintf("%s_q%s.jpg", plot_name, q_label))
+    output_file = file.path(dirname(input_file), sprintf("%s_q%s.jpg", plot_name, q_label))
     time_taken = system.time({
       tinyjpg(input_file, output = output_file, quality = q)
     })["elapsed"]
@@ -132,7 +128,7 @@ xfun::tabset(tabs, xfun::tab_content)
 
 ## Visualization
 
-```{r plot-filesize, fig.cap='File size vs quality level.'}
+```{r plot-filesize, fig.cap='File size vs quality level.', dev='png'}
 par(mar = c(4, 4, 1, 1))
 pchs = c(19, 17, 15)
 
@@ -149,7 +145,7 @@ legend("topleft", legend = plot_names,
 grid()
 ```
 
-```{r plot-reduction, fig.cap='Size reduction percentage vs quality level.'}
+```{r plot-reduction, fig.cap='Size reduction percentage vs quality level.', dev='png'}
 par(mar = c(4, 4, 1, 1))
 plot(NA, xlim = range(quality_levels), ylim = range(results$Reduction_pct),
      xlab = "Quality", ylab = "Size Reduction (%)")
@@ -164,7 +160,7 @@ legend("topright", legend = plot_names,
 grid()
 ```
 
-```{r plot-time, fig.cap='Processing time vs quality level.'}
+```{r plot-time, fig.cap='Processing time vs quality level.', dev='png'}
 par(mar = c(4, 4, 1, 1))
 plot(NA, xlim = range(quality_levels), ylim = range(results$Time_sec),
      xlab = "Quality", ylab = "Time (seconds)")
@@ -180,5 +176,5 @@ grid()
 ```
 
 ```{r optimize-document-plots, include=FALSE}
-tinyjpg(litedown::get_context("plot_files"), quality = 75)
+tinypng(head(dirname(litedown::get_context("plot_files")), 1))
 ```
