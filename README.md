@@ -76,8 +76,8 @@ For PNG, the `level` parameter controls the optimization level (0-6):
 For JPEG, the `quality` parameter (0-100) controls the trade-off between
 quality and file size; higher quality means larger files and vice versa.
 
-See the [benchmark results](https://pkg.yihui.org/tinyimg/examples/benchmark.html) for
-detailed comparisons, and `?tinyimg`, `?tinypng`, `?tinyjpg` for full documentation.
+See the benchmark results (for [png](https://pkg.yihui.org/tinyimg/examples/benchmark-png.html) and [jpeg](https://pkg.yihui.org/tinyimg/examples/benchmark-jpg.html)) for
+detailed comparisons, and `?tinyimg` for full documentation.
 
 ## For Package Developers
 

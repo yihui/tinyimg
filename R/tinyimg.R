@@ -54,7 +54,7 @@
 #'   files; lower quality means smaller files. Passed to `tinyjpg()` by
 #'   `tinyimg()`. `tiny_output()` appends `_q<value>` when `quality < 100`.
 #' @param ... Additional arguments passed from `tinyimg()` to `tinypng()`
-#'   (e.g., `lossy`, `alpha`, `preserve`).
+#'   (e.g., `alpha`, `preserve`).
 #' @return `tinyimg()`, `tinypng()`, and `tinyjpg()` invisibly return a
 #'   character vector of output file paths. `tiny_output()` returns a
 #'   character vector of output file paths (visibly).
@@ -86,17 +86,17 @@
 #' @export
 tinyimg = function(
   input, output = tiny_output, recursive = TRUE, verbose = TRUE,
-  level = 2L, quality = 75L, ...
+  level = 2L, quality = 75L, lossy = 0, ...
 ) {
-  out_fn = if (identical(output, tiny_output)) {
-    function(x) tiny_output(x, quality = quality)
-  } else output
-  all = tinyopt_files(input, out_fn, paste0(rx_png, "|", rx_jpg), recursive)
+  all = tinyopt_files(
+    input, output, paste0(rx_png, "|", rx_jpg), recursive,
+    lossy = as.numeric(lossy), quality = as.numeric(quality)
+  )
   is_png = grepl(rx_png, all$input, ignore.case = TRUE)
   is_jpg = grepl(rx_jpg, all$input, ignore.case = TRUE)
   if (any(is_png)) tinypng(
     all$input[is_png], all$output[is_png],
-    level = level, recursive = FALSE, verbose = verbose, ...
+    level = level, recursive = FALSE, verbose = verbose, lossy = lossy, ...
   )
   if (any(is_jpg)) tinyjpg(
     all$input[is_jpg], all$output[is_jpg],

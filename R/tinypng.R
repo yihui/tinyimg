@@ -10,7 +10,9 @@ rx_jpg = "\\.jpe?g$"
 #' @param recursive Recursively search subdirectories.
 #' @return Named list with `input` and `output` character vectors (paths expanded).
 #' @noRd
-tinyopt_files = function(input, output, pattern, recursive) {
+tinyopt_files = function(input, output, pattern, recursive, lossy = 0, quality = 75) {
+  if (identical(output, tiny_output))
+    output = function(x) tiny_output(x, lossy = lossy, quality = quality)
   if (length(input) == 1 && dir.exists(input)) {
     files = list.files(input, pattern, recursive = recursive, ignore.case = TRUE)
     output = if (is.function(output)) {
@@ -28,16 +30,13 @@ tinyopt_files = function(input, output, pattern, recursive) {
 #' @rdname tinyimg
 #' @export
 tiny_output = function(input, lossy = 0, quality = 75) {
-  if (!length(input)) return(character(0))
-  mapply(function(f, l, q) {
-    ext  = tolower(tools::file_ext(f))
-    base = tools::file_path_sans_ext(f)
-    if (ext %in% c("png", "apng")) {
-      if (l > 0) paste0(base, "_l", l, ".", ext) else f
-    } else if (ext %in% c("jpg", "jpeg")) {
-      if (q < 100) paste0(base, "_q", q, ".", ext) else f
-    } else f
-  }, input, lossy, quality, SIMPLIFY = TRUE, USE.NAMES = FALSE)
+  ext    = tolower(tools::file_ext(input))
+  base   = tools::file_path_sans_ext(input)
+  suffix = ifelse(
+    ext %in% c("png", "apng") & lossy > 0, paste0("_l", lossy),
+    ifelse(ext %in% c("jpg", "jpeg") & quality < 100, paste0("_q", quality), "")
+  )
+  sprintf("%s%s.%s", base, suffix, ext)
 }
 
 #' @rdname tinyimg
@@ -46,12 +45,10 @@ tinypng = function(
   input, output = tiny_output, level = 2L, alpha = FALSE, preserve = TRUE,
   recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
-  if (identical(output, tiny_output))
-    output = function(x) tiny_output(x, lossy = lossy)
-  paths = tinyopt_files(input, output, rx_png, recursive)
-  lossy = as.numeric(lossy[1])
+  paths = tinyopt_files(input, output, rx_png, recursive, lossy = as.numeric(lossy[1]))
   if (length(paths$input)) tinypng_impl(
-    paths$input, paths$output, as.integer(level), alpha, preserve, verbose, lossy
+    paths$input, paths$output, as.integer(level), alpha, preserve, verbose,
+    as.numeric(lossy[1])
   )
   invisible(paths$output)
 }

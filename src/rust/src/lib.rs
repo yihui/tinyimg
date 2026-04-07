@@ -149,6 +149,13 @@ fn tinypng_impl(
 // ---------------------------------------------------------------------------
 
 fn optimize_jpeg(input: &PathBuf, output: &PathBuf, quality: f32) -> Result<()> {
+    if quality >= 100.0 {
+        if input != output {
+            std::fs::copy(input, output)
+                .map_err(|e| format!("Failed to copy {}: {}", input.display(), e))?;
+        }
+        return Ok(());
+    }
     let src_data = std::fs::read(input)
         .map_err(|e| format!("Failed to read {}: {}", input.display(), e))?;
 

@@ -1,4 +1,4 @@
-# CHANGES IN tinyimg VERSION 0.3.3
+# CHANGES IN tinyimg VERSION 0.4
 
 - Added `tinyjpg()` for JPEG optimization (using the `mozjpeg` Rust crate).
 

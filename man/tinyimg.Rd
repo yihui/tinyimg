@@ -14,6 +14,7 @@ tinyimg(
   verbose = TRUE,
   level = 2L,
   quality = 75L,
+  lossy = 0,
   ...
 )
 
@@ -61,13 +62,13 @@ compression but take longer. Passed to \code{tinypng()} by \code{tinyimg()}.}
 files; lower quality means smaller files. Passed to \code{tinyjpg()} by
 \code{tinyimg()}. \code{tiny_output()} appends \verb{_q<value>} when \code{quality < 100}.}
 
-\item{...}{Additional arguments passed from \code{tinyimg()} to \code{tinypng()}
-(e.g., \code{lossy}, \code{alpha}, \code{preserve}).}
-
 \item{lossy}{Numeric threshold for per-color \eqn{\Delta E_{76}} in lossy
 PNG palette reduction. Values \verb{<= 0} disable lossy optimization. See
 Details. Passed to \code{tinypng()} by \code{tinyimg()} via \code{...}. When \verb{> 0},
 \code{tiny_output()} appends \verb{_l<value>} to the output filename.}
+
+\item{...}{Additional arguments passed from \code{tinyimg()} to \code{tinypng()}
+(e.g., \code{alpha}, \code{preserve}).}
 
 \item{alpha}{Optimize transparent pixels in PNG files for better
 compression. This is technically lossy but visually lossless.}
