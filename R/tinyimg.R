@@ -102,5 +102,5 @@ tinyimg = function(
     all$input[is_jpg], all$output[is_jpg],
     quality = quality, recursive = FALSE, verbose = verbose
   )
-  invisible(c(all$output[is_png], all$output[is_jpg]))
+  invisible(all$output)
 }

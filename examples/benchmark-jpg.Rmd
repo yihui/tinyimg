@@ -16,7 +16,7 @@ options(xfun.md_table.limit = Inf)
 ## Overview
 
 This document benchmarks the `tinyjpg()` function from the **tinyimg** package
-across different quality levels (50–100). We test with three types of plots:
+across different quality levels. We test with three types of plots:
 
 1. A scatterplot based on the penguins dataset
 2. A simple boxplot (simpler graphics)
@@ -29,7 +29,7 @@ For each quality level, we measure:
 
 ## Test Plots
 
-First, we create test plots using the `jpeg()` device (set as default via
+First, we create test plots using the `jpeg()` device (set as default via the chunk option
 `dev = 'jpeg'`):
 
 ```{r scatterplot, fig.cap='Penguin bill length vs flipper length.'}
@@ -77,70 +77,69 @@ the results:
 ```{r benchmark}
 # Get the JPEG plot files created by litedown
 plot_files = litedown::get_context("plot_files")
+plot_names = c("scatterplot", "boxplot", "persp")
 
 # Create a temporary directory for optimized files
 tmp_dir = tempfile()
 dir.create(tmp_dir)
 
-# Function to benchmark a single file at all quality levels
-benchmark_file = function(input_file, plot_name) {
+quality_levels = c(10, 30, 50, 70, 80, 90, 95)
+
+opt_files = list()
+result_rows = list()
+
+for (i in seq_along(plot_files)) {
+  input_file = plot_files[i]
+  plot_name = plot_names[i]
   original_size = file.info(input_file)$size
-
-  # Add a row for the original file (quality = NA)
-  raw_row = data.frame(
-    Plot = plot_name,
-    Quality = NA_integer_,
-    Size_KB = original_size / 1024,
-    Reduction_pct = 0,
-    Time_sec = 0
-  )
-
-  optimized_rows = do.call(rbind, lapply(c(50, 60, 70, 75, 80, 90, 95, 100), function(q) {
-    output_file = file.path(tmp_dir, sprintf("%s_q%d.jpg", plot_name, q))
-
+  opt_files[[plot_name]] = list()
+  for (q in quality_levels) {
+    q_label = as.character(q)
+    output_file = file.path(tmp_dir, sprintf("%s_q%s.jpg", plot_name, q_label))
     time_taken = system.time({
       tinyjpg(input_file, output = output_file, quality = q)
     })["elapsed"]
-
+    opt_files[[plot_name]][[q_label]] = output_file
     new_size = file.info(output_file)$size
-    reduction_pct = ((original_size - new_size) / original_size) * 100
-
-    data.frame(
+    result_rows[[length(result_rows) + 1L]] = data.frame(
       Plot = plot_name,
       Quality = q,
       Size_KB = new_size / 1024,
-      Reduction_pct = reduction_pct,
+      Reduction_pct = ((original_size - new_size) / original_size) * 100,
       Time_sec = time_taken
     )
-  }))
-
-  rbind(raw_row, optimized_rows)
+  }
 }
 
-# Benchmark all three plots
-results = rbind(
-  benchmark_file(plot_files[1], "scatterplot"),
-  benchmark_file(plot_files[2], "boxplot"),
-  benchmark_file(plot_files[3], "persp")
-)
-
+results = do.call(rbind, result_rows)
 rownames(results) = NULL
 results
+```
+
+A visual comparison of the quality optimization results:
+
+```{r quality-images}
+tabs = lapply(names(opt_files), function(plot_name) {
+  setNames(lapply(names(opt_files[[plot_name]]), function(q) {
+    pct = subset(results, Plot == plot_name & Quality == as.integer(q))$Reduction_pct
+    img = opt_files[[plot_name]][[q]]
+    c(sprintf('Reduction: %.02f%%', pct), '', paste0("![quality](", xfun::relative_path(img), ")"))
+  }), paste0("quality = ", names(opt_files[[plot_name]])))
+})
+names(tabs) = names(opt_files)
+xfun::tabset(tabs, xfun::tab_content)
 ```
 
 ## Visualization
 
 ```{r plot-filesize, fig.cap='File size vs quality level.'}
 par(mar = c(4, 4, 1, 1))
-plot_names = unique(results$Plot)
 pchs = c(19, 17, 15)
-quality_levels = c(50, 60, 70, 75, 80, 90, 95, 100)
-opt_results = subset(results, !is.na(Quality))
 
-plot(NA, xlim = range(quality_levels), ylim = range(opt_results$Size_KB),
+plot(NA, xlim = range(quality_levels), ylim = range(results$Size_KB),
      xlab = "Quality", ylab = "File Size (KB)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(opt_results, Plot == plot_names[i])
+  plot_data = subset(results, Plot == plot_names[i])
   lines(plot_data$Quality, plot_data$Size_KB,
         type = "b", pch = pchs[i], col = i + 1)
 }
@@ -152,10 +151,10 @@ grid()
 
 ```{r plot-reduction, fig.cap='Size reduction percentage vs quality level.'}
 par(mar = c(4, 4, 1, 1))
-plot(NA, xlim = range(quality_levels), ylim = range(opt_results$Reduction_pct),
+plot(NA, xlim = range(quality_levels), ylim = range(results$Reduction_pct),
      xlab = "Quality", ylab = "Size Reduction (%)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(opt_results, Plot == plot_names[i])
+  plot_data = subset(results, Plot == plot_names[i])
   lines(plot_data$Quality, plot_data$Reduction_pct,
         type = "b", pch = pchs[i], col = i + 1)
 }
@@ -167,10 +166,10 @@ grid()
 
 ```{r plot-time, fig.cap='Processing time vs quality level.'}
 par(mar = c(4, 4, 1, 1))
-plot(NA, xlim = range(quality_levels), ylim = range(opt_results$Time_sec),
+plot(NA, xlim = range(quality_levels), ylim = range(results$Time_sec),
      xlab = "Quality", ylab = "Time (seconds)")
 for (i in seq_along(plot_names)) {
-  plot_data = subset(opt_results, Plot == plot_names[i])
+  plot_data = subset(results, Plot == plot_names[i])
   lines(plot_data$Quality, plot_data$Time_sec,
         type = "b", pch = pchs[i], col = i + 1)
 }
