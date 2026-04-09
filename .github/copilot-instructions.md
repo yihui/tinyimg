@@ -51,7 +51,7 @@ This is an R package that optimizes and compresses images using Rust libraries. 
 
 4. **Run tests**:
    ```bash
-   R CMD check tinyimg_*.tar.gz
+   R CMD check --no-manual tinyimg_*.tar.gz
    ```
    or directly:
    ```bash
