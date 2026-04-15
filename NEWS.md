@@ -9,7 +9,6 @@
   suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the default `output` for
   all three optimizers.
 
-
 # CHANGES IN tinyimg VERSION 0.3
 
 - Added optional lossy PNG optimization before lossless oxipng optimization.

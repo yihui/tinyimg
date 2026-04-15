@@ -3,19 +3,22 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/yihui/tinyimg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yihui/tinyimg/actions/workflows/R-CMD-check.yaml)
+[![CRAN
+release](https://www.r-pkg.org/badges/version/tinyimg)](https://cran.r-project.org/package=tinyimg)
 
 <!-- badges: end -->
 
 An R package for optimizing and compressing images using Rust libraries.
-Supports PNG optimization via [exoquant](https://github.com/exoticorn/exoquant-rs)
-(lossy palette reduction) and [oxipng](https://github.com/oxipng/oxipng) (lossless
-optimization), and JPEG re-encoding via [mozjpeg](https://github.com/mozilla/mozjpeg).
+Supports PNG optimization via
+[exoquant](https://github.com/exoticorn/exoquant-rs) (lossy palette reduction)
+and [oxipng](https://github.com/oxipng/oxipng) (lossless optimization), and JPEG
+re-encoding via [mozjpeg](https://github.com/mozilla/mozjpeg).
 
 ## Installation
 
 You can install the development version of {tinyimg} from r-universe.dev:
 
-```r
+``` r
 install.packages("tinyimg", repos = "https://yihui.r-universe.dev")
 ```
 
@@ -23,7 +26,7 @@ install.packages("tinyimg", repos = "https://yihui.r-universe.dev")
 
 ### Optimize PNG and JPEG images
 
-```r
+``` r
 library(tinyimg)
 
 # Optimize all images in a directory (PNG and JPEG)
@@ -35,7 +38,7 @@ tinyimg(c("photo.jpg", "diagram.png"))
 
 ### PNG optimization
 
-```r
+``` r
 # Create a test PNG
 tmp = tempfile()
 png(tmp, width = 400, height = 400)
@@ -51,7 +54,7 @@ tinypng(tmp, paste0(tmp, "-lossy.png"), lossy = 2.3)
 
 ### JPEG optimization
 
-```r
+``` r
 # Create a test JPEG
 tmp = tempfile(fileext = ".jpg")
 jpeg(tmp, width = 400, height = 400)
@@ -69,28 +72,33 @@ tinyjpg(tmp, paste0(tmp, "-q60.jpg"), quality = 60)
 
 For PNG, the `level` parameter controls the optimization level (0-6):
 
-- `0`: Fast optimization with minimal compression
-- `2`: Default - good balance between speed and compression
-- `6`: Maximum optimization - best compression but slower
+-   `0`: Fast optimization with minimal compression
+-   `2`: Default - good balance between speed and compression
+-   `6`: Maximum optimization - best compression but slower
 
-For JPEG, the `quality` parameter (0-100) controls the trade-off between
-quality and file size; higher quality means larger files and vice versa.
+For JPEG, the `quality` parameter (0-100) controls the trade-off between quality
+and file size; higher quality means larger files and vice versa.
 
-See the benchmark results (for [png](https://pkg.yihui.org/tinyimg/examples/benchmark-png.html) and [jpeg](https://pkg.yihui.org/tinyimg/examples/benchmark-jpg.html)) for
-detailed comparisons, and `?tinyimg` for full documentation.
+See the benchmark results (for
+[png](https://pkg.yihui.org/tinyimg/examples/benchmark-png.html) and
+[jpeg](https://pkg.yihui.org/tinyimg/examples/benchmark-jpg.html)) for detailed
+comparisons, and `?tinyimg` for full documentation.
 
 ## For Package Developers
 
-When installing from GitHub via `remotes::install_github("yihui/tinyimg")`, the package will automatically create the vendor directory if Rust is installed on your system.
+When installing from GitHub via `remotes::install_github("yihui/tinyimg")`, the
+package will automatically create the vendor directory if Rust is installed on
+your system.
 
 If you're developing and need to manually create the vendor directory:
 
-```bash
+``` bash
 # Run the update script to create vendor/ directory
 ./src/rust/update-vendor.sh
 ```
 
-This creates the local `vendor/` directory needed for development. Neither `vendor/` nor `vendor.tar.xz` are tracked in git.
+This creates the local `vendor/` directory needed for development. Neither
+`vendor/` nor `vendor.tar.xz` are tracked in git.
 
 ## License
 
