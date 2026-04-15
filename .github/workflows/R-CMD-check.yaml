@@ -70,7 +70,7 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: '1.78.0'
+          toolchain: '1.82.0'
 
       - name: Vendor Rust dependencies
         run: |
