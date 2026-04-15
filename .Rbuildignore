@@ -10,3 +10,4 @@
 ^src/rust/\.cargo$
 ^examples$
 ^cran-comments\.md$
+^playground$
