@@ -1,40 +1,46 @@
 # CHANGES IN tinyimg VERSION 0.5
 
+-   This package can be built to WASM now (#29). You can install it via
+    `webr::install('tinyimg', repos = 'https://yihui.r-universe.dev')` in your
+    webR application.
+
 # CHANGES IN tinyimg VERSION 0.4
 
-- Added `tinyjpg()` for JPEG optimization (using the `mozjpeg` Rust crate).
+-   Added `tinyjpg()` for JPEG optimization (using the `mozjpeg` Rust crate).
 
-- Added `tinyimg()` as a general entry point for optimizing both PNG and JPEG
-  files in a directory or a vector of paths.
+-   Added `tinyimg()` as a general entry point for optimizing both PNG and JPEG
+    files in a directory or a vector of paths.
 
-- Added `tiny_output()` helper to generate safe output paths with lossy/quality
-  suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the default `output` for
-  all three optimizers.
+-   Added `tiny_output()` helper to generate safe output paths with
+    lossy/quality suffixes (e.g., `foo_l2.3.png`, `foo_q70.jpg`), now the
+    default `output` for all three optimizers.
 
 # CHANGES IN tinyimg VERSION 0.3
 
-- Added optional lossy PNG optimization before lossless oxipng optimization.
+-   Added optional lossy PNG optimization before lossless oxipng optimization.
 
-- Changed the primary API from `optim_png()` to `tinypng()`.
+-   Changed the primary API from `optim_png()` to `tinypng()`.
 
-- Updated benchmark examples for lossy optimization results, visual comparisons, and lossy-level plots.
+-   Updated benchmark examples for lossy optimization results, visual
+    comparisons, and lossy-level plots.
 
 # CHANGES IN tinyimg VERSION 0.2
 
 ## Initial CRAN release
 
-This is the first CRAN release of tinyimg. The package provides tools for optimizing and compressing images using Rust libraries.
+This is the first CRAN release of tinyimg. The package provides tools for
+optimizing and compressing images using Rust libraries.
 
-- PNG optimization via the oxipng Rust crate
+-   PNG optimization via the oxipng Rust crate
 
-- Support for single file and directory optimization
+-   Support for single file and directory optimization
 
-- Configurable optimization levels (0-6)
+-   Configurable optimization levels (0-6)
 
-- Optional alpha channel optimization for transparent pixels
+-   Optional alpha channel optimization for transparent pixels
 
-- Preservation of file permissions and timestamps
+-   Preservation of file permissions and timestamps
 
-- Verbose output showing file size reduction
+-   Verbose output showing file size reduction
 
-- Recursive directory processing
+-   Recursive directory processing
