@@ -81,6 +81,8 @@ done_keys = paste(done$package, done$version, sep = "@")
 all_keys  = paste(all_pkgs$Package, all_pkgs$Version, sep = "@")
 remaining = all_pkgs[!all_keys %in% done_keys, ]
 message(sprintf("%d packages remaining to process", nrow(remaining)))
+# remove any done rows for packages with new versions
+done = done[!done$package %in% remaining$Package, ]
 
 if (max_pkgs > 0L && nrow(remaining) > max_pkgs)
   remaining = remaining[seq_len(max_pkgs), ]
