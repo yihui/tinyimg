@@ -210,7 +210,7 @@ process_package = function(pkg_name, pkg_version) {
 
 # ----- Main processing loop --------------------------------------------------
 
-n_cores    = max(1L, parallel::detectCores())
+n_cores    = 1L  # max(1L, parallel::detectCores())
 batch_size = n_cores * 2L
 n_rem      = nrow(remaining)
 time_limit_hit = FALSE
