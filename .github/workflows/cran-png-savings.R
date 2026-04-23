@@ -192,7 +192,7 @@ process_package = function(pkg_name, pkg_version) {
 
   savings_pct = if (total_orig > 0) (1 - total_opt / total_orig) * 100 else 0
   message(sprintf(
-    "  %s %s: %s -> %s bytes (%.1f%% savings)",
+    "  %s %s: %s -> %s (%.1f%% savings)",
     pkg_name, pkg_version,
     xfun::format_bytes(total_orig),
     xfun::format_bytes(total_opt),
@@ -272,9 +272,10 @@ if (nrow(done) > 0L) {
   tot_orig = sum(done$orig_size, na.rm = TRUE)
   tot_opt  = sum(done$opt_size,  na.rm = TRUE)
   message(sprintf(
-    "Aggregate: %s -> %s bytes (%.1f%% savings)",
+    "Aggregate: %s -> %s (%s saved; %.1f%% savings)",
     xfun::format_bytes(tot_orig),
     xfun::format_bytes(tot_opt),
+    xfun::format_bytes(tot_orig - tot_opt),
     if (tot_orig > 0) (1 - tot_opt / tot_orig) * 100 else 0
   ))
 }
