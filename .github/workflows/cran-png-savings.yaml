@@ -1,0 +1,93 @@
+name: CRAN PNG Savings
+
+# Triggered manually or by itself when the 5.5-hour time budget is exhausted
+# before all packages are processed.  Not intended for push / PR runs because
+# it is expensive (downloads every CRAN package tarball).
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write   # needed to trigger the next run and to delete the cache
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@HEAD
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@HEAD
+
+      - name: Install R packages
+        uses: yihui/actions/setup-r-dependencies@HEAD
+        with:
+          extra-packages: tinyimg xfun
+          r-universe: cran yihui
+
+      # Restore the accumulated results CSV from the previous run (if any).
+      # We use the separate restore action (not the combined cache action) so
+      # that the later save step is not skipped on a cache hit.
+      - name: Restore cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cran-savings-cache
+          key: cran-png-savings-v1
+
+      - name: Run analysis
+        id: run_analysis
+        run: Rscript .github/workflows/cran-png-savings.R
+        env:
+          CRAN_MIRROR: https://cloud.r-project.org
+          CACHE_DIR: ~/.cran-savings-cache
+          TIME_LIMIT_HOURS: "5.5"
+
+      # Delete the old cache entry so that the save step below can write a
+      # fresh entry under the same key.  Runs even if the analysis step fails
+      # so the latest partial results are always preserved.
+      - name: Delete old cache
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IDS=$(gh api \
+            "repos/${{ github.repository }}/actions/caches?key=cran-png-savings-v1" \
+            --jq '.actions_caches[].id' 2>/dev/null || true)
+          for ID in $IDS; do
+            echo "Deleting cache entry $ID ..."
+            gh api -X DELETE \
+              "repos/${{ github.repository }}/actions/caches/$ID" \
+              2>/dev/null || true
+          done
+
+      - name: Save cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cran-savings-cache
+          key: cran-png-savings-v1
+
+      # If the analysis used its full time budget, kick off the next run so it
+      # can pick up where this one left off.
+      - name: Trigger next run
+        id: trigger_next
+        if: steps.run_analysis.outputs.time_limit_hit == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run cran-png-savings.yaml \
+            --ref "${{ github.ref_name }}"
+          echo "Next workflow run triggered."
+        continue-on-error: true
+
+      # If triggering the next run failed, fail the job with a clear message so
+      # the operator knows to re-run manually.
+      - name: Fail if next run could not be triggered
+        if: >-
+          steps.run_analysis.outputs.time_limit_hit == 'true' &&
+          steps.trigger_next.outcome == 'failure'
+        run: |
+          echo "::error::Time limit hit but could not trigger the next workflow run."
+          echo "::error::Results are saved in cache. Re-run this workflow manually."
+          exit 1
