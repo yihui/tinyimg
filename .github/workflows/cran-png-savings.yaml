@@ -67,7 +67,9 @@ jobs:
   # ---------------------------------------------------------------------------
   analyze:
     needs: setup
-    # Skip entirely when there is nothing left to do (empty matrix would error).
+    # Skip entirely when there is nothing left to do.  GitHub Actions errors
+    # when a matrix expression resolves to an empty array, so the has_work
+    # guard must be checked here before the matrix is evaluated.
     if: needs.setup.outputs.has_work == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true

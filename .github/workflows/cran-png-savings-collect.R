@@ -52,8 +52,9 @@ new_rows = do.call(rbind, lapply(artifact_csvs, function(f) {
 
 if (!is.null(new_rows) && nrow(new_rows) > 0L) {
   combined = rbind(combined, new_rows)
-  # Keep the latest entry per package@version pair (drop duplicates).
-  combined = combined[!duplicated(paste(combined$package, combined$version)), ]
+  # Keep the latest entry per package@version pair (fromLast keeps the most
+  # recently added row when there are duplicates across runs).
+  combined = combined[!duplicated(paste(combined$package, combined$version), fromLast = TRUE), ]
   message(sprintf("Combined total: %d packages", nrow(combined)))
   write.csv(combined, csv_file, row.names = FALSE)
 } else {

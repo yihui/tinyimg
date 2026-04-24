@@ -50,8 +50,9 @@ if (file.exists(csv_file)) {
 done_keys = paste(done$package, done$version, sep = "@")
 all_keys  = paste(all_pkgs$Package, all_pkgs$Version, sep = "@")
 remaining = all_pkgs[!all_keys %in% done_keys, ]
-# Drop stale rows whose package has since received a new CRAN version.
-done = done[!done$package %in% remaining$Package, ]
+# Remove done entries whose exact package@version no longer exists on CRAN
+# (i.e. the package was updated to a new version).
+done = done[done_keys %in% all_keys, ]
 
 message(sprintf("%d packages remaining to process", nrow(remaining)))
 
