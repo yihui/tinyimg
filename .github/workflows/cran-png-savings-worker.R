@@ -113,10 +113,9 @@ tinypng_subprocess = function(input, lossless_out, lossy_out) {
     sprintf("try(tinypng(%s, %s, level=2L, verbose=FALSE, lossy=2.3))",
             deparse(input), deparse(lossy_out))
   ), script)
-  system(
-    sprintf("(ulimit -v %d; Rscript --vanilla %s 2>/dev/null)",
-            mem_limit_kb, shQuote(script))
-  )
+  cmd = sprintf("(ulimit -v %s; Rscript %s)", mem_limit_kb, shQuote(script))
+  message("Running: ", cmd)
+  system(cmd)
   invisible(NULL)
 }
 
