@@ -107,17 +107,15 @@ tinypng_subprocess = function(input, lossless_out, lossy_out) {
   script = tempfile(fileext = ".R")
   on.exit(unlink(script), add = TRUE)
   writeLines(c(
-    "suppressPackageStartupMessages(library(tinyimg))",
+    "library(tinyimg)",
     sprintf("try(tinypng(%s, %s, level=2L, verbose=FALSE))",
             deparse(input), deparse(lossless_out)),
     sprintf("try(tinypng(%s, %s, level=2L, verbose=FALSE, lossy=2.3))",
             deparse(input), deparse(lossy_out))
   ), script)
-  system2(
-    "bash",
-    c("-c", sprintf("ulimit -v %d; Rscript --vanilla %s 2>/dev/null",
-                    mem_limit_kb, shQuote(script))),
-    stdout = FALSE, stderr = FALSE
+  system(
+    sprintf("(ulimit -v %d; Rscript --vanilla %s 2>/dev/null)",
+            mem_limit_kb, shQuote(script))
   )
   invisible(NULL)
 }
