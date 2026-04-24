@@ -72,7 +72,7 @@ jobs:
       # can pick up where this one left off.
       - name: Trigger next run
         id: trigger_next
-        if: steps.run_analysis.outputs.time_limit_hit == 'true'
+        if: steps.run_analysis.outputs.unfinished == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -85,7 +85,7 @@ jobs:
       # the operator knows to re-run manually.
       - name: Fail if next run could not be triggered
         if: >-
-          steps.run_analysis.outputs.time_limit_hit == 'true' &&
+          steps.run_analysis.outputs.unfinished == 'true' &&
           steps.trigger_next.outcome == 'failure'
         run: |
           echo "::error::Time limit hit but could not trigger the next workflow run."

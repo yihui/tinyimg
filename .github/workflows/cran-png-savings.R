@@ -6,7 +6,7 @@
 #   - base64-encoded PNGs embedded in .html files (e.g. vignettes)
 #
 # Results are accumulated in a CSV so runs can be resumed across multiple
-# GitHub Actions executions.  The script signals "time_limit_hit=true" via
+# GitHub Actions executions.  The script signals "unfinished=true" via
 # GITHUB_OUTPUT when it is about to exceed the configured time budget.
 #
 # Environment variables (all optional):
@@ -55,11 +55,7 @@ download_retry = function(url, destfile, retries = 3L) {
 
 message("Fetching CRAN package list from ", mirror, " ...")
 pkg_db   = available.packages(repos = mirror, type = "source")
-all_pkgs = data.frame(
-  Package = pkg_db[, "Package"],
-  Version = pkg_db[, "Version"],
-  stringsAsFactors = FALSE
-)
+all_pkgs = as.data.frame(pkg_db[, c("Package", "Version"), drop = FALSE])
 message(sprintf("Found %d packages on CRAN", nrow(all_pkgs)))
 
 # ----- Resume from previous results ------------------------------------------
@@ -72,8 +68,7 @@ if (file.exists(csv_file)) {
     package   = character(),
     version   = character(),
     orig_size = numeric(),
-    opt_size  = numeric(),
-    stringsAsFactors = FALSE
+    opt_size  = numeric()
   )
 }
 
@@ -213,7 +208,6 @@ process_package = function(pkg_name, pkg_version) {
 n_cores    = max(1L, parallel::detectCores())
 batch_size = n_cores * 2L
 n_rem      = min(nrow(remaining), 5000L)
-time_limit_hit = FALSE
 
 message(sprintf("Using %d core(s), batch size %d", n_cores, batch_size))
 
@@ -224,7 +218,6 @@ while (i <= n_rem) {
       "Time limit of %.1f hours reached after processing %d packages",
       time_limit / 3600, nrow(done)
     ))
-    time_limit_hit = TRUE
     break
   }
 
@@ -263,12 +256,13 @@ while (i <= n_rem) {
 
 # ----- Summary ---------------------------------------------------------------
 
+N_all = nrow(all_pkgs); N_done = nrow(done)
 message(sprintf(
-  "Finished. %d packages in CSV. %.2f hours elapsed.",
-  nrow(done), elapsed_secs() / 3600
+  "Finished. %d/%d packages in CSV. %.2f hours elapsed.",
+  N_done, N_all, elapsed_secs() / 3600
 ))
 
-if (nrow(done) > 0L) {
+if (N_done > 0L) {
   tot_orig = sum(done$orig_size, na.rm = TRUE)
   tot_opt  = sum(done$opt_size,  na.rm = TRUE)
   message(sprintf(
@@ -278,7 +272,6 @@ if (nrow(done) > 0L) {
     xfun::format_bytes(tot_orig - tot_opt),
     if (tot_orig > 0) (1 - tot_opt / tot_orig) * 100 else 0
   ))
-  N_all = nrow(all_pkgs); N_done = nrow(done)
   if (N_all > N_done) message(sprintf(
     "Estimated savings: %s",
     xfun::format_bytes((tot_orig - tot_opt) * N_all / N_done)
@@ -290,6 +283,6 @@ if (nrow(done) > 0L) {
 gha_out = Sys.getenv("GITHUB_OUTPUT", "")
 if (nzchar(gha_out))
   cat(
-    sprintf("time_limit_hit=%s\n", tolower(as.character(time_limit_hit))),
+    sprintf("unfinished=%s\n", tolower(as.character(N_done < N_all))),
     file = gha_out, append = TRUE
   )
