@@ -3,6 +3,10 @@
 # write an updated combined CSV, print a summary, and signal GitHub Actions
 # whether another workflow run is needed to finish the remaining packages.
 #
+# The results CSV has five columns:
+#   package, version, orig_size, opt_size, lossy_size
+# Old entries lacking lossy_size are back-filled with NA.
+#
 # Environment variables (all optional):
 #   CRAN_MIRROR    – default https://cloud.r-project.org
 #   CACHE_DIR      – directory that holds results.csv
@@ -25,13 +29,16 @@ csv_file = file.path(cache_dir, "results.csv")
 
 if (file.exists(csv_file)) {
   combined = read.csv(csv_file, stringsAsFactors = FALSE)
+  if (!"lossy_size" %in% names(combined))
+    combined$lossy_size = NA_real_
   message(sprintf("Loaded %d existing results from cache", nrow(combined)))
 } else {
   combined = data.frame(
-    package   = character(),
-    version   = character(),
-    orig_size = numeric(),
-    opt_size  = numeric(),
+    package    = character(),
+    version    = character(),
+    orig_size  = numeric(),
+    opt_size   = numeric(),
+    lossy_size = numeric(),
     stringsAsFactors = FALSE
   )
 }
@@ -44,7 +51,12 @@ artifact_csvs = list.files(
 message(sprintf("Found %d artifact CSV(s) in %s", length(artifact_csvs), artifacts_dir))
 
 new_rows = do.call(rbind, lapply(artifact_csvs, function(f) {
-  tryCatch(read.csv(f, stringsAsFactors = FALSE), error = function(e) {
+  tryCatch({
+    df = read.csv(f, stringsAsFactors = FALSE)
+    if (!"lossy_size" %in% names(df))
+      df$lossy_size = NA_real_
+    df
+  }, error = function(e) {
     message(sprintf("  Warning: could not read %s: %s", f, conditionMessage(e)))
     NULL
   })
@@ -76,17 +88,26 @@ message(sprintf(
 ))
 
 if (N_done > 0L) {
-  tot_orig = sum(combined$orig_size, na.rm = TRUE)
-  tot_opt  = sum(combined$opt_size,  na.rm = TRUE)
+  tot_orig  = sum(combined$orig_size,  na.rm = TRUE)
+  tot_opt   = sum(combined$opt_size,   na.rm = TRUE)
+  tot_lossy = sum(combined$lossy_size, na.rm = TRUE)
   message(sprintf(
-    "Aggregate: %s -> %s (%s saved; %.1f%% savings)",
+    "Lossless: %s -> %s (%s saved; %.1f%% savings)",
     xfun::format_bytes(tot_orig),
     xfun::format_bytes(tot_opt),
     xfun::format_bytes(tot_orig - tot_opt),
     if (tot_orig > 0) (1 - tot_opt / tot_orig) * 100 else 0
   ))
+  if (sum(!is.na(combined$lossy_size)) > 0L)
+    message(sprintf(
+      "Lossy:    %s -> %s (%s saved; %.1f%% savings)",
+      xfun::format_bytes(tot_orig),
+      xfun::format_bytes(tot_lossy),
+      xfun::format_bytes(tot_orig - tot_lossy),
+      if (tot_orig > 0) (1 - tot_lossy / tot_orig) * 100 else 0
+    ))
   if (N_all > N_done) message(sprintf(
-    "Estimated total savings: %s",
+    "Estimated total lossless savings: %s",
     xfun::format_bytes((tot_orig - tot_opt) * N_all / N_done)
   ))
 }

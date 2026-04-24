@@ -8,7 +8,7 @@ on:
 
 permissions:
   actions: write   # needed to trigger the next run and to delete the cache
-  contents: read
+  contents: write  # needed to publish the CSV as a GitHub release asset
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -42,6 +42,19 @@ jobs:
         with:
           path: ~/.cran-savings-cache
           key: cran-png-savings-v1
+
+      # If the cache was purged, try to seed results.csv from the latest
+      # GitHub release asset so we don't reprocess already-done packages.
+      - name: Fetch results from GitHub release if not in cache
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -f ~/.cran-savings-cache/results.csv ]; then
+            mkdir -p ~/.cran-savings-cache
+            gh release download --pattern cran-png-savings.csv \
+              --output ~/.cran-savings-cache/results.csv 2>/dev/null || \
+              echo "No release asset found; starting fresh."
+          fi
 
       - name: Determine remaining packages and set matrix
         id: set-matrix
@@ -102,6 +115,8 @@ jobs:
           CACHE_DIR: ~/.cran-savings-cache
           JOB_INDEX: ${{ matrix.index }}
           PKGS_PER_JOB: "1000"
+          PNG_SIZE_THRESHOLD: "1048576"
+          MEM_LIMIT_PCT: "50"
 
       # Upload even on failure so partial results are not lost.
       - name: Upload results
@@ -169,6 +184,26 @@ jobs:
           path: ~/.cran-savings-cache/results.csv
           if-no-files-found: ignore
           retention-days: 90
+
+      # Publish results.csv to the latest GitHub release so it survives cache
+      # purges and can be fetched by the setup step on the next run.
+      - name: Publish results to GitHub release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f ~/.cran-savings-cache/results.csv ]; then
+            LATEST_TAG=$(gh release list --limit 1 --json tagName \
+              --jq '.[0].tagName' 2>/dev/null || echo "")
+            if [ -n "$LATEST_TAG" ]; then
+              gh release upload "$LATEST_TAG" \
+                ~/.cran-savings-cache/results.csv \
+                --name cran-png-savings.csv --clobber
+              echo "Published cran-png-savings.csv to release $LATEST_TAG."
+            else
+              echo "No releases found; skipping publish."
+            fi
+          fi
 
       # Delete the old cache entry so the save step can write under the same key.
       - name: Delete old cache
