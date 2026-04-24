@@ -90,7 +90,7 @@ jobs:
           r-universe: cran yihui
 
       - name: Download remaining packages list
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.3
         with:
           name: remaining-packages
           path: ~/.cran-savings-cache
@@ -146,7 +146,7 @@ jobs:
       # Download all per-job result CSVs into a flat artifacts directory.
       # continue-on-error so the step does not fail when no analyze jobs ran.
       - name: Download result artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.3
         with:
           pattern: results-*
           path: ~/.cran-savings-cache/artifacts
