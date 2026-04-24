@@ -28,12 +28,6 @@ jobs:
       - name: Set up R
         uses: r-lib/actions/setup-r@HEAD
 
-      - name: Install R packages
-        uses: yihui/actions/setup-r-dependencies@HEAD
-        with:
-          extra-packages: xfun ps
-          r-universe: cran yihui
-
       # Restore the accumulated results CSV from previous runs (if any).
       # Using the separate restore action so the later save step is never
       # skipped on a cache hit.
@@ -99,7 +93,7 @@ jobs:
       - name: Install R packages
         uses: yihui/actions/setup-r-dependencies@HEAD
         with:
-          extra-packages: tinyimg xfun
+          extra-packages: tinyimg xfun ps
           r-universe: cran yihui
 
       - name: Download remaining packages list
