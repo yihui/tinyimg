@@ -9,6 +9,11 @@
 # It then outputs a JSON matrix {"index":[0,1,...,n-1]} so the caller can
 # fan out to that many parallel worker jobs.
 #
+# The results CSV now has five columns:
+#   package, version, orig_size, opt_size, lossy_size
+# Old cached CSVs with only four columns (no lossy_size) are accepted:
+# lossy_size is filled with NA for those rows.
+#
 # Environment variables (all optional):
 #   CRAN_MIRROR  – default https://cloud.r-project.org
 #   CACHE_DIR    – directory that holds results.csv
@@ -34,15 +39,25 @@ message(sprintf("Found %d packages on CRAN", nrow(all_pkgs)))
 
 # ----- Resume: load accumulated results from previous runs -------------------
 
+# Download from latest release if cache is unavailable locally, e.g. on a new
+# runner or if the cache was cleared.
+if (!file.exists(csv_file)) try(
+  download.file("https://github.com/yihui/tinyimg/releases/download/latest/cran-png-savings.csv", csv_file)
+)
+
 if (file.exists(csv_file)) {
   done = read.csv(csv_file, stringsAsFactors = FALSE)
+  # Back-fill lossy_size column absent in older cached data.
+  if (!"lossy_size" %in% names(done))
+    done$lossy_size = NA_real_
   message(sprintf("Already processed: %d packages", nrow(done)))
 } else {
   done = data.frame(
-    package   = character(),
-    version   = character(),
-    orig_size = numeric(),
-    opt_size  = numeric(),
+    package    = character(),
+    version    = character(),
+    orig_size  = numeric(),
+    opt_size   = numeric(),
+    lossy_size = numeric(),
     stringsAsFactors = FALSE
   )
 }
