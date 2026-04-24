@@ -3,6 +3,7 @@ use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use mozjpeg::{ColorSpace, Compress, Decompress};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::collections::{HashMap, HashSet};
+use std::io::Read;
 use std::path::PathBuf;
 
 // ---------------------------------------------------------------------------
@@ -96,6 +97,27 @@ where
 // PNG optimisation
 // ---------------------------------------------------------------------------
 
+/// Read image dimensions from a PNG IHDR chunk without decoding the image.
+/// Returns None if the file is not a valid PNG or cannot be read.
+fn png_dimensions(path: &PathBuf) -> Option<(u32, u32)> {
+    let mut file = std::fs::File::open(path).ok()?;
+    // First 24 bytes: 8-byte PNG signature + 4-byte length + 4-byte "IHDR"
+    // + 4-byte width + 4-byte height
+    let mut buf = [0u8; 24];
+    file.read_exact(&mut buf).ok()?;
+    // Verify PNG signature
+    if &buf[0..8] != b"\x89PNG\r\n\x1a\n" {
+        return None;
+    }
+    // Verify IHDR chunk type
+    if &buf[12..16] != b"IHDR" {
+        return None;
+    }
+    let width  = u32::from_be_bytes([buf[16], buf[17], buf[18], buf[19]]);
+    let height = u32::from_be_bytes([buf[20], buf[21], buf[22], buf[23]]);
+    Some((width, height))
+}
+
 /// Optimize PNG files using oxipng
 ///
 /// @param input Vector of input PNG file paths
@@ -105,6 +127,7 @@ where
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
 /// @param lossy Maximum CIE76 Delta E threshold
+/// @param max_pixels Maximum number of pixels (width*height) to process; 0 means no limit
 /// @export
 #[extendr]
 fn tinypng_impl(
@@ -115,21 +138,46 @@ fn tinypng_impl(
     preserve: bool,
     verbose: bool,
     lossy: f64,
+    max_pixels: f64,
 ) -> Result<()> {
     let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
     let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
     validate_io(&inputs, &outputs)?;
 
-    let mut opts = Options::from_preset(level as u8);
-    opts.strip = StripChunks::All;
-    opts.optimize_alpha = alpha;
+    let pixel_limit: u64 = if max_pixels > 0.0 { max_pixels as u64 } else { u64::MAX };
+    let input_trunc  = if verbose { find_truncate_index(&inputs)  } else { 0 };
+    let output_trunc = if verbose { find_truncate_index(&outputs) } else { 0 };
 
-    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
+    for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
+        let input_path  = PathBuf::from(input_str);
+        let output_path = PathBuf::from(output_str);
+        let input_size  = std::fs::metadata(&input_path).map(|m| m.len()).unwrap_or(0);
+
+        // Check image dimensions to avoid OOM on oversized images.
+        if pixel_limit < u64::MAX {
+            if let Some((w, h)) = png_dimensions(&input_path) {
+                let pixels = (w as u64) * (h as u64);
+                if pixels > pixel_limit {
+                    rprintln!(
+                        "Warning: {} ({}x{} = {} pixels) skipped: \
+                         exceeds max_pixels = {}",
+                        truncate_path(input_str, input_trunc), w, h,
+                        pixels, pixel_limit
+                    );
+                    continue;
+                }
+            }
+        }
+
+        let mut opts = Options::from_preset(level as u8);
+        opts.strip = StripChunks::All;
+        opts.optimize_alpha = alpha;
+
         if lossy > 0.0 {
-            let lossy_data = apply_lossy_png(input_path, lossy)?;
+            let lossy_data = apply_lossy_png(&input_path, lossy)?;
             let optimized = oxipng::optimize_from_memory(&lossy_data, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
-            std::fs::write(output_path, optimized)
+            std::fs::write(&output_path, optimized)
                 .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
         } else {
             let in_file  = InFile::Path(input_path.clone());
@@ -140,8 +188,14 @@ fn tinypng_impl(
             oxipng::optimize(&in_file, &out_file, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
         }
-        Ok(())
-    })
+        if verbose {
+            report_verbose(
+                input_str, output_str, input_size,
+                &output_path, input_trunc, output_trunc,
+            );
+        }
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------

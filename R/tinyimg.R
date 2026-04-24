@@ -53,6 +53,12 @@
 #' @param quality JPEG quality level (0--100). Higher quality means larger
 #'   files; lower quality means smaller files. Passed to `tinyjpg()` by
 #'   `tinyimg()`. `tiny_output()` appends `_q<value>` when `quality < 100`.
+#' @param max_pixels Maximum number of pixels (width times height) a PNG may
+#'   have before it is skipped with a warning. The default (`2e8`, i.e. 200
+#'   million pixels) protects against out-of-memory errors on images that are
+#'   impractically large for optimization (e.g., a 101831 x 31782 image
+#'   requires about 12 GB of memory just for the raw pixel buffer, exceeding
+#'   typical CI runner limits). Set to `0` to disable the check.
 #' @param ... Additional arguments passed from `tinyimg()` to `tinypng()`
 #'   (e.g., `alpha`, `preserve`).
 #' @return `tinyimg()`, `tinypng()`, and `tinyjpg()` invisibly return a
