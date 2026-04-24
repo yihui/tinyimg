@@ -210,9 +210,9 @@ process_package = function(pkg_name, pkg_version) {
 
 # ----- Main processing loop --------------------------------------------------
 
-n_cores    = 1L  # max(1L, parallel::detectCores())
+n_cores    = max(1L, parallel::detectCores())
 batch_size = n_cores * 2L
-n_rem      = nrow(remaining)
+n_rem      = min(nrow(remaining), 5000L)
 time_limit_hit = FALSE
 
 message(sprintf("Using %d core(s), batch size %d", n_cores, batch_size))
@@ -277,6 +277,11 @@ if (nrow(done) > 0L) {
     xfun::format_bytes(tot_opt),
     xfun::format_bytes(tot_orig - tot_opt),
     if (tot_orig > 0) (1 - tot_opt / tot_orig) * 100 else 0
+  ))
+  N_all = nrow(all_pkgs); N_done = nrow(done)
+  if (N_all > N_done) message(sprintf(
+    "Estimated savings: %s",
+    xfun::format_bytes((tot_orig - tot_opt) * N_all / N_done)
   ))
 }
 
