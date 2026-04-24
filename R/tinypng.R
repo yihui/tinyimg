@@ -43,13 +43,12 @@ tiny_output = function(input, lossy = 0, quality = 75) {
 #' @export
 tinypng = function(
   input, output = tiny_output, level = 2L, alpha = FALSE, preserve = TRUE,
-  recursive = TRUE, verbose = TRUE, lossy = 0, max_pixels = 2e8
+  recursive = TRUE, verbose = TRUE, lossy = 0
 ) {
   lossy = as.numeric(lossy[1])
   paths = tinyopt_files(input, output, rx_png, recursive, lossy = lossy)
   if (length(paths$input)) tinypng_impl(
-    paths$input, paths$output, as.integer(level), alpha, preserve, verbose,
-    lossy, as.numeric(max_pixels)
+    paths$input, paths$output, as.integer(level), alpha, preserve, verbose, lossy
   )
   invisible(paths$output)
 }

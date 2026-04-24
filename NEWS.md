@@ -4,14 +4,6 @@
     `webr::install('tinyimg', repos = 'https://yihui.r-universe.dev')` in your
     webR application.
 
--   Added `max_pixels` argument to `tinypng()` and `tinyjpg()` (default
-    `2e8`). Images whose pixel count (width × height) exceeds this limit are
-    skipped with a warning instead of attempting to load the full pixel buffer
-    into memory. This prevents out-of-memory crashes when a package contains an
-    unusually large image (e.g., a 101831 × 31782 PNG that would require ~12 GB
-    of RAM). `tinyimg()` accepts and forwards the same argument to both
-    functions.
-
 # CHANGES IN tinyimg VERSION 0.4
 
 -   Added `tinyjpg()` for JPEG optimization (using the `mozjpeg` Rust crate).

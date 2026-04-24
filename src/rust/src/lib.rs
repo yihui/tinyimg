@@ -3,7 +3,6 @@ use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use mozjpeg::{ColorSpace, Compress, Decompress};
 use oxipng::{InFile, OutFile, Options, StripChunks};
 use std::collections::{HashMap, HashSet};
-use std::io::Read;
 use std::path::PathBuf;
 
 // ---------------------------------------------------------------------------
@@ -97,27 +96,6 @@ where
 // PNG optimisation
 // ---------------------------------------------------------------------------
 
-/// Read image dimensions from a PNG IHDR chunk without decoding the image.
-/// Returns None if the file is not a valid PNG or cannot be read.
-fn png_dimensions(path: &PathBuf) -> Option<(u32, u32)> {
-    let mut file = std::fs::File::open(path).ok()?;
-    // First 24 bytes: 8-byte PNG signature + 4-byte length + 4-byte "IHDR"
-    // + 4-byte width + 4-byte height
-    let mut buf = [0u8; 24];
-    file.read_exact(&mut buf).ok()?;
-    // Verify PNG signature
-    if &buf[0..8] != b"\x89PNG\r\n\x1a\n" {
-        return None;
-    }
-    // Verify IHDR chunk type
-    if &buf[12..16] != b"IHDR" {
-        return None;
-    }
-    let width = u32::from_be_bytes([buf[16], buf[17], buf[18], buf[19]]);
-    let height = u32::from_be_bytes([buf[20], buf[21], buf[22], buf[23]]);
-    Some((width, height))
-}
-
 /// Optimize PNG files using oxipng
 ///
 /// @param input Vector of input PNG file paths
@@ -127,7 +105,6 @@ fn png_dimensions(path: &PathBuf) -> Option<(u32, u32)> {
 /// @param preserve Preserve file permissions and timestamps
 /// @param verbose Print file size reduction info
 /// @param lossy Maximum CIE76 Delta E threshold
-/// @param max_pixels Maximum number of pixels (width*height) to process; 0 means no limit
 /// @export
 #[extendr]
 fn tinypng_impl(
@@ -138,46 +115,21 @@ fn tinypng_impl(
     preserve: bool,
     verbose: bool,
     lossy: f64,
-    max_pixels: f64,
 ) -> Result<()> {
     let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
     let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
     validate_io(&inputs, &outputs)?;
 
-    let pixel_limit: u64 = if max_pixels > 0.0 { max_pixels as u64 } else { u64::MAX };
-    let input_trunc  = if verbose { find_truncate_index(&inputs)  } else { 0 };
-    let output_trunc = if verbose { find_truncate_index(&outputs) } else { 0 };
+    let mut opts = Options::from_preset(level as u8);
+    opts.strip = StripChunks::All;
+    opts.optimize_alpha = alpha;
 
-    for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
-        let input_path  = PathBuf::from(input_str);
-        let output_path = PathBuf::from(output_str);
-        let input_size  = std::fs::metadata(&input_path).map(|m| m.len()).unwrap_or(0);
-
-        // Check image dimensions to avoid OOM on oversized images.
-        if pixel_limit < u64::MAX {
-            if let Some((w, h)) = png_dimensions(&input_path) {
-                let pixels = (w as u64) * (h as u64);
-                if pixels > pixel_limit {
-                    rprintln!(
-                        "Warning: {} ({}x{} = {} pixels) skipped: \
-                         exceeds max_pixels = {}",
-                        truncate_path(input_str, input_trunc), w, h,
-                        pixels, pixel_limit
-                    );
-                    continue;
-                }
-            }
-        }
-
-        let mut opts = Options::from_preset(level as u8);
-        opts.strip = StripChunks::All;
-        opts.optimize_alpha = alpha;
-
+    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
         if lossy > 0.0 {
-            let lossy_data = apply_lossy_png(&input_path, lossy)?;
+            let lossy_data = apply_lossy_png(input_path, lossy)?;
             let optimized = oxipng::optimize_from_memory(&lossy_data, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
-            std::fs::write(&output_path, optimized)
+            std::fs::write(output_path, optimized)
                 .map_err(|e| format!("Failed to write {}: {}", output_path.display(), e))?;
         } else {
             let in_file  = InFile::Path(input_path.clone());
@@ -188,14 +140,8 @@ fn tinypng_impl(
             oxipng::optimize(&in_file, &out_file, &opts)
                 .map_err(|e| format!("Failed to optimize {}: {}", input_path.display(), e))?;
         }
-        if verbose {
-            report_verbose(
-                input_str, output_str, input_size,
-                &output_path, input_trunc, output_trunc,
-            );
-        }
-    }
-    Ok(())
+        Ok(())
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -252,62 +198,12 @@ fn optimize_jpeg(input: &PathBuf, output: &PathBuf, quality: f32) -> Result<()> 
     Ok(())
 }
 
-/// Read image dimensions from a JPEG SOF marker without decoding the image.
-/// Returns None if the file is not a valid JPEG or cannot be read.
-fn jpeg_dimensions(path: &PathBuf) -> Option<(u32, u32)> {
-    use std::io::{Seek, SeekFrom};
-    let mut file = std::fs::File::open(path).ok()?;
-    let mut buf2 = [0u8; 2];
-    let mut byte = [0u8; 1];
-
-    // Verify SOI marker
-    file.read_exact(&mut buf2).ok()?;
-    if buf2 != [0xFF, 0xD8] { return None; }
-
-    loop {
-        // Read first 0xFF of the next marker; return on unexpected byte
-        file.read_exact(&mut byte).ok()?;
-        if byte[0] != 0xFF { return None; }
-        // Skip any extra 0xFF padding bytes
-        loop {
-            file.read_exact(&mut byte).ok()?;
-            if byte[0] != 0xFF { break; }
-        }
-        let marker = byte[0];
-
-        // Markers with no length field
-        if marker == 0xD8 || marker == 0xD9 || marker == 0x01 ||
-           (0xD0..=0xD7).contains(&marker) {
-            continue;
-        }
-
-        // Read segment length (big-endian; includes the 2 length bytes)
-        file.read_exact(&mut buf2).ok()?;
-        let seg_len = u16::from_be_bytes(buf2) as u64;
-
-        // SOF markers carry image dimensions
-        if matches!(marker, 0xC0 | 0xC1 | 0xC2 | 0xC3 | 0xC5 | 0xC6 | 0xC7 |
-                             0xC9 | 0xCA | 0xCB | 0xCD | 0xCE | 0xCF) {
-            let mut sof = [0u8; 5];
-            file.read_exact(&mut sof).ok()?;
-            // sof[0] = precision, [1..2] = height, [3..4] = width
-            let height = u16::from_be_bytes([sof[1], sof[2]]) as u32;
-            let width  = u16::from_be_bytes([sof[3], sof[4]]) as u32;
-            return Some((width, height));
-        }
-
-        // Skip segment data (seg_len - 2: length includes its own 2 bytes)
-        file.seek(SeekFrom::Current(seg_len as i64 - 2)).ok()?;
-    }
-}
-
-
+/// Optimize JPEG files using mozjpeg
 ///
 /// @param input Vector of input JPEG file paths
 /// @param output Vector of output JPEG file paths (same length as input)
 /// @param quality Quality level (0-100); higher means better quality and larger files
 /// @param verbose Print file size reduction info
-/// @param max_pixels Maximum number of pixels (width*height) to process; 0 means no limit
 /// @export
 #[extendr]
 fn tinyjpg_impl(
@@ -315,46 +211,13 @@ fn tinyjpg_impl(
     output: Strings,
     quality: f64,
     verbose: bool,
-    max_pixels: f64,
 ) -> Result<()> {
     let inputs: Vec<String>  = input.iter().map(|s| s.to_string()).collect();
     let outputs: Vec<String> = output.iter().map(|s| s.to_string()).collect();
     validate_io(&inputs, &outputs)?;
-
-    let pixel_limit: u64 = if max_pixels > 0.0 { max_pixels as u64 } else { u64::MAX };
-    let input_trunc  = if verbose { find_truncate_index(&inputs)  } else { 0 };
-    let output_trunc = if verbose { find_truncate_index(&outputs) } else { 0 };
-
-    for (input_str, output_str) in inputs.iter().zip(outputs.iter()) {
-        let input_path  = PathBuf::from(input_str);
-        let output_path = PathBuf::from(output_str);
-        let input_size  = std::fs::metadata(&input_path).map(|m| m.len()).unwrap_or(0);
-
-        // Check image dimensions to avoid OOM on oversized images.
-        if pixel_limit < u64::MAX {
-            if let Some((w, h)) = jpeg_dimensions(&input_path) {
-                let pixels = (w as u64) * (h as u64);
-                if pixels > pixel_limit {
-                    rprintln!(
-                        "Warning: {} ({}x{} = {} pixels) skipped: \
-                         exceeds max_pixels = {}",
-                        truncate_path(input_str, input_trunc), w, h,
-                        pixels, pixel_limit
-                    );
-                    continue;
-                }
-            }
-        }
-
-        optimize_jpeg(&input_path, &output_path, quality as f32)?;
-        if verbose {
-            report_verbose(
-                input_str, output_str, input_size,
-                &output_path, input_trunc, output_trunc,
-            );
-        }
-    }
-    Ok(())
+    process_files(&inputs, &outputs, verbose, |input_path, output_path| {
+        optimize_jpeg(input_path, output_path, quality as f32)
+    })
 }
 
 fn apply_lossy_png(input: &PathBuf, lossy: f64) -> Result<Vec<u8>> {
