@@ -53,7 +53,7 @@
 #' @param quality JPEG quality level (0--100). Higher quality means larger
 #'   files; lower quality means smaller files. Passed to `tinyjpg()` by
 #'   `tinyimg()`. `tiny_output()` appends `_q<value>` when `quality < 100`.
-#' @param max_pixels Maximum number of pixels (width times height) a PNG may
+#' @param max_pixels Maximum number of pixels (width times height) an image may
 #'   have before it is skipped with a warning. The default (`2e8`, i.e. 200
 #'   million pixels) protects against out-of-memory errors on images that are
 #'   impractically large for optimization (e.g., a 101831 x 31782 image
@@ -92,7 +92,7 @@
 #' @export
 tinyimg = function(
   input, output = tiny_output, recursive = TRUE, verbose = TRUE,
-  level = 2L, quality = 75, lossy = 0, ...
+  level = 2L, quality = 75, lossy = 0, max_pixels = 2e8, ...
 ) {
   all = tinyopt_files(
     input, output, paste0(rx_png, "|", rx_jpg), recursive,
@@ -102,11 +102,13 @@ tinyimg = function(
   is_jpg = grepl(rx_jpg, all$input, ignore.case = TRUE)
   if (any(is_png)) tinypng(
     all$input[is_png], all$output[is_png],
-    level = level, recursive = FALSE, verbose = verbose, lossy = lossy, ...
+    level = level, recursive = FALSE, verbose = verbose, lossy = lossy,
+    max_pixels = max_pixels, ...
   )
   if (any(is_jpg)) tinyjpg(
     all$input[is_jpg], all$output[is_jpg],
-    quality = quality, recursive = FALSE, verbose = verbose
+    quality = quality, recursive = FALSE, verbose = verbose,
+    max_pixels = max_pixels
   )
   invisible(all$output)
 }

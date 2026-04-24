@@ -15,6 +15,7 @@ tinyimg(
   level = 2L,
   quality = 75,
   lossy = 0,
+  max_pixels = 2e+08,
   ...
 )
 
@@ -23,7 +24,8 @@ tinyjpg(
   output = tiny_output,
   quality = 75,
   recursive = TRUE,
-  verbose = TRUE
+  verbose = TRUE,
+  max_pixels = 2e+08
 )
 
 tiny_output(input, lossy = 0, quality = 75)
@@ -68,7 +70,7 @@ PNG palette reduction. Values \verb{<= 0} disable lossy optimization. See
 Details. Passed to \code{tinypng()} by \code{tinyimg()} via \code{...}. When \verb{> 0},
 \code{tiny_output()} appends \verb{_l<value>} to the output filename.}
 
-\item{max_pixels}{Maximum number of pixels (width times height) a PNG may
+\item{max_pixels}{Maximum number of pixels (width times height) an image may
 have before it is skipped with a warning. The default (\code{2e8}, i.e. 200
 million pixels) protects against out-of-memory errors on images that are
 impractically large for optimization (e.g., a 101831 x 31782 image
