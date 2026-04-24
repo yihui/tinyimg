@@ -31,8 +31,8 @@ jobs:
       - name: Install R packages
         uses: yihui/actions/setup-r-dependencies@HEAD
         with:
-          extra-packages: xfun
-          r-universe: yihui
+          extra-packages: xfun ps
+          r-universe: cran yihui
 
       # Restore the accumulated results CSV from previous runs (if any).
       # Using the separate restore action so the later save step is never
