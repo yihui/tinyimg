@@ -39,12 +39,6 @@ message(sprintf("Found %d packages on CRAN", nrow(all_pkgs)))
 
 # ----- Resume: load accumulated results from previous runs -------------------
 
-# Download from latest release if cache is unavailable locally, e.g. on a new
-# runner or if the cache was cleared.
-if (!file.exists(csv_file)) try(
-  download.file("https://github.com/yihui/tinyimg/releases/download/latest/cran-png-savings.csv", csv_file)
-)
-
 if (file.exists(csv_file)) {
   done = read.csv(csv_file, stringsAsFactors = FALSE)
   # Back-fill lossy_size column absent in older cached data.
