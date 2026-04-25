@@ -190,9 +190,9 @@ jobs:
             LATEST_TAG=$(gh release list --limit 1 --json tagName \
               --jq '.[0].tagName' 2>/dev/null || echo "")
             if [ -n "$LATEST_TAG" ]; then
+            cp ~/.cran-savings-cache/results.csv cran-png-savings.csv
               gh release upload "$LATEST_TAG" \
-                ~/.cran-savings-cache/results.csv \
-                --name cran-png-savings.csv --clobber
+                cran-png-savings.csv --clobber
               echo "Published cran-png-savings.csv to release $LATEST_TAG."
             else
               echo "No releases found; skipping publish."
