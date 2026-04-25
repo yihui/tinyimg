@@ -103,7 +103,9 @@ jobs:
           path: ~/.cran-savings-cache
 
       - name: Run analysis
-        run: Rscript .github/workflows/cran-png-savings-worker.R
+        run: |
+          # limit memory to 8Gb
+          (ulimit -v 8388608; Rscript .github/workflows/cran-png-savings-worker.R)
         env:
           CRAN_MIRROR: https://cloud.r-project.org
           CACHE_DIR: ~/.cran-savings-cache
