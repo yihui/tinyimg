@@ -93,7 +93,7 @@ jobs:
       - name: Install R packages
         uses: yihui/actions/setup-r-dependencies@HEAD
         with:
-          extra-packages: tinyimg xfun ps
+          extra-packages: tinyimg xfun
           r-universe: cran yihui
 
       - name: Download remaining packages list
@@ -109,8 +109,6 @@ jobs:
           CACHE_DIR: ~/.cran-savings-cache
           JOB_INDEX: ${{ matrix.index }}
           PKGS_PER_JOB: "1000"
-          PNG_SIZE_THRESHOLD: "1048576"
-          MEM_LIMIT_PCT: "50"
 
       # Upload even on failure so partial results are not lost.
       - name: Upload results

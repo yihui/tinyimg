@@ -21,13 +21,6 @@
 #                         written here too (default ~/.cran-savings-cache)
 #   JOB_INDEX           - zero-based slice index (required)
 #   PKGS_PER_JOB        - packages per slice (default 1000)
-#   PNG_SIZE_THRESHOLD  - file-size threshold in bytes above which a PNG is
-#                         processed in a subprocess (default 1048576 = 1 MiB).
-#                         Chosen so that even a 250x compression-ratio image
-#                         stays within half the available GHA memory inline.
-#   MEM_LIMIT_PCT       - percentage of currently-available RAM to allow each
-#                         subprocess (default 50). Uses ps::ps_system_memory()
-#                         at startup; falls back to /proc/meminfo on Linux.
 
 suppressPackageStartupMessages({
   library(tinyimg)
@@ -38,8 +31,6 @@ mirror             = Sys.getenv("CRAN_MIRROR",          "https://cloud.r-project
 cache_dir          = Sys.getenv("CACHE_DIR",            path.expand("~/.cran-savings-cache"))
 job_index          = as.integer(Sys.getenv("JOB_INDEX",         "0"))
 pkgs_per_job       = as.integer(Sys.getenv("PKGS_PER_JOB",      "1000"))
-png_size_threshold = as.numeric(Sys.getenv("PNG_SIZE_THRESHOLD", "1048576"))  # 1 MiB
-mem_limit_pct      = as.numeric(Sys.getenv("MEM_LIMIT_PCT",      "50"))
 
 remaining_file = file.path(cache_dir, "remaining.csv")
 results_file   = file.path(cache_dir, sprintf("results-%d.csv", job_index))
@@ -65,26 +56,6 @@ message(sprintf(
   job_index, start_row, end_row, nrow(my_pkgs)
 ))
 
-# ----- Compute subprocess memory limit (kilobytes for ulimit -v) -------------
-
-mem_limit_kb = tryCatch({
-  avail = ps::ps_system_memory()[["avail"]]
-  as.integer(avail * mem_limit_pct / 100 / 1024)
-}, error = function(e) {
-  # Fallback: read /proc/meminfo (Linux-specific)
-  tryCatch({
-    lines = readLines("/proc/meminfo", warn = FALSE)
-    kb    = as.integer(gsub("[^0-9]", "",
-              grep("^MemAvailable:", lines, value = TRUE)[[1]]))
-    as.integer(kb * mem_limit_pct / 100)
-  }, error = function(e2) {
-    message("Warning: could not read system memory; defaulting to 2 GiB limit")
-    2L * 1024L * 1024L
-  })
-})
-message(sprintf("Subprocess memory limit: %s (%.0f%% of available)",
-                xfun::format_bytes(mem_limit_kb * 1024.0), mem_limit_pct))
-
 # ----- Helpers ---------------------------------------------------------------
 
 download_retry = function(url, destfile, retries = 3L) {
@@ -99,47 +70,27 @@ download_retry = function(url, destfile, retries = 3L) {
   FALSE
 }
 
-# Run tinypng() in a subprocess with a virtual-memory cap (ulimit -v).
-# Both lossless (lossy=0) and lossy (lossy=2.3) optimisations are attempted
-# in a single Rscript invocation to amortise startup cost.  Output files that
-# are not created indicate that the corresponding optimisation failed (e.g. OOM).
-tinypng_subprocess = function(input, lossless_out, lossy_out) {
-  script = tempfile(fileext = ".R")
-  on.exit(unlink(script), add = TRUE)
-  writeLines(c(
-    "library(tinyimg)",
-    sprintf("try(tinypng(%s, %s, level=2L, verbose=FALSE))",
-            deparse(input), deparse(lossless_out)),
-    sprintf("try(tinypng(%s, %s, level=2L, verbose=FALSE, lossy=2.3))",
-            deparse(input), deparse(lossy_out))
-  ), script)
-  cmd = sprintf("(ulimit -v %s; ulimit -c 0; Rscript %s)", mem_limit_kb, shQuote(script))
-  message("Running: ", cmd)
-  system(cmd)
-  invisible(NULL)
-}
-
 # Optimise a single PNG file losslessly and lossily.
 # Returns a numeric vector c(opt_size, lossy_size) where NA means failure.
-optimise_png = function(input, sz, tmp_dir) {
+optimise_png = function(input, sz, tmp_dir, base64 = FALSE) {
   lossless_out = tempfile(fileext = ".png", tmpdir = tmp_dir)
   lossy_out    = tempfile(fileext = ".png", tmpdir = tmp_dir)
 
-  if (sz > png_size_threshold) {
-    tinypng_subprocess(input, lossless_out, lossy_out)
-  } else {
-    tryCatch(
-      tinypng(input, lossless_out, level = 2L, verbose = FALSE),
-      error = function(e) NULL
-    )
-    tryCatch(
-      tinypng(input, lossy_out, level = 2L, verbose = FALSE, lossy = 2.3),
-      error = function(e) NULL
-    )
-  }
+  tryCatch(
+    tinypng(input, lossless_out, level = 2L, verbose = FALSE),
+    error = function(e) NULL
+  )
+  tryCatch(
+    tinypng(input, lossy_out, level = 2L, verbose = FALSE, lossy = 2.3),
+    error = function(e) NULL
+  )
 
-  opt_sz   = if (file.exists(lossless_out)) file.size(lossless_out) else NA_real_
-  lossy_sz = if (file.exists(lossy_out))    file.size(lossy_out)    else NA_real_
+  opt_sz   = if (file.exists(lossless_out)) {
+    if (base64) nchar(xfun::base64_encode(lossless_out)) else file.size(lossless_out)
+  } else NA_real_
+  lossy_sz = if (file.exists(lossy_out)) {
+    if (base64) nchar(xfun::base64_encode(lossless_out)) else file.size(lossy_out)
+  } else NA_real_
   c(opt_sz, lossy_sz)
 }
 
@@ -236,10 +187,11 @@ process_package = function(pkg_name, pkg_version) {
       orig_sz = file.size(tmp_png)
       if (is.na(orig_sz) || orig_sz == 0L) { unlink(tmp_png); next }
 
-      sizes     = optimise_png(tmp_png, orig_sz, tmp_dir)
+      sizes     = optimise_png(tmp_png, orig_sz, tmp_dir, base64 = TRUE)
       opt_sz2   = sizes[1]
       lossy_sz2 = sizes[2]
 
+      orig_sz     = nchar(b64)
       total_orig  = total_orig  + orig_sz
       total_opt   = total_opt   + if (is.na(opt_sz2))   orig_sz else opt_sz2
       total_lossy = total_lossy + if (is.na(lossy_sz2))  orig_sz else lossy_sz2
