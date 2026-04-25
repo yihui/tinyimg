@@ -108,7 +108,7 @@ if (N_done > 0L) {
     ))
   if (N_all > N_done) message(sprintf(
     "Estimated total lossless savings: %s",
-    xfun::format_bytes((tot_orig - tot_opt) * N_all / N_done)
+    xfun::format_bytes((tot_orig - tot_opt) / N_done * N_all)
   ))
 }
 
