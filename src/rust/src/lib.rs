@@ -2,8 +2,54 @@ use extendr_api::prelude::*;
 use exoquant::{convert_to_indexed, ditherer, optimizer, Color};
 use mozjpeg::{ColorSpace, Compress, Decompress};
 use oxipng::{InFile, OutFile, Options, StripChunks};
+use std::alloc::{GlobalAlloc, Layout, System};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+
+// ---------------------------------------------------------------------------
+// Custom global allocator: panic on OOM instead of calling abort()
+// ---------------------------------------------------------------------------
+//
+// Rust's default allocator calls abort() when an allocation fails, which
+// causes a core dump in the host R process.  By replacing it with this
+// wrapper we turn allocation failures into Rust panics; because the crate
+// uses `panic = "unwind"` and extendr wraps every exported function in
+// `catch_unwind`, the panic is caught and returned to R as a normal error.
+
+struct PanicOnOomAllocator;
+
+unsafe impl GlobalAlloc for PanicOnOomAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let ptr = System.alloc(layout);
+        if ptr.is_null() {
+            panic!("memory allocation of {} bytes failed", layout.size());
+        }
+        ptr
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        System.dealloc(ptr, layout)
+    }
+
+    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        let ptr = System.alloc_zeroed(layout);
+        if ptr.is_null() {
+            panic!("memory allocation of {} bytes failed", layout.size());
+        }
+        ptr
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        let new_ptr = System.realloc(ptr, layout, new_size);
+        if new_ptr.is_null() {
+            panic!("memory reallocation of {} bytes failed", new_size);
+        }
+        new_ptr
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: PanicOnOomAllocator = PanicOnOomAllocator;
 
 // ---------------------------------------------------------------------------
 // Shared I/O helpers
