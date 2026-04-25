@@ -1,5 +1,8 @@
 # CHANGES IN tinyimg VERSION 0.5
 
+-   Memory allocation failures in `tinypng()` and `tinyjpg()` now propagate as
+    R errors instead of calling `abort()` and crashing the R process (#XX).
+
 -   This package can be built to WASM now (#29). You can install it via
     `webr::install('tinyimg', repos = 'https://yihui.r-universe.dev')` in your
     webR application.
