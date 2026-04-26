@@ -1,0 +1,49 @@
+---
+title: "PNG Savings in CRAN Packages"
+---
+
+```{r, include = FALSE}
+if (!requireNamespace("gglite", quietly = TRUE)) {
+  install.packages("gglite", repos = "https://yihui.r-universe.dev")
+}
+```
+
+This example shows the PNG savings in CRAN packages using `tinyimg::tinypng()`. The data is collected via the GitHub Action workflow in <https://github.com/yihui/tinyimg/actions/workflows/cran-png-savings.yaml>.
+
+Download data:
+
+```{r}
+cran_png = read.csv(
+  'https://github.com/yihui/tinyimg/releases/latest/download/cran-png-savings.csv'
+)
+```
+
+Total original PNG size in all packages is `{r} xfun::format_bytes(sum(cran_png$orig_size))`, and total optimized PNG sizes are `{r} xfun::format_bytes(sum(cran_png$opt_size))` (lossless) and `{r} xfun::format_bytes(sum(cran_png$lossy_size))` (lossy).
+
+Transform data:
+
+```{r}
+cran_png = subset(cran_png, orig_size > 0)
+png_data = reshape(
+  cran_png, varying = c("opt_size", "lossy_size"), v.names = "opt_size",
+  timevar = "type", times = c("Lossless", "Lossy"), direction = "long"
+)
+png_data = within(png_data, {
+  orig_mb = round(orig_size / 2^20, 4)
+  opt_mb = round(opt_size / 2^20, 4)
+})
+```
+
+Draw a scatter plot of original vs optimized (loseless and lossy) PNG sizes:
+
+```{r}
+library(gglite)
+png_data |>
+  g2(opt_mb ~ orig_mb, color = ~ type) |> 
+  mark_point(tooltip = list(title = 'package')) |>
+  axis_x(title = 'Original PNG size (MB)') |>
+  axis_y(title = 'Optimized PNG size (MB)') |>
+  interact('brushFilter')
+```
+
+You may brush the points to zoom in, and double click to zoom out.
