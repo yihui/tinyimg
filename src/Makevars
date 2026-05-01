@@ -33,17 +33,22 @@ $(STATLIB):
 	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
 	# to set it here to ensure that cargo will be found.
 	# Limit to 2 jobs per CRAN policy (cargo build -j defaults to number of logical CPUs)
-	# On macOS, ensure MACOSX_DEPLOYMENT_TARGET matches R's deployment target so that
-	# cargo (and the cc-rs crate used to compile C dependencies) does not produce
-	# objects tagged for a newer OS than R's linker expects. Use the value already
-	# present in the environment (set by R's own build system) when available;
-	# otherwise fall back to the macOS major version derived from the Darwin kernel
-	# version (Darwin N corresponds to macOS N-9).
+	# On macOS, always derive MACOSX_DEPLOYMENT_TARGET from R's own compiler config
+	# so that cargo (and cc-rs) builds C code for the same OS version R targets.
+	# 1. Parse -version-min= from R's CC/CFLAGS/LDFLAGS (catches both the Intel form
+	#    -mmacosx-version-min= and the ARM/CRAN M1mac form -mmacos-version-min=).
+	# 2. Fall back to `sw_vers -productVersion` (works for any macOS version,
+	#    including future versions where the Darwin-version arithmetic breaks).
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
 		export CFLAGS_wasm32_unknown_emscripten="-fPIC" && \
 		if [ "$$(uname -s)" = "Darwin" ]; then \
-			export MACOSX_DEPLOYMENT_TARGET="$${MACOSX_DEPLOYMENT_TARGET:-$$(uname -r | awk -F. '{print $$1-9}').0}"; \
+			R_FLAGS="$$(R CMD config CC 2>/dev/null) $$(R CMD config CFLAGS 2>/dev/null) $$(R CMD config LDFLAGS 2>/dev/null)"; \
+			DEPLOY_TARGET="$$(echo "$$R_FLAGS" | sed -n 's/.*-version-min=\([0-9][0-9.]*\).*/\1/p' | head -n 1)"; \
+			if [ -z "$$DEPLOY_TARGET" ]; then \
+				DEPLOY_TARGET="$$(sw_vers -productVersion 2>/dev/null | cut -d. -f1)"; \
+			fi; \
+			[ -n "$$DEPLOY_TARGET" ] && export MACOSX_DEPLOYMENT_TARGET="$$DEPLOY_TARGET"; \
 		fi && \
 		cargo build --lib --release --jobs 2 --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
 	rm -Rf $(CARGOTMP) && \
