@@ -4,6 +4,18 @@ STATLIB = $(LIBDIR)/libtinyimg.a
 PKG_LIBS = -L$(LIBDIR) -ltinyimg
 PKG_CFLAGS = -pthread $(C_VISIBILITY)
 
+# On macOS, R's Makeconf defines MACOSX_DEPLOYMENT_TARGET as a Make variable but
+# does not export it to child processes. We export it here so that cargo (and the
+# cc-rs crate it uses to compile C dependencies) respects the same deployment
+# target that R itself uses, preventing "built for newer macOS" linker warnings.
+ifeq ($(shell uname -s 2>/dev/null),Darwin)
+  ifeq ($(MACOSX_DEPLOYMENT_TARGET),)
+    # Fallback: derive from the Darwin kernel version (Darwin N -> macOS N-9)
+    MACOSX_DEPLOYMENT_TARGET := $(shell uname -r | awk -F. '{print $$1-9}').0
+  endif
+  export MACOSX_DEPLOYMENT_TARGET
+endif
+
 all: $(SHLIB) cleanup
 
 $(SHLIB): $(STATLIB)
@@ -31,18 +43,11 @@ $(STATLIB):
 		echo 'directory = "rust/vendor"' >> $(CARGOTMP)/config.toml; \
 	fi
 	# In some environments, ~/.cargo/bin might not be included in PATH, so we need
-	# to set it here to ensure that cargo will be found. `rustc --print sysroot`
-	# is a way to get the Rust sysroot without needing cargo itself.
+	# to set it here to ensure that cargo will be found.
 	# Limit to 2 jobs per CRAN policy (cargo build -j defaults to number of logical CPUs)
 	export CARGO_HOME=$(CARGOTMP) && \
 		export PATH="$(PATH):$(HOME)/.cargo/bin" && \
 		export CFLAGS_wasm32_unknown_emscripten="-fPIC" && \
-		if [ "$$(uname -s)" = "Darwin" ] && [ -z "$$MACOSX_DEPLOYMENT_TARGET" ]; then \
-			DEPLOY_TARGET="$$(grep '^MACOSX_DEPLOYMENT_TARGET' "$$(R RHOME)/etc/Makeconf" 2>/dev/null | sed 's/^MACOSX_DEPLOYMENT_TARGET *= *//' | head -1)"; \
-			if [ -n "$$DEPLOY_TARGET" ]; then \
-				export MACOSX_DEPLOYMENT_TARGET="$$DEPLOY_TARGET"; \
-			fi; \
-		fi && \
 		cargo build --lib --release --jobs 2 --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
 	rm -Rf $(CARGOTMP) && \
 		rm -Rf $(LIBDIR)/build && \
