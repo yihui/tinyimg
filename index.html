@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="generator" content="litedown 0.9.9">
+<title>tinyimg: Optimize and Compress Images</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/article.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/copy-button.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/heading-anchor.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/pages.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/site.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/prism-xcode.min.css">
+</head>
+<body>
+<nav><p><a href="index.html">Home</a>
+<a href="examples.html">Examples</a>
+<a href="manual.html">Manual</a>
+<a href="news.html">News</a>
+<a href="playground/">Playground</a></p></nav>
+<div class="frontmatter">
+<div class="title"><h1>tinyimg: Optimize and Compress Images</h1></div>
+<div class="date"><h3>2026-05-22</h3></div>
+</div>
+<div class="body">
+<div id="TOC">
+<ul class="numbered">
+<li><a href="#sec:installation"><span class="section-number main-number">1</span> Installation</a></li>
+<li><a href="#sec:usage"><span class="section-number main-number">2</span> Usage</a>
+<ul>
+<li><a href="#sec:optimize-png-and-jpeg-images"><span class="section-number">2.1</span> Optimize PNG and JPEG images</a></li>
+<li><a href="#sec:png-optimization"><span class="section-number">2.2</span> PNG optimization</a></li>
+<li><a href="#sec:jpeg-optimization"><span class="section-number">2.3</span> JPEG optimization</a></li>
+<li><a href="#sec:optimization-levels-and-quality"><span class="section-number">2.4</span> Optimization levels and quality</a></li>
+</ul>
+</li>
+<li><a href="#sec:for-package-developers"><span class="section-number main-number">3</span> For Package Developers</a></li>
+<li><a href="#sec:license"><span class="section-number main-number">4</span> License</a></li>
+<li><a href="#sec:appendix">Appendix</a></li>
+</ul>
+</div>
+<table class="table-full"><tbody>
+<tr>
+<td>Title</td>
+<td>Optimize and Compress Images</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>0.4.5</td>
+</tr>
+<tr>
+<td>Description</td>
+<td>Optimize and compress images using Rust libraries to reduce
+file sizes while maintaining image quality. Supports PNG palette
+reduction and dithering via the exoquant crate before lossless PNG
+optimization via the oxipng crate, and JPEG re-encoding via the
+mozjpeg crate. The package provides functions to optimize individual
+image files or entire directories, with configurable compression levels.
+Use tinyimg() as a convenient entry point for mixed PNG/JPEG workflows.</td>
+</tr>
+<tr>
+<td>Suggests</td>
+<td>testit</td>
+</tr>
+<tr>
+<td>License</td>
+<td>MIT + file LICENSE</td>
+</tr>
+<tr>
+<td>URL</td>
+<td><a href="https://github.com/yihui/tinyimg">https://github.com/yihui/tinyimg</a></td>
+</tr>
+<tr>
+<td>BugReports</td>
+<td><a href="https://github.com/yihui/tinyimg/issues">https://github.com/yihui/tinyimg/issues</a></td>
+</tr>
+<tr>
+<td>Author</td>
+<td><a href="https://yihui.org">Yihui Xie</a> <a href="https://orcid.org/0000-0003-0645-5666"><img src="https://cloud.r-project.org/web/orcid.svg" alt="ORCID iD" class="orcid" /></a> [aut, cre, cph], Authors of the dependency Rust crates  [ctb, cph]</td>
+</tr>
+</tbody></table>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/manual.min.css">
+<!-- badges: start -->
+<p><a href="https://github.com/yihui/tinyimg/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/yihui/tinyimg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check" /></a>
+<a href="https://cran.r-project.org/package=tinyimg"><img src="https://www.r-pkg.org/badges/version/tinyimg" alt="CRAN release" /></a></p>
+<!-- badges: end -->
+<p>An R package for optimizing and compressing images using Rust libraries.
+Supports PNG optimization via
+<a href="https://github.com/exoticorn/exoquant-rs">exoquant</a> (lossy palette reduction)
+and <a href="https://github.com/oxipng/oxipng">oxipng</a> (lossless optimization), and JPEG
+re-encoding via <a href="https://github.com/mozilla/mozjpeg">mozjpeg</a>.</p>
+<h2 id="sec:installation"><span class="section-number main-number">1</span> Installation</h2>
+<p>You can install the development version of {tinyimg} from r-universe.dev:</p>
+<pre><code class="language-r">install.packages(&quot;tinyimg&quot;, repos = &quot;https://yihui.r-universe.dev&quot;)
+</code></pre>
+<h2 id="sec:usage"><span class="section-number main-number">2</span> Usage</h2>
+<h3 id="sec:optimize-png-and-jpeg-images"><span class="section-number">2.1</span> Optimize PNG and JPEG images</h3>
+<pre><code class="language-r">library(tinyimg)
+
+# Optimize all images in a directory (PNG and JPEG)
+tinyimg(&quot;path/to/directory&quot;)
+
+# Optimize specific files (mixed formats)
+tinyimg(c(&quot;photo.jpg&quot;, &quot;diagram.png&quot;))
+</code></pre>
+<h3 id="sec:png-optimization"><span class="section-number">2.2</span> PNG optimization</h3>
+<pre><code class="language-r"># Create a test PNG
+tmp = tempfile()
+png(tmp, width = 400, height = 400)
+plot(1:10)
+dev.off()
+
+# Optimize with different levels (lossless)
+tinypng(tmp, paste0(tmp, &quot;-o1.png&quot;), level = 1)
+tinypng(tmp, paste0(tmp, &quot;-o6.png&quot;), level = 6)
+# Lossy
+tinypng(tmp, paste0(tmp, &quot;-lossy.png&quot;), lossy = 2.3)
+</code></pre>
+<h3 id="sec:jpeg-optimization"><span class="section-number">2.3</span> JPEG optimization</h3>
+<pre><code class="language-r"># Create a test JPEG
+tmp = tempfile(fileext = &quot;.jpg&quot;)
+jpeg(tmp, width = 400, height = 400)
+plot(1:10)
+dev.off()
+
+# Optimize with default quality (75)
+tinyjpg(tmp)
+
+# Optimize to a new file at a lower quality
+tinyjpg(tmp, paste0(tmp, &quot;-q60.jpg&quot;), quality = 60)
+</code></pre>
+<h3 id="sec:optimization-levels-and-quality"><span class="section-number">2.4</span> Optimization levels and quality</h3>
+<p>For PNG, the <code>level</code> parameter controls the optimization level (0-6):</p>
+<ul>
+<li><code>0</code>: Fast optimization with minimal compression</li>
+<li><code>2</code>: Default - good balance between speed and compression</li>
+<li><code>6</code>: Maximum optimization - best compression but slower</li>
+</ul>
+<p>For JPEG, the <code>quality</code> parameter (0-100) controls the trade-off between quality
+and file size; higher quality means larger files and vice versa.</p>
+<p>See the benchmark results (for
+<a href="https://pkg.yihui.org/tinyimg/examples/benchmark-png.html">png</a> and
+<a href="https://pkg.yihui.org/tinyimg/examples/benchmark-jpg.html">jpeg</a>) for detailed
+comparisons, and <code>?tinyimg</code> for full documentation.</p>
+<h2 id="sec:for-package-developers"><span class="section-number main-number">3</span> For Package Developers</h2>
+<p>When installing from GitHub via <code>remotes::install_github(&quot;yihui/tinyimg&quot;)</code>, the
+package will automatically create the vendor directory if Rust is installed on
+your system.</p>
+<p>If you’re developing and need to manually create the vendor directory:</p>
+<pre><code class="language-bash"># Run the update script to create vendor/ directory
+./src/rust/update-vendor.sh
+</code></pre>
+<p>This creates the local <code>vendor/</code> directory needed for development. Neither
+<code>vendor/</code> nor <code>vendor.tar.xz</code> are tracked in git.</p>
+<h2 id="sec:license"><span class="section-number main-number">4</span> License</h2>
+<p>MIT License. See LICENSE file for details.</p>
+<h2 id="sec:appendix" class="appendix">Appendix</h2>
+<p>To cite the package <strong>tinyimg</strong> in publications, please use:</p>
+<p>Xie Y (2026). <em>tinyimg: Optimize and Compress Images</em>. R package
+version 0.4.5, <a href="https://github.com/yihui/tinyimg">https://github.com/yihui/tinyimg</a>.</p>
+<pre><code class="language-latex">@Manual{,
+  title = {tinyimg: Optimize and Compress Images},
+  author = {Yihui Xie},
+  year = {2026},
+  note = {R package version 0.4.5},
+  url = {https://github.com/yihui/tinyimg},
+}
+</code></pre>
+</div>
+<footer><div class="flex-col">
+<p>Developed by <a href="https://yihui.org">Yihui Xie</a></p>
+<p>Site built with <a href="https://github.com/yihui/litedown">litedown</a> v0.9.9</p>
+</div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/sidenotes.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/appendix.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/toc-highlight.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/copy-button.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/heading-anchor.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/pages.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+</body>
+</html>

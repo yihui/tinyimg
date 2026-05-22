@@ -1,0 +1,3 @@
+benchmark-jpg.Rmd
+benchmark-png.Rmd
+cran-png.Rmd

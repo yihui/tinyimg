@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="generator" content="litedown 0.9.9">
+<title>Examples</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/article.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/copy-button.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/heading-anchor.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/pages.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/site.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/prism-xcode.min.css">
+</head>
+<body>
+<nav><p><a href="index.html">Home</a>
+<a href="examples.html">Examples</a>
+<a href="manual.html">Manual</a>
+<a href="news.html">News</a>
+<a href="playground/">Playground</a></p></nav>
+<div class="frontmatter">
+<div class="title"><h1>Examples</h1></div>
+</div>
+<div class="body">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/yihui/litedown/inst/resources/listing.css">
+<style type="text/css">
+.box pre {
+  & > code {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: none;
+  }
+  &:not(:focus) code {
+    cursor: pointer;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 10;
+  }
+}
+pre, pre:hover {
+  white-space: pre-wrap;
+}
+.box a {
+  text-decoration: none;
+}
+</style>
+<div class="box">
+<div class="caption name">
+<p><a href="examples/benchmark-jpg.html"><code>tinyjpg()</code> Benchmarks</a> <em>(source: <a href="examples/benchmark-jpg.Rmd">benchmark-jpg.Rmd</a>)</em> <a href="examples/benchmark-jpg.html" class="run">⏵</a></p>
+</div>
+<pre><code class="language-md">---
+title: &quot;`tinyjpg()` Benchmarks&quot;
+output:
+  html:
+    meta:
+      css: [&quot;@tabsets&quot;]
+      js: [&quot;@tabsets&quot;]
+---
+
+```{r}
+litedown::reactor(echo = FALSE, dev = 'jpeg')
+library(tinyimg)
+options(xfun.md_table.limit = Inf)
+```
+
+## Overview
+
+This document benchmarks the `tinyjpg()` function from the **tinyimg** package
+across different quality levels. We test with three types of plots:
+
+1. A scatterplot based on the penguins dataset
+2. A simple boxplot (simpler graphics)
+3. A complex 3D perspective plot (more complex graphics)
+
+For each quality level, we measure:
+
+- File size reduction (in KB and percentage)
+- Time taken for optimization
+
+## Test Plots
+
+First, we create test plots using the `jpeg()` device (set as default via the chunk option
+`dev = 'jpeg'`):
+
+```{r scatterplot, fig.cap='Penguin bill length vs flipper length.'}
+par(mar = c(4, 4, 1, 1))
+n = length(penguins$flipper_len)
+cols = grDevices::hcl.colors(n, &quot;Spectral&quot;)
+plot(penguins$flipper_len, penguins$bill_len,
+     pch = 19,
+     col = cols[seq_along(penguins$flipper_len)],
+     xlab = &quot;Flipper Length (mm)&quot;,
+     ylab = &quot;Bill Length (mm)&quot;)
+```
+
+```{r boxplot, fig.cap='Miles per gallon by cylinder count.'}
+par(mar = c(4, 4, 1, 1))
+boxplot(mpg ~ cyl, data = mtcars,
+        xlab = &quot;Number of Cylinders&quot;,
+        ylab = &quot;Miles Per Gallon&quot;,
+        col = c(&quot;lightblue&quot;, &quot;lightgreen&quot;, &quot;lightpink&quot;))
+```
+
+```{r persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
+par(mar = c(2, 2, 1, 1))
+x = seq(-10, 10, length = 50)
+y = seq(-10, 10, length = 50)
+z = outer(x, y, function(x, y) {
+  r = sqrt(x^2 + y^2)
+  10 * sin(r) / r
+})
+z[is.nan(z)] = 10
+persp(x, y, z,
+      theta = 30, phi = 30,
+      expand = 0.5,
+      col = &quot;lightblue&quot;,
+      shade = 0.5,
+      ticktype = &quot;detailed&quot;,
+      xlab = &quot;X&quot;, ylab = &quot;Y&quot;, zlab = &quot;Z&quot;)
+```
+
+## Benchmarks
+
+Now let's optimize these JPEG files at different quality levels and measure
+the results:
+
+```{r benchmark}
+# Get the JPEG plot files created by litedown
+plot_files = litedown::get_context(&quot;plot_files&quot;)
+plot_names = c(&quot;scatterplot&quot;, &quot;boxplot&quot;, &quot;persp&quot;)
+
+quality_levels = c(10, 30, 50, 70, 80, 90, 95)
+
+opt_files = list()
+result_rows = list()
+
+for (i in seq_along(plot_files)) {
+  input_file = plot_files[i]
+  plot_name = plot_names[i]
+  original_size = file.info(input_file)$size
+  opt_files[[plot_name]] = list()
+  for (q in quality_levels) {
+    q_label = as.character(q)
+    output_file = file.path(dirname(input_file), sprintf(&quot;%s_q%s.jpg&quot;, plot_name, q_label))
+    time_taken = system.time({
+      tinyjpg(input_file, output = output_file, quality = q)
+    })[&quot;elapsed&quot;]
+    opt_files[[plot_name]][[q_label]] = output_file
+    new_size = file.info(output_file)$size
+    result_rows[[length(result_rows) + 1L]] = data.frame(
+      Plot = plot_name,
+      Quality = q,
+      Size_KB = new_size / 1024,
+      Reduction_pct = ((original_size - new_size) / original_size) * 100,
+      Time_sec = time_taken
+    )
+  }
+}
+
+results = do.call(rbind, result_rows)
+rownames(results) = NULL
+results
+```
+
+A visual comparison of the quality optimization results:
+
+```{r quality-images}
+tabs = lapply(names(opt_files), function(plot_name) {
+  setNames(lapply(names(opt_files[[plot_name]]), function(q) {
+    pct = subset(results, Plot == plot_name &amp; Quality == as.integer(q))$Reduction_pct
+    img = opt_files[[plot_name]][[q]]
+    c(sprintf('Reduction: %.02f%%', pct), '', paste0(&quot;![quality](&quot;, xfun::relative_path(img), &quot;)&quot;))
+  }), paste0(&quot;quality = &quot;, names(opt_files[[plot_name]])))
+})
+names(tabs) = names(opt_files)
+xfun::tabset(tabs, xfun::tab_content)
+```
+
+## Visualization
+
+```{r plot-filesize, fig.cap='File size vs quality level.', dev='png'}
+par(mar = c(4, 4, 1, 1))
+pchs = c(19, 17, 15)
+
+plot(NA, xlim = range(quality_levels), ylim = range(results$Size_KB),
+     xlab = &quot;Quality&quot;, ylab = &quot;File Size (KB)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Quality, plot_data$Size_KB,
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+legend(&quot;topleft&quot;, legend = plot_names,
+       col = seq_along(plot_names) + 1,
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-reduction, fig.cap='Size reduction percentage vs quality level.', dev='png'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(quality_levels), ylim = range(results$Reduction_pct),
+     xlab = &quot;Quality&quot;, ylab = &quot;Size Reduction (%)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Quality, plot_data$Reduction_pct,
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+legend(&quot;topright&quot;, legend = plot_names,
+       col = seq_along(plot_names) + 1,
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-time, fig.cap='Processing time vs quality level.', dev='png'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(quality_levels), ylim = range(results$Time_sec),
+     xlab = &quot;Quality&quot;, ylab = &quot;Time (seconds)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Quality, plot_data$Time_sec,
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+legend(&quot;topleft&quot;, legend = plot_names,
+       col = seq_along(plot_names) + 1,
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r optimize-document-plots, include=FALSE}
+tinypng(head(dirname(litedown::get_context(&quot;plot_files&quot;)), 1))
+```
+</code></pre>
+</div>
+<div class="box">
+<div class="caption name">
+<p><a href="examples/benchmark-png.html"><code>tinypng()</code> Benchmarks</a> <em>(source: <a href="examples/benchmark-png.Rmd">benchmark-png.Rmd</a>)</em> <a href="examples/benchmark-png.html" class="run">⏵</a></p>
+</div>
+<pre><code class="language-md">---
+title: &quot;`tinypng()` Benchmarks&quot;
+output:
+  html:
+    meta:
+      css: [&quot;@tabsets&quot;]
+      js: [&quot;@tabsets&quot;]
+---
+
+```{r}
+litedown::reactor(echo = FALSE)
+library(tinyimg)
+options(xfun.md_table.limit = Inf)
+```
+
+## Overview
+
+This document benchmarks the `tinypng()` function from the **tinyimg** package
+across different optimization levels (0-6). We test with three types of plots:
+
+1. A scatterplot based on the penguins dataset
+2. A simple boxplot (simpler graphics)
+3. A complex 3D perspective plot (more complex graphics)
+
+For each optimization level, we measure:
+
+- File size reduction (in KB and percentage)
+- Time taken for optimization
+
+## Test Plots
+
+First, we create test plots using the `png()` device:
+
+```{r scatterplot, fig.cap='Penguin bill length vs flipper length.'}
+par(mar = c(4, 4, 1, 1))
+n = length(penguins$flipper_len)
+cols = grDevices::hcl.colors(n, &quot;Spectral&quot;)
+plot(penguins$flipper_len, penguins$bill_len,
+     pch = 19,
+     col = cols[seq_along(penguins$flipper_len)],
+     xlab = &quot;Flipper Length (mm)&quot;,
+     ylab = &quot;Bill Length (mm)&quot;)
+```
+
+```{r boxplot, fig.cap='Miles per gallon by cylinder count.'}
+par(mar = c(4, 4, 1, 1))
+boxplot(mpg ~ cyl, data = mtcars, 
+        xlab = &quot;Number of Cylinders&quot;, 
+        ylab = &quot;Miles Per Gallon&quot;,
+        col = c(&quot;lightblue&quot;, &quot;lightgreen&quot;, &quot;lightpink&quot;))
+```
+
+```{r persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
+par(mar = c(2, 2, 1, 1))
+x = seq(-10, 10, length = 50)
+y = seq(-10, 10, length = 50)
+z = outer(x, y, function(x, y) {
+  r = sqrt(x^2 + y^2)
+  10 * sin(r) / r
+})
+
+persp(x, y, z, 
+      theta = 30, phi = 30, 
+      expand = 0.5,
+      col = &quot;lightblue&quot;,
+      shade = 0.5,
+      ticktype = &quot;detailed&quot;,
+      xlab = &quot;X&quot;, ylab = &quot;Y&quot;, zlab = &quot;Z&quot;)
+```
+
+## Benchmarks
+
+Now let's optimize these plot files at different levels and measure the results:
+
+```{r benchmark}
+# Get the plot files created by litedown
+plot_files = litedown::get_context(&quot;plot_files&quot;)
+
+# Create a temporary directory for optimized files
+tmp_dir = tempfile()
+dir.create(tmp_dir)
+
+# Function to benchmark a single file at all levels
+benchmark_file = function(input_file, plot_name) {
+  original_size = file.info(input_file)$size
+  
+  # Add a row for the raw file (level = -1)
+  raw_row = data.frame(
+    Plot = plot_name,
+    Level = -1L,
+    Size_KB = original_size / 1024,
+    Reduction_pct = 0,
+    Time_sec = 0
+  )
+  
+  optimized_rows = do.call(rbind, lapply(0:6, function(level) {
+    output_file = file.path(tmp_dir, sprintf(&quot;%s_level_%d.png&quot;, plot_name, level))
+    
+    time_taken = system.time({
+      tinypng(input_file, output = output_file, level = level)
+    })[&quot;elapsed&quot;]
+    
+    new_size = file.info(output_file)$size
+    reduction_pct = ((original_size - new_size) / original_size) * 100
+    
+    data.frame(
+      Plot = plot_name,
+      Level = level,
+      Size_KB = new_size / 1024,
+      Reduction_pct = reduction_pct,
+      Time_sec = time_taken
+    )
+  }))
+  
+  rbind(raw_row, optimized_rows)
+}
+
+# Benchmark all three plots
+results = rbind(
+  benchmark_file(plot_files[1], &quot;scatterplot&quot;),
+  benchmark_file(plot_files[2], &quot;boxplot&quot;),
+  benchmark_file(plot_files[3], &quot;persp&quot;)
+)
+
+rownames(results) = NULL
+results
+```
+
+Note: The optimization level of `-1` represents the raw, unoptimized file (not a valid value for the `level` argument of `tinypng()`). This helps show the effect of `level = 0` more clearly.
+
+## Lossy Optimization
+
+```{r lossy-benchmark}
+lossy_levels = c(0, 1, 2.3, 6, 16, 32, 64)
+plot_names = c(&quot;scatterplot&quot;, &quot;boxplot&quot;, &quot;persp&quot;)
+lossy_files = list()
+lossy_rows = list()
+
+for (i in seq_along(plot_files)) {
+  input_file = plot_files[i]
+  plot_name = plot_names[i]
+  original_size = file.info(input_file)$size
+  lossy_files[[plot_name]] = list()
+  for (lossy in lossy_levels) {
+    lossy_label = as.character(lossy)
+    output_file = file.path(
+      dirname(input_file),
+      sprintf(&quot;%s_lossy_%s.png&quot;, plot_name, gsub(&quot;\\.&quot;, &quot;_&quot;, lossy_label))
+    )
+    time_taken = system.time({
+      tinypng(input_file, output = output_file, lossy = lossy)
+    })[&quot;elapsed&quot;]
+    lossy_files[[plot_name]][[lossy_label]] = output_file
+    new_size = file.info(output_file)$size
+    lossy_rows[[length(lossy_rows) + 1L]] = data.frame(
+      Plot = plot_name,
+      Lossy = lossy,
+      Size_KB = new_size / 1024,
+      Reduction_pct = ((original_size - new_size) / original_size) * 100,
+      Time_sec = time_taken
+    )
+  }
+}
+lossy_results = do.call(rbind, lossy_rows)
+
+rownames(lossy_results) = NULL
+lossy_results
+```
+
+A visual comparison of the lossy optimization results:
+
+```{r lossy-images}
+tabs = lapply(names(lossy_files), function(plot_name) {
+  setNames(lapply(names(lossy_files[[plot_name]]), function(lossy) {
+    # reduction%
+    pct = subset(lossy_results, Plot == plot_name &amp; Lossy == lossy)$Reduction_pct
+    img = lossy_files[[plot_name]][[lossy]]
+    c(sprintf('Reduction: %.02f%%', pct), '', paste0(&quot;![lossy](&quot;, xfun::relative_path(img), &quot;)&quot;))
+  }), paste0(&quot;lossy = &quot;, names(lossy_files[[plot_name]])))
+})
+names(tabs) = names(lossy_files)
+xfun::tabset(tabs, xfun::tab_content)
+```
+
+## Visualization
+
+Note that for the lossy optimization benchmarks, we first did the lossy optimization and then applied the default level of lossless optimization on top of it. The outcome is the combination of both optimizations.
+
+The dashed vertical line in the lossy optimization plots indicates the JND ([just noticeable difference](https://en.wikipedia.org/wiki/Color_difference#CIE76)) threshold of 2.3.
+
+```{r plot-filesize, fig.cap='File size vs optimization level (log scale).'}
+par(mar = c(4, 4, 1, 1))
+
+# Prepare data for all plots
+plot_names = unique(results$Plot)
+pchs = c(19, 17, 15)
+
+# Calculate y-axis range on log scale
+all_sizes = results$Size_KB
+ylim_range = range(all_sizes)
+
+plot(NA, xlim = c(-1, 6), ylim = ylim_range, log = &quot;y&quot;,
+     xlab = &quot;Lossless Optimization Level&quot;, 
+     ylab = &quot;File Size (KB, log scale)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Level, plot_data$Size_KB, 
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+legend(&quot;topright&quot;, legend = plot_names, 
+       col = seq_along(plot_names) + 1, 
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-filesize-lossy, fig.cap='File size vs lossy level.'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Size_KB), log = &quot;y&quot;,
+     xlab = &quot;Lossy Level&quot;, ylab = &quot;File Size (KB, log scale)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(lossy_results, Plot == plot_names[i])
+  lines(plot_data$Lossy, plot_data$Size_KB,
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+abline(v = 2.3, lty = 2) # JND threshold
+legend(&quot;topright&quot;, legend = plot_names,
+       col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-time, fig.cap='Processing time vs optimization level.'}
+par(mar = c(4, 4, 1, 1))
+
+# Calculate y-axis range
+all_times = results$Time_sec
+ylim_range = range(all_times)
+
+plot(NA, xlim = c(-1, 6), ylim = ylim_range,
+     xlab = &quot;Lossless Optimization Level&quot;, 
+     ylab = &quot;Time (seconds)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Level, plot_data$Time_sec, 
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+legend(&quot;topleft&quot;, legend = plot_names, 
+       col = seq_along(plot_names) + 1, 
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-time-lossy, fig.cap='Processing time vs lossy level.'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Time_sec),
+     xlab = &quot;Lossy Level&quot;, ylab = &quot;Time (seconds)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(lossy_results, Plot == plot_names[i])
+  lines(plot_data$Lossy, plot_data$Time_sec,
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+abline(v = 2.3, lty = 2) # JND threshold
+legend(&quot;bottomright&quot;, legend = plot_names,
+       col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-reduction-pct, fig.cap='Size reduction percentage by optimization level.'}
+par(mar = c(4, 4, 1, 1))
+
+# Calculate y-axis range
+all_reduction = results$Reduction_pct
+ylim_range = range(all_reduction)
+
+plot(NA, xlim = c(-1, 6), ylim = ylim_range,
+     xlab = &quot;Lossless Optimization Level&quot;, 
+     ylab = &quot;Size Reduction (%)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Level, plot_data$Reduction_pct, 
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+legend(&quot;bottomright&quot;, legend = plot_names, 
+       col = seq_along(plot_names) + 1, 
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-reduction-pct-lossy, fig.cap='Size reduction percentage by lossy level.'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(lossy_levels), ylim = range(lossy_results$Reduction_pct),
+     xlab = &quot;Lossy Level&quot;, ylab = &quot;Size Reduction (%)&quot;)
+for (i in seq_along(plot_names)) {
+  plot_data = subset(lossy_results, Plot == plot_names[i])
+  lines(plot_data$Lossy, plot_data$Reduction_pct,
+        type = &quot;b&quot;, pch = pchs[i], col = i + 1)
+}
+abline(v = 2.3, lty = 2) # JND threshold
+legend(&quot;bottomright&quot;, legend = plot_names,
+       col = seq_along(plot_names) + 1, pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-size-reduction-bar, fig.cap='Absolute size reduction by optimization level.'}
+par(mar = c(4, 4, 1, 1))
+
+# Prepare data for bar chart - reduction from raw (level -1) to each level
+reduction_matrix = do.call(cbind, lapply(plot_names, function(pn) {
+  plot_data = subset(results, Plot == pn)
+  raw_size = plot_data$Size_KB[plot_data$Level == -1]
+  optimized_sizes = plot_data$Size_KB[plot_data$Level &gt;= 0]
+  raw_size - optimized_sizes
+}))
+
+barplot(t(reduction_matrix),
+        beside = TRUE,
+        names.arg = 0:6,
+        col = seq_along(plot_names) + 1,
+        xlab = &quot;Lossless Optimization Level&quot;,
+        ylab = &quot;Size Reduction (KB)&quot;,
+        legend.text = plot_names,
+        args.legend = list(x = &quot;topleft&quot;))
+grid()
+```
+
+```{r plot-size-reduction-bar-lossy, fig.cap='Absolute size reduction by lossy level.'}
+par(mar = c(4, 4, 1, 1))
+lossy_categories = lossy_levels
+lossy_labels = as.character(lossy_categories)
+lossy_reduction_matrix = do.call(cbind, lapply(plot_names, function(pn) {
+  plot_data = subset(lossy_results, Plot == pn)
+  raw_size = subset(results, Plot == pn &amp; Level == -1)$Size_KB
+  sapply(lossy_categories, function(k) {
+    size_k = subset(plot_data, Lossy == k)$Size_KB
+    if (length(size_k) == 1) raw_size - as.numeric(size_k) else NA_real_
+  })
+}))
+barplot(t(lossy_reduction_matrix),
+        beside = TRUE,
+        names.arg = lossy_labels,
+        col = seq_along(plot_names) + 1,
+        xlab = &quot;Lossy Level&quot;,
+        ylab = &quot;Size Reduction (KB)&quot;,
+        legend.text = plot_names,
+        args.legend = list(x = &quot;topleft&quot;))
+grid()
+```
+
+```{r optimize-document-plots, include=FALSE}
+tinypng(litedown::get_context(&quot;plot_files&quot;), level = 6)
+```
+
+```{r cleanup, include=FALSE}
+unlink(tmp_dir, recursive = TRUE)
+```
+</code></pre>
+</div>
+<div class="box">
+<div class="caption name">
+<p><a href="examples/cran-png.html">PNG Savings in CRAN Packages</a> <em>(source: <a href="examples/cran-png.Rmd">cran-png.Rmd</a>)</em> <a href="examples/cran-png.html" class="run">⏵</a></p>
+</div>
+<pre><code class="language-md">---
+title: &quot;PNG Savings in CRAN Packages&quot;
+---
+
+```{r, include = FALSE}
+if (!requireNamespace(&quot;gglite&quot;, quietly = TRUE)) {
+  install.packages(&quot;gglite&quot;, repos = &quot;https://yihui.r-universe.dev&quot;)
+}
+```
+
+This example shows the PNG savings in CRAN packages using `tinyimg::tinypng()`. The data is collected via the GitHub Action workflow in &lt;https://github.com/yihui/tinyimg/actions/workflows/cran-png-savings.yaml&gt;.
+
+Download data:
+
+```{r}
+cran_png = read.csv(
+  'https://github.com/yihui/tinyimg/releases/latest/download/cran-png-savings.csv'
+)
+```
+
+Total original PNG size in all packages is `{r} xfun::format_bytes(sum(cran_png$orig_size))`, and total optimized PNG sizes are `{r} xfun::format_bytes(sum(cran_png$opt_size))` (lossless) and `{r} xfun::format_bytes(sum(cran_png$lossy_size))` (lossy).
+
+Transform data:
+
+```{r}
+cran_png = subset(cran_png, orig_size &gt; 0)
+png_data = reshape(
+  cran_png, varying = c(&quot;opt_size&quot;, &quot;lossy_size&quot;), v.names = &quot;opt_size&quot;,
+  timevar = &quot;type&quot;, times = c(&quot;Lossless&quot;, &quot;Lossy&quot;), direction = &quot;long&quot;
+)
+png_data = within(png_data, {
+  orig_mb = round(orig_size / 2^20, 4)
+  opt_mb = round(opt_size / 2^20, 4)
+})
+```
+
+Draw a scatter plot of original vs optimized (loseless and lossy) PNG sizes:
+
+```{r}
+library(gglite)
+png_data |&gt;
+  g2(opt_mb ~ orig_mb, color = ~ type) |&gt; 
+  mark_point(tooltip = list(title = 'package')) |&gt;
+  axis_x(title = 'Original PNG size (MB)') |&gt;
+  axis_y(title = 'Optimized PNG size (MB)') |&gt;
+  interact('brushFilter')
+```
+
+You may brush the points to zoom in, and double click to zoom out.
+</code></pre>
+</div>
+</div>
+<footer><div class="flex-col">
+<p>Developed by <a href="https://yihui.org">Yihui Xie</a></p>
+<p>Site built with <a href="https://github.com/yihui/litedown">litedown</a> v0.9.9</p>
+</div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/sidenotes.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/appendix.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/toc-highlight.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/copy-button.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/heading-anchor.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/pages.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="generator" content="litedown 0.9.9">
+<title>News</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/article.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/copy-button.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/heading-anchor.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/pages.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/site.min.css">
+</head>
+<body>
+<nav><p><a href="index.html">Home</a>
+<a href="examples.html">Examples</a>
+<a href="manual.html">Manual</a>
+<a href="news.html">News</a>
+<a href="playground/">Playground</a></p></nav>
+<div class="frontmatter">
+<div class="title"><h1>News</h1></div>
+</div>
+<div class="body">
+<div id="TOC">
+<ul>
+<li><a href="#sec:tinyimg-0-5">tinyimg 0.5</a></li>
+<li><a href="#sec:tinyimg-0-4">tinyimg 0.4</a></li>
+<li><a href="#sec:tinyimg-0-3">tinyimg 0.3</a></li>
+<li><a href="#sec:tinyimg-0-2">tinyimg 0.2</a>
+<ul>
+<li><a href="#sec:initial-cran-release">Initial CRAN release</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h2 id="sec:tinyimg-0-5" class="unnumbered">tinyimg 0.5</h2>
+<ul>
+<li>
+<p>Memory allocation failures in <code>tinypng()</code> and <code>tinyjpg()</code> now propagate as R
+errors instead of calling <code>abort()</code> and crashing the R process.</p>
+</li>
+<li>
+<p>This package can be built to WASM now (#29). You can install it via
+<code>webr::install('tinyimg', repos = 'https://yihui.r-universe.dev')</code> in your
+webR application.</p>
+</li>
+</ul>
+<h2 id="sec:tinyimg-0-4" class="unnumbered">tinyimg 0.4</h2>
+<ul>
+<li>
+<p>Added <code>tinyjpg()</code> for JPEG optimization (using the <code>mozjpeg</code> Rust crate).</p>
+</li>
+<li>
+<p>Added <code>tinyimg()</code> as a general entry point for optimizing both PNG and JPEG
+files in a directory or a vector of paths.</p>
+</li>
+<li>
+<p>Added <code>tiny_output()</code> helper to generate safe output paths with
+lossy/quality suffixes (e.g., <code>foo_l2.3.png</code>, <code>foo_q70.jpg</code>), now the
+default <code>output</code> for all three optimizers.</p>
+</li>
+</ul>
+<h2 id="sec:tinyimg-0-3" class="unnumbered">tinyimg 0.3</h2>
+<ul>
+<li>
+<p>Added optional lossy PNG optimization before lossless oxipng optimization.</p>
+</li>
+<li>
+<p>Changed the primary API from <code>optim_png()</code> to <code>tinypng()</code>.</p>
+</li>
+<li>
+<p>Updated benchmark examples for lossy optimization results, visual
+comparisons, and lossy-level plots.</p>
+</li>
+</ul>
+<h2 id="sec:tinyimg-0-2" class="unnumbered">tinyimg 0.2</h2>
+<h3 id="sec:initial-cran-release" class="unnumbered">Initial CRAN release</h3>
+<p>This is the first CRAN release of tinyimg. The package provides tools for
+optimizing and compressing images using Rust libraries.</p>
+<ul>
+<li>
+<p>PNG optimization via the oxipng Rust crate</p>
+</li>
+<li>
+<p>Support for single file and directory optimization</p>
+</li>
+<li>
+<p>Configurable optimization levels (0-6)</p>
+</li>
+<li>
+<p>Optional alpha channel optimization for transparent pixels</p>
+</li>
+<li>
+<p>Preservation of file permissions and timestamps</p>
+</li>
+<li>
+<p>Verbose output showing file size reduction</p>
+</li>
+<li>
+<p>Recursive directory processing</p>
+</li>
+</ul>
+</div>
+<footer><div class="flex-col">
+<p>Developed by <a href="https://yihui.org">Yihui Xie</a></p>
+<p>Site built with <a href="https://github.com/yihui/litedown">litedown</a> v0.9.9</p>
+</div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/sidenotes.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/appendix.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/toc-highlight.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/copy-button.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/heading-anchor.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/pages.min.js" defer></script>
+</body>
+</html>

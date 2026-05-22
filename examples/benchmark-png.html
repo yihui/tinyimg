@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="generator" content="litedown 0.9.9">
+<title>tinypng() Benchmarks</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/article.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/copy-button.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/heading-anchor.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/pages.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/site.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/tabsets.min.css">
+</head>
+<body>
+<nav><p><a href="../index.html">Home</a>
+<a href="../examples.html">Examples</a>
+<a href="../manual.html">Manual</a>
+<a href="../news.html">News</a>
+<a href="../playground/">Playground</a></p></nav>
+<div class="frontmatter">
+<div class="title"><h1><code>tinypng()</code> Benchmarks</h1></div>
+</div>
+<div class="body">
+<div id="TOC">
+<ul class="numbered">
+<li><a href="#sec:overview"><span class="section-number main-number">1</span> Overview</a></li>
+<li><a href="#sec:test-plots"><span class="section-number main-number">2</span> Test Plots</a></li>
+<li><a href="#sec:benchmarks"><span class="section-number main-number">3</span> Benchmarks</a></li>
+<li><a href="#sec:lossy-optimization"><span class="section-number main-number">4</span> Lossy Optimization</a></li>
+<li><a href="#sec:visualization"><span class="section-number main-number">5</span> Visualization</a></li>
+</ul>
+</div>
+<h2 id="sec:overview"><span class="section-number main-number">1</span> Overview</h2>
+<p>This document benchmarks the <code>tinypng()</code> function from the <strong>tinyimg</strong> package
+across different optimization levels (0-6). We test with three types of plots:</p>
+<ol>
+<li>A scatterplot based on the penguins dataset</li>
+<li>A simple boxplot (simpler graphics)</li>
+<li>A complex 3D perspective plot (more complex graphics)</li>
+</ol>
+<p>For each optimization level, we measure:</p>
+<ul>
+<li>File size reduction (in KB and percentage)</li>
+<li>Time taken for optimization</li>
+</ul>
+<h2 id="sec:test-plots"><span class="section-number main-number">2</span> Test Plots</h2>
+<p>First, we create test plots using the <code>png()</code> device:</p>
+<div id="fig:scatterplot" class="figure">
+<p><img src="benchmark-png__files/scatterplot-1.png" alt="Penguin bill length vs flipper length." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">1</span>
+Penguin bill length vs flipper length.</p>
+</div>
+</div>
+<div id="fig:boxplot" class="figure">
+<p><img src="benchmark-png__files/boxplot-1.png" alt="Miles per gallon by cylinder count." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">2</span>
+Miles per gallon by cylinder count.</p>
+</div>
+</div>
+<div id="fig:persp" class="figure">
+<p><img src="benchmark-png__files/persp-1.png" alt="A complex 3D surface defined by the function sin(r)/r." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">3</span>
+A complex 3D surface defined by the function sin(r)/r.</p>
+</div>
+</div>
+<h2 id="sec:benchmarks"><span class="section-number main-number">3</span> Benchmarks</h2>
+<p>Now let’s optimize these plot files at different levels and measure the results:</p>
+<pre><code>#&gt; scatterplot-1.png -&gt; scatterplot_level_0.png | 52.8 KB -&gt; 45.1 KB (-14.6%)
+#&gt; scatterplot-1.png -&gt; scatterplot_level_1.png | 52.8 KB -&gt; 43.7 KB (-17.2%)
+#&gt; scatterplot-1.png -&gt; scatterplot_level_2.png | 52.8 KB -&gt; 39.5 KB (-25.2%)
+#&gt; scatterplot-1.png -&gt; scatterplot_level_3.png | 52.8 KB -&gt; 39.5 KB (-25.2%)
+#&gt; scatterplot-1.png -&gt; scatterplot_level_4.png | 52.8 KB -&gt; 39.3 KB (-25.5%)
+#&gt; scatterplot-1.png -&gt; scatterplot_level_5.png | 52.8 KB -&gt; 39.3 KB (-25.5%)
+#&gt; scatterplot-1.png -&gt; scatterplot_level_6.png | 52.8 KB -&gt; 39.3 KB (-25.5%)
+#&gt; boxplot-1.png -&gt; boxplot_level_0.png | 13.2 KB -&gt; 12.2 KB (-7.5%)
+#&gt; boxplot-1.png -&gt; boxplot_level_1.png | 13.2 KB -&gt; 12.2 KB (-7.9%)
+#&gt; boxplot-1.png -&gt; boxplot_level_2.png | 13.2 KB -&gt; 11.9 KB (-10.2%)
+#&gt; boxplot-1.png -&gt; boxplot_level_3.png | 13.2 KB -&gt; 11.9 KB (-10.2%)
+#&gt; boxplot-1.png -&gt; boxplot_level_4.png | 13.2 KB -&gt; 11.3 KB (-14.2%)
+#&gt; boxplot-1.png -&gt; boxplot_level_5.png | 13.2 KB -&gt; 11.3 KB (-14.2%)
+#&gt; boxplot-1.png -&gt; boxplot_level_6.png | 13.2 KB -&gt; 11.3 KB (-14.2%)
+#&gt; persp-1.png -&gt; persp_level_0.png | 172.7 KB -&gt; 125.5 KB (-27.3%)
+#&gt; persp-1.png -&gt; persp_level_1.png | 172.7 KB -&gt; 114.3 KB (-33.8%)
+#&gt; persp-1.png -&gt; persp_level_2.png | 172.7 KB -&gt; 112.8 KB (-34.7%)
+#&gt; persp-1.png -&gt; persp_level_3.png | 172.7 KB -&gt; 112.8 KB (-34.7%)
+#&gt; persp-1.png -&gt; persp_level_4.png | 172.7 KB -&gt; 111.9 KB (-35.2%)
+#&gt; persp-1.png -&gt; persp_level_5.png | 172.7 KB -&gt; 111.9 KB (-35.2%)
+#&gt; persp-1.png -&gt; persp_level_6.png | 172.7 KB -&gt; 111.9 KB (-35.2%)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Plot</th>
+<th align="right">Level</th>
+<th align="right">Size_KB</th>
+<th align="right">Reduction_pct</th>
+<th align="right">Time_sec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scatterplot</td>
+<td align="right">-1</td>
+<td align="right">52.770</td>
+<td align="right">0.000</td>
+<td align="right">0.000</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">0</td>
+<td align="right">45.083</td>
+<td align="right">14.566</td>
+<td align="right">0.019</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">1</td>
+<td align="right">43.688</td>
+<td align="right">17.211</td>
+<td align="right">0.063</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">2</td>
+<td align="right">39.479</td>
+<td align="right">25.185</td>
+<td align="right">0.194</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">3</td>
+<td align="right">39.479</td>
+<td align="right">25.185</td>
+<td align="right">0.666</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">4</td>
+<td align="right">39.296</td>
+<td align="right">25.533</td>
+<td align="right">1.438</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">5</td>
+<td align="right">39.296</td>
+<td align="right">25.533</td>
+<td align="right">2.536</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">6</td>
+<td align="right">39.296</td>
+<td align="right">25.533</td>
+<td align="right">3.052</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">-1</td>
+<td align="right">13.216</td>
+<td align="right">0.000</td>
+<td align="right">0.000</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">0</td>
+<td align="right">12.225</td>
+<td align="right">7.500</td>
+<td align="right">0.017</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">1</td>
+<td align="right">12.172</td>
+<td align="right">7.899</td>
+<td align="right">0.041</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">2</td>
+<td align="right">11.864</td>
+<td align="right">10.227</td>
+<td align="right">0.102</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">3</td>
+<td align="right">11.864</td>
+<td align="right">10.227</td>
+<td align="right">0.411</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">4</td>
+<td align="right">11.346</td>
+<td align="right">14.151</td>
+<td align="right">0.861</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">5</td>
+<td align="right">11.346</td>
+<td align="right">14.151</td>
+<td align="right">1.654</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">6</td>
+<td align="right">11.346</td>
+<td align="right">14.151</td>
+<td align="right">2.089</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">-1</td>
+<td align="right">172.745</td>
+<td align="right">0.000</td>
+<td align="right">0.000</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">0</td>
+<td align="right">125.522</td>
+<td align="right">27.337</td>
+<td align="right">0.020</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">1</td>
+<td align="right">114.313</td>
+<td align="right">33.825</td>
+<td align="right">0.058</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">2</td>
+<td align="right">112.781</td>
+<td align="right">34.712</td>
+<td align="right">0.169</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">3</td>
+<td align="right">112.781</td>
+<td align="right">34.712</td>
+<td align="right">0.602</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">4</td>
+<td align="right">111.905</td>
+<td align="right">35.219</td>
+<td align="right">1.295</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">5</td>
+<td align="right">111.905</td>
+<td align="right">35.219</td>
+<td align="right">2.284</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">6</td>
+<td align="right">111.905</td>
+<td align="right">35.219</td>
+<td align="right">2.750</td>
+</tr>
+</tbody>
+</table>
+<p>Note: The optimization level of <code>-1</code> represents the raw, unoptimized file (not a valid value for the <code>level</code> argument of <code>tinypng()</code>). This helps show the effect of <code>level = 0</code> more clearly.</p>
+<h2 id="sec:lossy-optimization"><span class="section-number main-number">4</span> Lossy Optimization</h2>
+<pre><code>#&gt; scatterplot-1.png -&gt; scatterplot_lossy_0.png | 52.8 KB -&gt; 39.5 KB (-25.2%)
+#&gt; scatterplot-1.png -&gt; scatterplot_lossy_1.png | 52.8 KB -&gt; 19.1 KB (-63.9%)
+#&gt; scatterplot-1.png -&gt; scatterplot_lossy_2_3.png | 52.8 KB -&gt; 19.1 KB (-63.9%)
+#&gt; scatterplot-1.png -&gt; scatterplot_lossy_6.png | 52.8 KB -&gt; 19.1 KB (-63.9%)
+#&gt; scatterplot-1.png -&gt; scatterplot_lossy_16.png | 52.8 KB -&gt; 15.2 KB (-71.1%)
+#&gt; scatterplot-1.png -&gt; scatterplot_lossy_32.png | 52.8 KB -&gt; 11.1 KB (-79.0%)
+#&gt; scatterplot-1.png -&gt; scatterplot_lossy_64.png | 52.8 KB -&gt; 6.2 KB (-88.2%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_0.png | 13.2 KB -&gt; 11.9 KB (-10.2%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_1.png | 13.2 KB -&gt; 7.0 KB (-47.2%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_2_3.png | 13.2 KB -&gt; 7.0 KB (-47.2%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_6.png | 13.2 KB -&gt; 7.0 KB (-47.2%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_16.png | 13.2 KB -&gt; 5.1 KB (-61.6%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_32.png | 13.2 KB -&gt; 4.5 KB (-66.0%)
+#&gt; boxplot-1.png -&gt; boxplot_lossy_64.png | 13.2 KB -&gt; 1.9 KB (-85.6%)
+#&gt; persp-1.png -&gt; persp_lossy_0.png | 172.7 KB -&gt; 112.8 KB (-34.7%)
+#&gt; persp-1.png -&gt; persp_lossy_1.png | 172.7 KB -&gt; 54.9 KB (-68.2%)
+#&gt; persp-1.png -&gt; persp_lossy_2_3.png | 172.7 KB -&gt; 54.9 KB (-68.2%)
+#&gt; persp-1.png -&gt; persp_lossy_6.png | 172.7 KB -&gt; 49.4 KB (-71.4%)
+#&gt; persp-1.png -&gt; persp_lossy_16.png | 172.7 KB -&gt; 35.3 KB (-79.6%)
+#&gt; persp-1.png -&gt; persp_lossy_32.png | 172.7 KB -&gt; 29.5 KB (-82.9%)
+#&gt; persp-1.png -&gt; persp_lossy_64.png | 172.7 KB -&gt; 6.6 KB (-96.2%)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Plot</th>
+<th align="right">Lossy</th>
+<th align="right">Size_KB</th>
+<th align="right">Reduction_pct</th>
+<th align="right">Time_sec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scatterplot</td>
+<td align="right">0.0</td>
+<td align="right">39.479</td>
+<td align="right">25.185</td>
+<td align="right">0.195</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">1.0</td>
+<td align="right">19.061</td>
+<td align="right">63.880</td>
+<td align="right">0.561</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">2.3</td>
+<td align="right">19.061</td>
+<td align="right">63.880</td>
+<td align="right">0.559</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">6.0</td>
+<td align="right">19.061</td>
+<td align="right">63.880</td>
+<td align="right">0.560</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">16.0</td>
+<td align="right">15.228</td>
+<td align="right">71.143</td>
+<td align="right">1.271</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">32.0</td>
+<td align="right">11.081</td>
+<td align="right">79.001</td>
+<td align="right">1.167</td>
+</tr>
+<tr>
+<td>scatterplot</td>
+<td align="right">64.0</td>
+<td align="right">6.250</td>
+<td align="right">88.156</td>
+<td align="right">0.882</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">0.0</td>
+<td align="right">11.864</td>
+<td align="right">10.227</td>
+<td align="right">0.100</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">1.0</td>
+<td align="right">6.976</td>
+<td align="right">47.218</td>
+<td align="right">0.501</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">2.3</td>
+<td align="right">6.976</td>
+<td align="right">47.218</td>
+<td align="right">0.501</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">6.0</td>
+<td align="right">6.976</td>
+<td align="right">47.218</td>
+<td align="right">0.500</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">16.0</td>
+<td align="right">5.079</td>
+<td align="right">61.568</td>
+<td align="right">1.001</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">32.0</td>
+<td align="right">4.491</td>
+<td align="right">66.016</td>
+<td align="right">0.883</td>
+</tr>
+<tr>
+<td>boxplot</td>
+<td align="right">64.0</td>
+<td align="right">1.904</td>
+<td align="right">85.591</td>
+<td align="right">0.652</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">0.0</td>
+<td align="right">112.781</td>
+<td align="right">34.712</td>
+<td align="right">0.170</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">1.0</td>
+<td align="right">54.936</td>
+<td align="right">68.198</td>
+<td align="right">0.577</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">2.3</td>
+<td align="right">54.936</td>
+<td align="right">68.198</td>
+<td align="right">0.578</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">6.0</td>
+<td align="right">49.410</td>
+<td align="right">71.397</td>
+<td align="right">1.194</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">16.0</td>
+<td align="right">35.275</td>
+<td align="right">79.580</td>
+<td align="right">1.046</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">32.0</td>
+<td align="right">29.479</td>
+<td align="right">82.935</td>
+<td align="right">0.903</td>
+</tr>
+<tr>
+<td>persp</td>
+<td align="right">64.0</td>
+<td align="right">6.574</td>
+<td align="right">96.194</td>
+<td align="right">0.687</td>
+</tr>
+</tbody>
+</table>
+<p>A visual comparison of the lossy optimization results:</p>
+<div class="tabset">
+<ul>
+<li>
+<p><code>scatterplot</code></p>
+<div class="tabset">
+<ul>
+<li>
+<p><code>lossy = 0</code></p>
+<p>Reduction: 25.19%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_0.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 1</code></p>
+<p>Reduction: 63.88%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_1.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 2.3</code></p>
+<p>Reduction: 63.88%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_2_3.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 6</code></p>
+<p>Reduction: 63.88%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_6.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 16</code></p>
+<p>Reduction: 71.14%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_16.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 32</code></p>
+<p>Reduction: 79.00%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_32.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 64</code></p>
+<p>Reduction: 88.16%</p>
+<p><img src="benchmark-png__files/scatterplot_lossy_64.png" alt="lossy" /></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>boxplot</code></p>
+<div class="tabset">
+<ul>
+<li>
+<p><code>lossy = 0</code></p>
+<p>Reduction: 10.23%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_0.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 1</code></p>
+<p>Reduction: 47.22%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_1.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 2.3</code></p>
+<p>Reduction: 47.22%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_2_3.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 6</code></p>
+<p>Reduction: 47.22%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_6.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 16</code></p>
+<p>Reduction: 61.57%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_16.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 32</code></p>
+<p>Reduction: 66.02%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_32.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 64</code></p>
+<p>Reduction: 85.59%</p>
+<p><img src="benchmark-png__files/boxplot_lossy_64.png" alt="lossy" /></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>persp</code></p>
+<div class="tabset">
+<ul>
+<li>
+<p><code>lossy = 0</code></p>
+<p>Reduction: 34.71%</p>
+<p><img src="benchmark-png__files/persp_lossy_0.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 1</code></p>
+<p>Reduction: 68.20%</p>
+<p><img src="benchmark-png__files/persp_lossy_1.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 2.3</code></p>
+<p>Reduction: 68.20%</p>
+<p><img src="benchmark-png__files/persp_lossy_2_3.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 6</code></p>
+<p>Reduction: 71.40%</p>
+<p><img src="benchmark-png__files/persp_lossy_6.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 16</code></p>
+<p>Reduction: 79.58%</p>
+<p><img src="benchmark-png__files/persp_lossy_16.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 32</code></p>
+<p>Reduction: 82.93%</p>
+<p><img src="benchmark-png__files/persp_lossy_32.png" alt="lossy" /></p>
+</li>
+<li>
+<p><code>lossy = 64</code></p>
+<p>Reduction: 96.19%</p>
+<p><img src="benchmark-png__files/persp_lossy_64.png" alt="lossy" /></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<h2 id="sec:visualization"><span class="section-number main-number">5</span> Visualization</h2>
+<p>Note that for the lossy optimization benchmarks, we first did the lossy optimization and then applied the default level of lossless optimization on top of it. The outcome is the combination of both optimizations.</p>
+<p>The dashed vertical line in the lossy optimization plots indicates the JND (<a href="https://en.wikipedia.org/wiki/Color_difference#CIE76">just noticeable difference</a>) threshold of 2.3.</p>
+<div id="fig:plot-filesize" class="figure">
+<p><img src="benchmark-png__files/plot-filesize-1.png" alt="File size vs optimization level (log scale)." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">4</span>
+File size vs optimization level (log scale).</p>
+</div>
+</div>
+<div id="fig:plot-filesize-lossy" class="figure">
+<p><img src="benchmark-png__files/plot-filesize-lossy-1.png" alt="File size vs lossy level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">5</span>
+File size vs lossy level.</p>
+</div>
+</div>
+<div id="fig:plot-time" class="figure">
+<p><img src="benchmark-png__files/plot-time-1.png" alt="Processing time vs optimization level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">6</span>
+Processing time vs optimization level.</p>
+</div>
+</div>
+<div id="fig:plot-time-lossy" class="figure">
+<p><img src="benchmark-png__files/plot-time-lossy-1.png" alt="Processing time vs lossy level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">7</span>
+Processing time vs lossy level.</p>
+</div>
+</div>
+<div id="fig:plot-reduction-pct" class="figure">
+<p><img src="benchmark-png__files/plot-reduction-pct-1.png" alt="Size reduction percentage by optimization level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">8</span>
+Size reduction percentage by optimization level.</p>
+</div>
+</div>
+<div id="fig:plot-reduction-pct-lossy" class="figure">
+<p><img src="benchmark-png__files/plot-reduction-pct-lossy-1.png" alt="Size reduction percentage by lossy level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">9</span>
+Size reduction percentage by lossy level.</p>
+</div>
+</div>
+<div id="fig:plot-size-reduction-bar" class="figure">
+<p><img src="benchmark-png__files/plot-size-reduction-bar-1.png" alt="Absolute size reduction by optimization level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">10</span>
+Absolute size reduction by optimization level.</p>
+</div>
+</div>
+<div id="fig:plot-size-reduction-bar-lossy" class="figure">
+<p><img src="benchmark-png__files/plot-size-reduction-bar-lossy-1.png" alt="Absolute size reduction by lossy level." /></p>
+<div class="caption">
+<p><span class="ref-number-fig">11</span>
+Absolute size reduction by lossy level.</p>
+</div>
+</div>
+</div>
+<footer><div class="flex-col">
+<p>Developed by <a href="https://yihui.org">Yihui Xie</a></p>
+<p>Site built with <a href="https://github.com/yihui/litedown">litedown</a> v0.9.9</p>
+</div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/sidenotes.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/appendix.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/toc-highlight.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/copy-button.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/heading-anchor.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/pages.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/js/tabsets.min.js" defer></script>
+</body>
+</html>

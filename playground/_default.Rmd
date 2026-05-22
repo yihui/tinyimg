@@ -1,0 +1,35 @@
+---
+title: Optimize PNG
+---
+
+For more info, see <https://pkg.yihui.org/tinyimg/>
+
+```{r}
+test_plot = function(expr, filename = tempfile(fileext = '.png'), ...) {
+  png(filename, ...)
+  expr
+  dev.off()
+  filename
+}
+```
+
+## The original plot
+
+```{r}
+out = test_plot({
+  par(mar = c(4, 4, 1, .1))
+  with(penguins, plot(bill_len ~ bill_dep, pch = 19, col = species))
+})
+img = xfun::html_tag("img", src = xfun::base64_uri(out), alt = "Original")
+litedown::raw_text(img)
+```
+
+## The optimized plot
+
+```{r}
+tinyimg::tinypng(out)
+img = xfun::html_tag("img", src = xfun::base64_uri(out), alt = "Optimized")
+litedown::raw_text(img)
+```
+
+Can you see any difference?

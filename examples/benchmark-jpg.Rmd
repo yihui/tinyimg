@@ -1,0 +1,180 @@
+---
+title: "`tinyjpg()` Benchmarks"
+output:
+  html:
+    meta:
+      css: ["@tabsets"]
+      js: ["@tabsets"]
+---
+
+```{r}
+litedown::reactor(echo = FALSE, dev = 'jpeg')
+library(tinyimg)
+options(xfun.md_table.limit = Inf)
+```
+
+## Overview
+
+This document benchmarks the `tinyjpg()` function from the **tinyimg** package
+across different quality levels. We test with three types of plots:
+
+1. A scatterplot based on the penguins dataset
+2. A simple boxplot (simpler graphics)
+3. A complex 3D perspective plot (more complex graphics)
+
+For each quality level, we measure:
+
+- File size reduction (in KB and percentage)
+- Time taken for optimization
+
+## Test Plots
+
+First, we create test plots using the `jpeg()` device (set as default via the chunk option
+`dev = 'jpeg'`):
+
+```{r scatterplot, fig.cap='Penguin bill length vs flipper length.'}
+par(mar = c(4, 4, 1, 1))
+n = length(penguins$flipper_len)
+cols = grDevices::hcl.colors(n, "Spectral")
+plot(penguins$flipper_len, penguins$bill_len,
+     pch = 19,
+     col = cols[seq_along(penguins$flipper_len)],
+     xlab = "Flipper Length (mm)",
+     ylab = "Bill Length (mm)")
+```
+
+```{r boxplot, fig.cap='Miles per gallon by cylinder count.'}
+par(mar = c(4, 4, 1, 1))
+boxplot(mpg ~ cyl, data = mtcars,
+        xlab = "Number of Cylinders",
+        ylab = "Miles Per Gallon",
+        col = c("lightblue", "lightgreen", "lightpink"))
+```
+
+```{r persp, fig.cap='A complex 3D surface defined by the function sin(r)/r.'}
+par(mar = c(2, 2, 1, 1))
+x = seq(-10, 10, length = 50)
+y = seq(-10, 10, length = 50)
+z = outer(x, y, function(x, y) {
+  r = sqrt(x^2 + y^2)
+  10 * sin(r) / r
+})
+z[is.nan(z)] = 10
+persp(x, y, z,
+      theta = 30, phi = 30,
+      expand = 0.5,
+      col = "lightblue",
+      shade = 0.5,
+      ticktype = "detailed",
+      xlab = "X", ylab = "Y", zlab = "Z")
+```
+
+## Benchmarks
+
+Now let's optimize these JPEG files at different quality levels and measure
+the results:
+
+```{r benchmark}
+# Get the JPEG plot files created by litedown
+plot_files = litedown::get_context("plot_files")
+plot_names = c("scatterplot", "boxplot", "persp")
+
+quality_levels = c(10, 30, 50, 70, 80, 90, 95)
+
+opt_files = list()
+result_rows = list()
+
+for (i in seq_along(plot_files)) {
+  input_file = plot_files[i]
+  plot_name = plot_names[i]
+  original_size = file.info(input_file)$size
+  opt_files[[plot_name]] = list()
+  for (q in quality_levels) {
+    q_label = as.character(q)
+    output_file = file.path(dirname(input_file), sprintf("%s_q%s.jpg", plot_name, q_label))
+    time_taken = system.time({
+      tinyjpg(input_file, output = output_file, quality = q)
+    })["elapsed"]
+    opt_files[[plot_name]][[q_label]] = output_file
+    new_size = file.info(output_file)$size
+    result_rows[[length(result_rows) + 1L]] = data.frame(
+      Plot = plot_name,
+      Quality = q,
+      Size_KB = new_size / 1024,
+      Reduction_pct = ((original_size - new_size) / original_size) * 100,
+      Time_sec = time_taken
+    )
+  }
+}
+
+results = do.call(rbind, result_rows)
+rownames(results) = NULL
+results
+```
+
+A visual comparison of the quality optimization results:
+
+```{r quality-images}
+tabs = lapply(names(opt_files), function(plot_name) {
+  setNames(lapply(names(opt_files[[plot_name]]), function(q) {
+    pct = subset(results, Plot == plot_name & Quality == as.integer(q))$Reduction_pct
+    img = opt_files[[plot_name]][[q]]
+    c(sprintf('Reduction: %.02f%%', pct), '', paste0("![quality](", xfun::relative_path(img), ")"))
+  }), paste0("quality = ", names(opt_files[[plot_name]])))
+})
+names(tabs) = names(opt_files)
+xfun::tabset(tabs, xfun::tab_content)
+```
+
+## Visualization
+
+```{r plot-filesize, fig.cap='File size vs quality level.', dev='png'}
+par(mar = c(4, 4, 1, 1))
+pchs = c(19, 17, 15)
+
+plot(NA, xlim = range(quality_levels), ylim = range(results$Size_KB),
+     xlab = "Quality", ylab = "File Size (KB)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Quality, plot_data$Size_KB,
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("topleft", legend = plot_names,
+       col = seq_along(plot_names) + 1,
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-reduction, fig.cap='Size reduction percentage vs quality level.', dev='png'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(quality_levels), ylim = range(results$Reduction_pct),
+     xlab = "Quality", ylab = "Size Reduction (%)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Quality, plot_data$Reduction_pct,
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("topright", legend = plot_names,
+       col = seq_along(plot_names) + 1,
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r plot-time, fig.cap='Processing time vs quality level.', dev='png'}
+par(mar = c(4, 4, 1, 1))
+plot(NA, xlim = range(quality_levels), ylim = range(results$Time_sec),
+     xlab = "Quality", ylab = "Time (seconds)")
+for (i in seq_along(plot_names)) {
+  plot_data = subset(results, Plot == plot_names[i])
+  lines(plot_data$Quality, plot_data$Time_sec,
+        type = "b", pch = pchs[i], col = i + 1)
+}
+legend("topleft", legend = plot_names,
+       col = seq_along(plot_names) + 1,
+       pch = pchs[seq_along(plot_names)], lty = 1)
+grid()
+```
+
+```{r optimize-document-plots, include=FALSE}
+tinypng(head(dirname(litedown::get_context("plot_files")), 1))
+```
