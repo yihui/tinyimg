@@ -218,33 +218,33 @@ jpeg(tmp_jpg, width = 400, height = 400); plot(1:10); dev.off()
 <pre><code class="language-r"># Optimize both in one call (uses tiny_output() by default)
 tinyimg(c(tmp_png, tmp_jpg))
 </code></pre>
-<pre><code>#&gt; file1a401f62dd43.png | 7.2 KB -&gt; 6.6 KB (-8.4%)
-#&gt; file1a40baa012d.jpg -&gt; file1a40baa012d_q75.jpg | 7.6 KB -&gt; 4.5 KB (-40.4%)
+<pre><code>#&gt; file19372667a46.png | 7.2 KB -&gt; 6.6 KB (-8.4%)
+#&gt; file19376d054692.jpg -&gt; file19376d054692_q75.jpg | 7.6 KB -&gt; 4.5 KB (-40.4%)
 </code></pre>
 <pre><code class="language-r"># Optimize in place (lossless PNG is safe; use with care for JPEG)
 tinypng(tmp_png, identity)
 </code></pre>
-<pre><code>#&gt; file1a401f62dd43.png | 6.6 KB -&gt; 6.6 KB (+0.0%)
+<pre><code>#&gt; file19372667a46.png | 6.6 KB -&gt; 6.6 KB (+0.0%)
 </code></pre>
 <pre><code class="language-r">tinyjpg(tmp_jpg, identity)
 </code></pre>
-<pre><code>#&gt; file1a40baa012d.jpg | 7.6 KB -&gt; 4.5 KB (-40.4%)
+<pre><code>#&gt; file19376d054692.jpg | 7.6 KB -&gt; 4.5 KB (-40.4%)
 </code></pre>
 <pre><code class="language-r"># Lossy PNG: output gets a suffix automatically
 tinypng(tmp_png, lossy = 2.3)
 </code></pre>
-<pre><code>#&gt; file1a401f62dd43.png -&gt; file1a401f62dd43_l2.3.png | 6.6 KB -&gt; 3.5 KB (-46.0%)
+<pre><code>#&gt; file19372667a46.png -&gt; file19372667a46_l2.3.png | 6.6 KB -&gt; 3.5 KB (-46.0%)
 </code></pre>
 <pre><code class="language-r"># JPEG at a specific quality
 tinyjpg(tmp_jpg, quality = 60)
 </code></pre>
-<pre><code>#&gt; file1a40baa012d.jpg -&gt; file1a40baa012d_q60.jpg | 4.5 KB -&gt; 3.9 KB (-15.0%)
+<pre><code>#&gt; file19376d054692.jpg -&gt; file19376d054692_q60.jpg | 4.5 KB -&gt; 3.9 KB (-15.0%)
 </code></pre>
 <pre><code class="language-r"># See what output names tiny_output() would generate
 tiny_output(c(tmp_png, tmp_jpg), lossy = 2.3, quality = 60)
 </code></pre>
-<pre><code>#&gt; [1] &quot;/tmp/RtmpV5hbCU/file1a401f62dd43_l2.3.png&quot;
-#&gt; [2] &quot;/tmp/RtmpV5hbCU/file1a40baa012d_q60.jpg&quot;  
+<pre><code>#&gt; [1] &quot;/tmp/RtmpATG7AZ/file19372667a46_l2.3.png&quot;
+#&gt; [2] &quot;/tmp/RtmpATG7AZ/file19376d054692_q60.jpg&quot;
 </code></pre>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.44/css/manual.min.css">
 </div>
