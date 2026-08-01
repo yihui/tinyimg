@@ -12,7 +12,6 @@ This file lists the authors of the Rust crates vendored in this package.
 - exoquant: Dennis Ranke <dennis.ranke@gmail.com>
 - filetime: Alex Crichton <alex@alexcrichton.com>
 - funty: myrrlyn <self@myrrlyn.dev>
-- libc: The Rust Project Developers
 - libdeflate-sys: Adam Kewley <contact@adamkewley.com>
 - libdeflater: Adam Kewley <contact@adamkewley.com>
 - lodepng: Kornel <kornel@geekhood.net>
