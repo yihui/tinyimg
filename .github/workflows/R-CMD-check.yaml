@@ -57,6 +57,7 @@ jobs:
           - {os: ubuntu-latest, r: 'devel', http-user-agent: 'release'}
           - {os: macos-latest, r: 'release'}
           - {os: windows-latest, r: 'release'}
+          - {os: windows-11-arm, r: 'release', rust-target: 'aarch64-pc-windows-gnullvm'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -69,6 +70,8 @@ jobs:
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.config.rust-target }}
 
       - name: Vendor Rust dependencies
         run: |
