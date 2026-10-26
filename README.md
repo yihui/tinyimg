@@ -5,8 +5,8 @@
 [![R-CMD-check](https://github.com/yihui/tinyimg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yihui/tinyimg/actions/workflows/R-CMD-check.yaml)
 [![CRAN
 release](https://www.r-pkg.org/badges/version/tinyimg)](https://cran.r-project.org/package=tinyimg)
-
 [![Build site](https://github.com/yihui/tinyimg/actions/workflows/litedown-site.yml/badge.svg)](https://github.com/yihui/tinyimg/actions/workflows/litedown-site.yml)
+
 <!-- badges: end -->
 
 An R package for optimizing and compressing images using Rust libraries.
