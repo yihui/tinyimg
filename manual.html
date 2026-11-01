@@ -241,33 +241,33 @@ jpeg(tmp_jpg, width = 400, height = 400); plot(1:10); dev.off()
 <pre><code class="language-r"># Optimize both in one call (uses tiny_output() by default)
 tinyimg(c(tmp_png, tmp_jpg))
 </code></pre>
-<pre><code>#&gt; file212f548ef52e.png | 11.0 KB -&gt; 2.8 KB (-74.4%)
-#&gt; file212f7582ca60.jpg -&gt; file212f7582ca60_q75.jpg | 12.0 KB -&gt; 4.5 KB (-62.8%)
+<pre><code>#&gt; file1d9d72873539.png | 11.0 KB -&gt; 2.8 KB (-74.4%)
+#&gt; file1d9dab76bed.jpg -&gt; file1d9dab76bed_q75.jpg | 12.0 KB -&gt; 4.5 KB (-62.8%)
 </code></pre>
 <pre><code class="language-r"># Optimize in place (lossless PNG is safe; use with care for JPEG)
 tinypng(tmp_png, identity)
 </code></pre>
-<pre><code>#&gt; file212f548ef52e.png | 2.8 KB -&gt; 2.8 KB (+0.0%)
+<pre><code>#&gt; file1d9d72873539.png | 2.8 KB -&gt; 2.8 KB (+0.0%)
 </code></pre>
 <pre><code class="language-r">tinyjpg(tmp_jpg, identity)
 </code></pre>
-<pre><code>#&gt; file212f7582ca60.jpg | 12.0 KB -&gt; 4.5 KB (-62.8%)
+<pre><code>#&gt; file1d9dab76bed.jpg | 12.0 KB -&gt; 4.5 KB (-62.8%)
 </code></pre>
 <pre><code class="language-r"># Lossy PNG: output gets a suffix automatically
 tinypng(tmp_png, lossy = 2.3)
 </code></pre>
-<pre><code>#&gt; file212f548ef52e.png -&gt; file212f548ef52e_l2.3.png | 2.8 KB -&gt; 2.3 KB (-17.7%)
+<pre><code>#&gt; file1d9d72873539.png -&gt; file1d9d72873539_l2.3.png | 2.8 KB -&gt; 2.3 KB (-17.7%)
 </code></pre>
 <pre><code class="language-r"># JPEG at a specific quality
 tinyjpg(tmp_jpg, quality = 60)
 </code></pre>
-<pre><code>#&gt; file212f7582ca60.jpg -&gt; file212f7582ca60_q60.jpg | 4.5 KB -&gt; 3.9 KB (-12.7%)
+<pre><code>#&gt; file1d9dab76bed.jpg -&gt; file1d9dab76bed_q60.jpg | 4.5 KB -&gt; 3.9 KB (-12.7%)
 </code></pre>
 <pre><code class="language-r"># See what output names tiny_output() would generate
 tiny_output(c(tmp_png, tmp_jpg), lossy = 2.3, quality = 60)
 </code></pre>
-<pre><code>#&gt; [1] &quot;/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T//RtmpTBJZ7a/file212f548ef52e_l2.3.png&quot;
-#&gt; [2] &quot;/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T//RtmpTBJZ7a/file212f7582ca60_q60.jpg&quot; 
+<pre><code>#&gt; [1] &quot;/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T//RtmpE57Hjc/file1d9d72873539_l2.3.png&quot;
+#&gt; [2] &quot;/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T//RtmpE57Hjc/file1d9dab76bed_q60.jpg&quot;  
 </code></pre>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/callout.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/manual.min.css">
