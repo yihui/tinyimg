@@ -3,35 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<meta name="generator" content="litedown 0.11.14">
+<meta name="generator" content="litedown 0.11.23">
 <title>tinyjpg() Benchmarks</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/default.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/article.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/copy-button.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/heading-anchor.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/pages.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/site.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/css/tabsets.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/article.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/copy-button.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/heading-anchor.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/pages.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/site.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/css/tabsets.min.css">
 </head>
 <body>
-<nav><p><a href="../index.html">Home</a>
+<nav class="site-nav"><p><a href="../index.html">Home</a>
 <a href="../examples.html">Examples</a>
 <a href="../manual.html">Manual</a>
 <a href="../news.html">News</a>
 <a href="../playground/">Playground</a>
 <a href="https://github.com/yihui/tinyimg/" class="right"><img src="https://cdn.jsdelivr.net/npm/@primer/octicons@19/build/svg/mark-github-24.svg" alt="GitHub" class="no-invert" /></a></p></nav>
-<div class="frontmatter">
+<header class="frontmatter">
 <div class="title"><h1><code>tinyjpg()</code> Benchmarks</h1></div>
-</div>
-<div class="body">
-<div id="TOC">
+
+
+
+</header>
+<main>
+<article class="">
+<nav id="TOC">
 <ul class="numbered">
 <li><a href="#sec:overview"><span class="section-number main-number">1</span> Overview</a></li>
 <li><a href="#sec:test-plots"><span class="section-number main-number">2</span> Test Plots</a></li>
 <li><a href="#sec:benchmarks"><span class="section-number main-number">3</span> Benchmarks</a></li>
 <li><a href="#sec:visualization"><span class="section-number main-number">4</span> Visualization</a></li>
 </ul>
-</div>
+</nav>
 <h2 id="sec:overview"><span class="section-number main-number">1</span> Overview</h2>
 <p>This document benchmarks the <code>tinyjpg()</code> function from the <strong>tinyimg</strong> package
 across different quality levels. We test with three types of plots:</p>
@@ -72,27 +76,27 @@ A complex 3D surface defined by the function sin(r)/r.</p>
 <h2 id="sec:benchmarks"><span class="section-number main-number">3</span> Benchmarks</h2>
 <p>Now let’s optimize these JPEG files at different quality levels and measure
 the results:</p>
-<pre><code>#&gt; scatterplot-1.jpeg -&gt; scatterplot_q10.jpg | 48.3 KB -&gt; 5.6 KB (-88.5%)
-#&gt; scatterplot-1.jpeg -&gt; scatterplot_q30.jpg | 48.3 KB -&gt; 11.1 KB (-77.0%)
-#&gt; scatterplot-1.jpeg -&gt; scatterplot_q50.jpg | 48.3 KB -&gt; 14.8 KB (-69.4%)
-#&gt; scatterplot-1.jpeg -&gt; scatterplot_q70.jpg | 48.3 KB -&gt; 19.2 KB (-60.2%)
-#&gt; scatterplot-1.jpeg -&gt; scatterplot_q80.jpg | 48.3 KB -&gt; 24.1 KB (-50.0%)
-#&gt; scatterplot-1.jpeg -&gt; scatterplot_q90.jpg | 48.3 KB -&gt; 33.0 KB (-31.6%)
-#&gt; scatterplot-1.jpeg -&gt; scatterplot_q95.jpg | 48.3 KB -&gt; 43.2 KB (-10.5%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q10.jpg | 26.2 KB -&gt; 4.3 KB (-83.7%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q30.jpg | 26.2 KB -&gt; 7.0 KB (-73.4%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q50.jpg | 26.2 KB -&gt; 8.7 KB (-66.8%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q70.jpg | 26.2 KB -&gt; 10.3 KB (-60.8%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q80.jpg | 26.2 KB -&gt; 11.9 KB (-54.5%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q90.jpg | 26.2 KB -&gt; 14.6 KB (-44.2%)
-#&gt; boxplot-1.jpeg -&gt; boxplot_q95.jpg | 26.2 KB -&gt; 17.3 KB (-33.8%)
-#&gt; persp-1.jpeg -&gt; persp_q10.jpg | 66.5 KB -&gt; 5.4 KB (-91.9%)
-#&gt; persp-1.jpeg -&gt; persp_q30.jpg | 66.5 KB -&gt; 13.7 KB (-79.4%)
-#&gt; persp-1.jpeg -&gt; persp_q50.jpg | 66.5 KB -&gt; 19.4 KB (-70.8%)
-#&gt; persp-1.jpeg -&gt; persp_q70.jpg | 66.5 KB -&gt; 26.3 KB (-60.4%)
-#&gt; persp-1.jpeg -&gt; persp_q80.jpg | 66.5 KB -&gt; 33.4 KB (-49.8%)
-#&gt; persp-1.jpeg -&gt; persp_q90.jpg | 66.5 KB -&gt; 46.2 KB (-30.5%)
-#&gt; persp-1.jpeg -&gt; persp_q95.jpg | 66.5 KB -&gt; 59.0 KB (-11.3%)
+<pre><code>#&gt; scatterplot-1.jpeg -&gt; scatterplot_q10.jpg | 48.2 KB -&gt; 5.6 KB (-88.4%)
+#&gt; scatterplot-1.jpeg -&gt; scatterplot_q30.jpg | 48.2 KB -&gt; 11.1 KB (-76.9%)
+#&gt; scatterplot-1.jpeg -&gt; scatterplot_q50.jpg | 48.2 KB -&gt; 14.8 KB (-69.2%)
+#&gt; scatterplot-1.jpeg -&gt; scatterplot_q70.jpg | 48.2 KB -&gt; 19.4 KB (-59.7%)
+#&gt; scatterplot-1.jpeg -&gt; scatterplot_q80.jpg | 48.2 KB -&gt; 24.1 KB (-49.9%)
+#&gt; scatterplot-1.jpeg -&gt; scatterplot_q90.jpg | 48.2 KB -&gt; 32.9 KB (-31.6%)
+#&gt; scatterplot-1.jpeg -&gt; scatterplot_q95.jpg | 48.2 KB -&gt; 43.3 KB (-10.2%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q10.jpg | 26.0 KB -&gt; 4.3 KB (-83.4%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q30.jpg | 26.0 KB -&gt; 7.1 KB (-72.8%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q50.jpg | 26.0 KB -&gt; 8.9 KB (-65.9%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q70.jpg | 26.0 KB -&gt; 10.6 KB (-59.3%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q80.jpg | 26.0 KB -&gt; 12.1 KB (-53.6%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q90.jpg | 26.0 KB -&gt; 14.6 KB (-43.9%)
+#&gt; boxplot-1.jpeg -&gt; boxplot_q95.jpg | 26.0 KB -&gt; 17.5 KB (-32.8%)
+#&gt; persp-1.jpeg -&gt; persp_q10.jpg | 67.2 KB -&gt; 5.4 KB (-91.9%)
+#&gt; persp-1.jpeg -&gt; persp_q30.jpg | 67.2 KB -&gt; 13.9 KB (-79.4%)
+#&gt; persp-1.jpeg -&gt; persp_q50.jpg | 67.2 KB -&gt; 19.6 KB (-70.8%)
+#&gt; persp-1.jpeg -&gt; persp_q70.jpg | 67.2 KB -&gt; 26.6 KB (-60.4%)
+#&gt; persp-1.jpeg -&gt; persp_q80.jpg | 67.2 KB -&gt; 33.8 KB (-49.7%)
+#&gt; persp-1.jpeg -&gt; persp_q90.jpg | 67.2 KB -&gt; 46.7 KB (-30.5%)
+#&gt; persp-1.jpeg -&gt; persp_q95.jpg | 67.2 KB -&gt; 59.6 KB (-11.3%)
 </code></pre>
 <table>
 <thead>
@@ -108,149 +112,149 @@ the results:</p>
 <tr>
 <td>scatterplot</td>
 <td align="right">10</td>
-<td align="right">5.554</td>
-<td align="right">88.506</td>
-<td align="right">0.016</td>
+<td align="right">5.596</td>
+<td align="right">88.381</td>
+<td align="right">0.027</td>
 </tr>
 <tr>
 <td>scatterplot</td>
 <td align="right">30</td>
-<td align="right">11.089</td>
-<td align="right">77.050</td>
-<td align="right">0.018</td>
+<td align="right">11.141</td>
+<td align="right">76.868</td>
+<td align="right">0.036</td>
 </tr>
 <tr>
 <td>scatterplot</td>
 <td align="right">50</td>
-<td align="right">14.794</td>
-<td align="right">69.382</td>
-<td align="right">0.018</td>
+<td align="right">14.839</td>
+<td align="right">69.188</td>
+<td align="right">0.038</td>
 </tr>
 <tr>
 <td>scatterplot</td>
 <td align="right">70</td>
-<td align="right">19.247</td>
-<td align="right">60.165</td>
-<td align="right">0.022</td>
-</tr>
-<tr>
-<td>scatterplot</td>
-<td align="right">80</td>
-<td align="right">24.142</td>
-<td align="right">50.035</td>
+<td align="right">19.403</td>
+<td align="right">59.711</td>
 <td align="right">0.029</td>
 </tr>
 <tr>
 <td>scatterplot</td>
+<td align="right">80</td>
+<td align="right">24.120</td>
+<td align="right">49.917</td>
+<td align="right">0.053</td>
+</tr>
+<tr>
+<td>scatterplot</td>
 <td align="right">90</td>
-<td align="right">33.031</td>
-<td align="right">31.637</td>
-<td align="right">0.034</td>
+<td align="right">32.929</td>
+<td align="right">31.627</td>
+<td align="right">0.069</td>
 </tr>
 <tr>
 <td>scatterplot</td>
 <td align="right">95</td>
-<td align="right">43.222</td>
-<td align="right">10.546</td>
-<td align="right">0.051</td>
+<td align="right">43.271</td>
+<td align="right">10.153</td>
+<td align="right">0.068</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">10</td>
-<td align="right">4.273</td>
-<td align="right">83.682</td>
+<td align="right">4.329</td>
+<td align="right">83.367</td>
 <td align="right">0.014</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">30</td>
-<td align="right">6.974</td>
-<td align="right">73.371</td>
-<td align="right">0.016</td>
+<td align="right">7.071</td>
+<td align="right">72.831</td>
+<td align="right">0.034</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">50</td>
-<td align="right">8.707</td>
-<td align="right">66.752</td>
-<td align="right">0.018</td>
+<td align="right">8.881</td>
+<td align="right">65.879</td>
+<td align="right">0.033</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">70</td>
-<td align="right">10.266</td>
-<td align="right">60.801</td>
-<td align="right">0.024</td>
+<td align="right">10.598</td>
+<td align="right">59.283</td>
+<td align="right">0.033</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">80</td>
-<td align="right">11.923</td>
-<td align="right">54.473</td>
-<td align="right">0.023</td>
+<td align="right">12.075</td>
+<td align="right">53.606</td>
+<td align="right">0.028</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">90</td>
-<td align="right">14.616</td>
-<td align="right">44.188</td>
-<td align="right">0.030</td>
+<td align="right">14.603</td>
+<td align="right">43.895</td>
+<td align="right">0.032</td>
 </tr>
 <tr>
 <td>boxplot</td>
 <td align="right">95</td>
-<td align="right">17.334</td>
-<td align="right">33.811</td>
-<td align="right">0.026</td>
+<td align="right">17.481</td>
+<td align="right">32.834</td>
+<td align="right">0.031</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">10</td>
-<td align="right">5.413</td>
-<td align="right">91.861</td>
-<td align="right">0.021</td>
+<td align="right">5.446</td>
+<td align="right">91.895</td>
+<td align="right">0.029</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">30</td>
-<td align="right">13.729</td>
-<td align="right">79.358</td>
-<td align="right">0.028</td>
+<td align="right">13.870</td>
+<td align="right">79.359</td>
+<td align="right">0.024</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">50</td>
-<td align="right">19.445</td>
-<td align="right">70.764</td>
-<td align="right">0.076</td>
+<td align="right">19.638</td>
+<td align="right">70.775</td>
+<td align="right">0.045</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">70</td>
-<td align="right">26.329</td>
+<td align="right">26.600</td>
 <td align="right">60.414</td>
-<td align="right">0.071</td>
+<td align="right">0.058</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">80</td>
-<td align="right">33.379</td>
-<td align="right">49.815</td>
-<td align="right">0.054</td>
+<td align="right">33.774</td>
+<td align="right">49.737</td>
+<td align="right">0.057</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">90</td>
-<td align="right">46.200</td>
-<td align="right">30.538</td>
-<td align="right">0.064</td>
+<td align="right">46.710</td>
+<td align="right">30.486</td>
+<td align="right">0.063</td>
 </tr>
 <tr>
 <td>persp</td>
 <td align="right">95</td>
-<td align="right">59.020</td>
-<td align="right">11.264</td>
-<td align="right">0.061</td>
+<td align="right">59.634</td>
+<td align="right">11.253</td>
+<td align="right">0.080</td>
 </tr>
 </tbody>
 </table>
@@ -263,37 +267,37 @@ the results:</p>
 <ul>
 <li>
 <p><code>quality = 10</code></p>
-<p>Reduction: 88.51%</p>
+<p>Reduction: 88.38%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q10.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 30</code></p>
-<p>Reduction: 77.05%</p>
+<p>Reduction: 76.87%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q30.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 50</code></p>
-<p>Reduction: 69.38%</p>
+<p>Reduction: 69.19%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q50.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 70</code></p>
-<p>Reduction: 60.17%</p>
+<p>Reduction: 59.71%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q70.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 80</code></p>
-<p>Reduction: 50.04%</p>
+<p>Reduction: 49.92%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q80.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 90</code></p>
-<p>Reduction: 31.64%</p>
+<p>Reduction: 31.63%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q90.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 95</code></p>
-<p>Reduction: 10.55%</p>
+<p>Reduction: 10.15%</p>
 <p><img src="benchmark-jpg__files/scatterplot_q95.jpg" alt="quality" /></p>
 </li>
 </ul>
@@ -305,37 +309,37 @@ the results:</p>
 <ul>
 <li>
 <p><code>quality = 10</code></p>
-<p>Reduction: 83.68%</p>
+<p>Reduction: 83.37%</p>
 <p><img src="benchmark-jpg__files/boxplot_q10.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 30</code></p>
-<p>Reduction: 73.37%</p>
+<p>Reduction: 72.83%</p>
 <p><img src="benchmark-jpg__files/boxplot_q30.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 50</code></p>
-<p>Reduction: 66.75%</p>
+<p>Reduction: 65.88%</p>
 <p><img src="benchmark-jpg__files/boxplot_q50.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 70</code></p>
-<p>Reduction: 60.80%</p>
+<p>Reduction: 59.28%</p>
 <p><img src="benchmark-jpg__files/boxplot_q70.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 80</code></p>
-<p>Reduction: 54.47%</p>
+<p>Reduction: 53.61%</p>
 <p><img src="benchmark-jpg__files/boxplot_q80.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 90</code></p>
-<p>Reduction: 44.19%</p>
+<p>Reduction: 43.90%</p>
 <p><img src="benchmark-jpg__files/boxplot_q90.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 95</code></p>
-<p>Reduction: 33.81%</p>
+<p>Reduction: 32.83%</p>
 <p><img src="benchmark-jpg__files/boxplot_q95.jpg" alt="quality" /></p>
 </li>
 </ul>
@@ -347,7 +351,7 @@ the results:</p>
 <ul>
 <li>
 <p><code>quality = 10</code></p>
-<p>Reduction: 91.86%</p>
+<p>Reduction: 91.89%</p>
 <p><img src="benchmark-jpg__files/persp_q10.jpg" alt="quality" /></p>
 </li>
 <li>
@@ -357,7 +361,7 @@ the results:</p>
 </li>
 <li>
 <p><code>quality = 50</code></p>
-<p>Reduction: 70.76%</p>
+<p>Reduction: 70.78%</p>
 <p><img src="benchmark-jpg__files/persp_q50.jpg" alt="quality" /></p>
 </li>
 <li>
@@ -367,17 +371,17 @@ the results:</p>
 </li>
 <li>
 <p><code>quality = 80</code></p>
-<p>Reduction: 49.81%</p>
+<p>Reduction: 49.74%</p>
 <p><img src="benchmark-jpg__files/persp_q80.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 90</code></p>
-<p>Reduction: 30.54%</p>
+<p>Reduction: 30.49%</p>
 <p><img src="benchmark-jpg__files/persp_q90.jpg" alt="quality" /></p>
 </li>
 <li>
 <p><code>quality = 95</code></p>
-<p>Reduction: 11.26%</p>
+<p>Reduction: 11.25%</p>
 <p><img src="benchmark-jpg__files/persp_q95.jpg" alt="quality" /></p>
 </li>
 </ul>
@@ -407,17 +411,20 @@ Size reduction percentage vs quality level.</p>
 Processing time vs quality level.</p>
 </div>
 </div>
-</div>
+
+</article>
+</main>
 <footer><div class="flex-col">
 <p>Developed by <a href="https://yihui.org">Yihui Xie</a></p>
-<p>Site built with <a href="https://github.com/yihui/litedown">litedown</a> v0.11.14</p>
+<p><a href="https://github.com/yihui/tinyimg/edit/main/examples/benchmark-jpg.Rmd" class="edit-page">Edit this page</a></p>
+<p>Site built with <a href="https://github.com/yihui/litedown">litedown</a> v0.11.23</p>
 </div></footer>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/sidenotes.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/appendix.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/toc-highlight.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/copy-button.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/heading-anchor.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/pages.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.119/js/tabsets.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/sidenotes.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/toc-highlight.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/copy-button.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/heading-anchor.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/pages.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/nav-highlight.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@xiee/utils@1.14.139/js/tabsets.min.js" defer></script>
 </body>
 </html>
